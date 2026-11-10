@@ -1,3 +1,5 @@
+import { brandingStyle } from "./branding";
+import { defaultBranding } from "./model";
 import { useState } from "react";
 import { Button, Input, Text } from "@chakra-ui/react";
 
@@ -14,10 +16,8 @@ export function CompatibilityBlock({ problem }: { problem: string }) {
     }
   }
   return (
-    <main className="compatibility-page">
-      <header className="masthead" aria-label="KyO">
-        <span className="organization-name">KyO</span>
-        <span className="masthead-divider" aria-hidden="true">/</span>
+    <main className="compatibility-page" style={brandingStyle(defaultBranding)}>
+      <header className="masthead" aria-label="Piikki">
         <span className="wordmark">Piikki</span>
       </header>
       <section

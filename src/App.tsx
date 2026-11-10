@@ -3,7 +3,6 @@ import {
   useRef,
   useState,
   type ReactNode,
-  type CSSProperties,
 } from "react";
 import {
   Box,
@@ -27,19 +26,20 @@ import {
   formatAmount,
   parseAmount,
   type Entry,
+  type Branding,
   defaultBranding,
-  readableText,
 } from "./model";
+import { brandingStyle } from "./branding";
 import { CompatibilityBlock } from "./CompatibilityBlock";
+import { BrandingForm } from "./BrandingForm";
 import { Settings } from "./Settings";
 import { CustomerTable } from "./CustomerTable";
 import "./styles.css";
 type Modal =
+  | { kind: "onboarding" }
   | { kind: "customer" }
   | { kind: "settings" }
   | { kind: "reverse"; entry: Entry; customerName: string };
-type BrandStyle = CSSProperties &
-  Record<"--brand" | "--accent" | "--on-brand" | "--on-accent", string>;
 function FormField({
   label,
   children,
@@ -160,11 +160,12 @@ function CashierApp() {
       );
     }
   }
-  async function start() {
+  async function start(branding: Branding) {
     if (fileBusy || mutation.isPending) return;
     setFileBusy(true);
     try {
       const next = await Ledger.open();
+      await next.saveBranding(branding);
       const saved = await saveDatabase(next, "customers.sqlite");
       activate(saved.ledger);
       setFileName(saved.name);
@@ -227,12 +228,7 @@ function CashierApp() {
     />
   );
   const branding = data?.branding ?? defaultBranding;
-  const brandStyle: BrandStyle = {
-    "--brand": branding.primary,
-    "--accent": branding.secondary,
-    "--on-brand": readableText(branding.primary),
-    "--on-accent": readableText(branding.secondary),
-  };
+  const brandStyle = brandingStyle(branding);
   const fileControls = (
     <>
       <Text className="file-saving-help">
@@ -279,12 +275,14 @@ function CashierApp() {
       }}
     >
       {fileInput}
-      <header className="masthead" aria-label={branding.organization}>
+      <header className="masthead" aria-label={ledger ? branding.organization : "Piikki"}>
         {ledger && branding.logo && (
           <img className="organization-logo" src={branding.logo} alt={`${branding.organization} logo`} />
         )}
-        <span className="organization-name">{branding.organization}</span>
-        <span className="masthead-divider" aria-hidden="true">/</span>
+        {ledger && (<>
+          <span className="organization-name">{branding.organization}</span>
+          <span className="masthead-divider" aria-hidden="true">/</span>
+        </>)}
         <span className="wordmark">Piikki</span>
       </header>
       {!ledger ? (
@@ -301,7 +299,7 @@ function CashierApp() {
           <Button
             variant="ghost"
             disabled={fileBusy}
-            onClick={() => void start()}
+            onClick={() => { setError(""); setModal({ kind: "onboarding" }); }}
           >
             Luo tietokanta
           </Button>
@@ -508,10 +506,12 @@ function CashierApp() {
           <Dialog.Backdrop />
           <Dialog.Positioner>
             <Dialog.Content
-              className={`modal ${modal?.kind === "settings" ? "settings-modal" : ""}`}
+              className={`modal ${modal?.kind === "settings" || modal?.kind === "onboarding" ? "settings-modal" : ""}`}
               style={brandStyle}
               aria-label={
-                modal?.kind === "settings"
+                modal?.kind === "onboarding"
+                  ? "Organisaation tiedot"
+                  : modal?.kind === "settings"
                   ? "Asetukset"
                   : modal?.kind === "customer"
                     ? "Lisää henkilö"
@@ -519,6 +519,17 @@ function CashierApp() {
               }
             >
               <Dialog.Body>
+                {modal?.kind === "onboarding" && (
+                  <>
+                    <Dialog.Title>Organisaation tiedot</Dialog.Title>
+                    <BrandingForm
+                      initial={{ ...defaultBranding, organization: "" }}
+                      busy={busy}
+                      submitLabel="Luo tietokanta"
+                      save={start}
+                    />
+                  </>
+                )}
                 {modal?.kind === "customer" && (
                   <form
                     className="settings-form"

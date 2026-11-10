@@ -6,11 +6,12 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from "@testing-library/react";
 import { ChakraProvider, defaultSystem } from "@chakra-ui/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import App from "./App";
-import { createExample } from "./ledger";
+import { Ledger, createExample } from "./ledger";
 import * as fileAccess from "./database-file";
 
 vi.mock("sql.js/dist/sql-wasm.wasm?url", () => ({
@@ -78,7 +79,7 @@ it("charges immediately, hides IDs and filenames, and opens branding settings", 
   fireEvent.click(screen.getByRole("button", { name: "Asetukset" }));
   expect(await screen.findByRole("dialog", { name: "Asetukset" })).toBeTruthy();
   expect(screen.getByLabelText("Pääväri")).toBeTruthy();
-  expect(screen.getByLabelText("Toinen väri")).toBeTruthy();
+  expect(screen.getByLabelText("Taustaväri")).toBeTruthy();
   const logo = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=";
   fireEvent.change(screen.getByLabelText("Logo"), {
     target: { files: [new File([Uint8Array.from(atob(logo.split(",")[1]), (c) => c.charCodeAt(0))], "logo.png", { type: "image/png" })] },
@@ -136,4 +137,55 @@ it('offers a copyable link when the browser cannot open files', async () => {
     expect(writeText).toHaveBeenCalledWith(window.location.href);
     expect(screen.queryByRole('button', {name:'Avaa tietokanta'})).toBeNull();
   } finally { vi.unstubAllGlobals(); }
+});
+
+
+it("collects organization branding before creating and saving the database", async () => {
+  vi.spyOn(fileAccess, "fileAccessProblem").mockReturnValue(undefined);
+  const save = vi.spyOn(fileAccess, "saveDatabase").mockImplementation(async (ledger, name) => ({
+    ledger: await Ledger.open(ledger.export()),
+    name,
+  }));
+  mount();
+  expect(screen.queryByText("KyO")).toBeNull();
+  expect(screen.getByRole("banner", { name: "Piikki" })).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "Luo tietokanta" }));
+  const dialog = await screen.findByRole("dialog", { name: "Organisaation tiedot" });
+  expect(save).not.toHaveBeenCalled();
+  const create = within(dialog).getByRole("button", { name: "Luo tietokanta" });
+  expect(create.hasAttribute("disabled")).toBe(true);
+  fireEvent.change(within(dialog).getByLabelText("Osakunta"), {
+    target: { value: "Uusi organisaatio" },
+  });
+  fireEvent.change(within(dialog).getByLabelText("Pääväri"), {
+    target: { value: "#123456" },
+  });
+  fireEvent.change(within(dialog).getByLabelText("Taustaväri"), {
+    target: { value: "#abcdef" },
+  });
+  fireEvent.change(within(dialog).getByLabelText("Logo"), {
+    target: { files: [new File(["logo"], "logo.svg", { type: "image/svg+xml" })] },
+  });
+  await screen.findByAltText("Logon esikatselu");
+  fireEvent.click(create);
+  await screen.findByRole("banner", { name: "Uusi organisaatio" });
+  expect(save).toHaveBeenCalledTimes(1);
+  const saved = await Ledger.open(save.mock.calls[0][0].export());
+  expect(saved.snapshot().branding).toEqual({
+    organization: "Uusi organisaatio",
+    primary: "#123456",
+    secondary: "#abcdef",
+    logo: "data:image/svg+xml;base64,bG9nbw==",
+  });
+});
+
+it("cancels onboarding without creating a database", async () => {
+  vi.spyOn(fileAccess, "fileAccessProblem").mockReturnValue(undefined);
+  const save = vi.spyOn(fileAccess, "saveDatabase");
+  mount();
+  fireEvent.click(screen.getByRole("button", { name: "Luo tietokanta" }));
+  await screen.findByRole("dialog", { name: "Organisaation tiedot" });
+  fireEvent.click(screen.getByRole("button", { name: "Peruuta" }));
+  await waitFor(() => expect(document.querySelector('[role="dialog"][data-state="open"]')).toBeNull());
+  expect(save).not.toHaveBeenCalled();
 });

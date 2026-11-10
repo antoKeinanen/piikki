@@ -108,7 +108,7 @@ export function CustomerTable({
         </Table.Body>
       </Table.Root>
       {!table.getRowModel().rows.length && (
-        <Text p="8" color="gray.500">
+        <Text p="8" className="empty-history">
           Ei hakutuloksia.
         </Text>
       )}

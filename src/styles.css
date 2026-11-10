@@ -26,7 +26,7 @@ button:disabled {
 }
 button:focus-visible,
 input:focus-visible {
-  outline: 2px solid var(--ink);
+  outline: 2px solid var(--focus, var(--ink));
   outline-offset: 3px;
 }
 .app {
@@ -35,6 +35,36 @@ input:focus-visible {
   box-shadow: inset 0 3px var(--accent), inset 0 4px var(--line);
   padding: 48px 48px 32px;
   color: var(--ink);
+}
+.app,
+.modal,
+.compatibility-page {
+  background: var(--accent);
+  color: var(--ink);
+  --chakra-colors-fg: var(--ink);
+  --chakra-colors-fg-muted: var(--muted);
+  --chakra-colors-fg-subtle: var(--muted);
+  --chakra-colors-border: var(--line);
+  --chakra-colors-bg: var(--accent);
+  --chakra-colors-bg-panel: var(--accent);
+  --chakra-colors-bg-muted: var(--hover);
+  --chakra-colors-color-palette-solid: var(--brand);
+  --chakra-colors-color-palette-contrast: var(--on-brand);
+  --chakra-colors-color-palette-fg: var(--ink);
+  --chakra-colors-color-palette-focus-ring: var(--focus);
+  --chakra-colors-border-emphasized: var(--focus);
+}
+.app button:focus-visible,
+.modal button:focus-visible,
+.app input:focus-visible,
+.modal input:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+}
+.app button:hover:not(:disabled),
+.modal button:hover:not(:disabled) {
+  background: var(--hover);
+  color: var(--on-hover);
 }
 .workspace {
   display: grid;
@@ -70,8 +100,9 @@ input:focus-visible {
   color: var(--ink);
   border-radius: 3px;
 }
-.search-row button:hover {
-  background: #f3f3f3;
+.search-row button:hover:not(:disabled) {
+  background: var(--hover);
+  color: var(--on-hover);
 }
 .customers table {
   width: 100%;
@@ -95,16 +126,19 @@ input:focus-visible {
   background: transparent !important;
 }
 .customer-row:hover {
-  background: #f3f3f3 !important;
+  background: var(--hover) !important;
+}
+.customer-row:hover td {
+  color: var(--on-hover);
 }
 .customer-row[data-selected="true"] {
-  background: #f0f0f0 !important;
+  background: var(--brand) !important;
 }
 .customer-row[data-selected="true"] td:first-child {
-  box-shadow: inset 3px 0 var(--ink);
+  box-shadow: inset 3px 0 var(--indicator);
 }
 .customer-row[data-selected="true"] td {
-  color: var(--ink);
+  color: var(--on-brand);
 }
 .customer-select {
   display: block;
@@ -112,6 +146,14 @@ input:focus-visible {
   min-height: 62px;
   width: 100%;
   font-size: 15px;
+}
+.customer-select:hover:not(:disabled) {
+  background: transparent !important;
+  color: inherit !important;
+}
+.customer-select:focus-visible {
+  outline-color: currentColor !important;
+  outline-offset: -5px !important;
 }
 .customer-name {
   font-weight: 500;
@@ -163,7 +205,7 @@ input:focus-visible {
 }
 .mode button.mode-active {
   color: var(--ink);
-  border-bottom-color: var(--brand);
+  border-bottom-color: var(--indicator);
 }
 .quick-charges {
   display: grid;
@@ -183,7 +225,7 @@ input:focus-visible {
   background: transparent;
 }
 .quick-charge:hover:not(:disabled) {
-  border-color: var(--brand) !important;
+  border-color: var(--indicator) !important;
   background: var(--brand) !important;
   color: var(--on-brand) !important;
 }
@@ -210,23 +252,31 @@ label {
   font-size: 12px !important;
 }
 input {
+  color: var(--ink);
+  --focus-color: var(--focus);
   border-color: var(--line) !important;
   border-radius: 3px !important;
   background: transparent !important;
   padding: 0 13px;
 }
 input::placeholder {
-  color: #858585;
+  color: var(--muted);
+  opacity: 1;
 }
 .primary {
   background: var(--brand) !important;
   color: var(--on-brand) !important;
-  border: 0 !important;
+  border: 1px solid var(--indicator) !important;
   border-radius: 3px !important;
   font-weight: 500 !important;
 }
-.primary:hover {
-  filter: brightness(0.94);
+.app .primary:hover:not(:disabled),
+.modal .primary:hover:not(:disabled),
+.compatibility-page .primary:hover:not(:disabled) {
+  background: var(--brand);
+  color: var(--on-brand);
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 .primary:disabled {
   opacity: 0.36;
@@ -273,12 +323,12 @@ input::placeholder {
   font-size: 14px;
 }
 .error {
-  color: #a33328;
+  color: var(--error);
   font-size: 13px;
   margin: 14px 0;
 }
 .modal {
-  background: #ffffff !important;
+  background: var(--accent) !important;
   color: var(--ink);
   border-radius: 4px !important;
   box-shadow: none !important;
@@ -302,7 +352,7 @@ input::placeholder {
 }
 .settings-tabs [role="tab"][aria-selected="true"] {
   color: var(--ink);
-  border-color: var(--brand);
+  border-color: var(--indicator);
 }
 .settings-tabs [role="tabpanel"] {
   padding: 26px 0 0;
@@ -374,7 +424,7 @@ input::placeholder {
   width: 100%;
   margin-top: 28px;
   font-size: 13px;
-  color: var(--muted) !important;
+  color: var(--muted);
   border-radius: 3px !important;
 }
 .reversal-name {
@@ -394,7 +444,7 @@ input::placeholder {
   font-size: 14px;
 }
 .dragging {
-  outline: 2px dashed var(--brand);
+  outline: 2px dashed var(--indicator);
   outline-offset: -16px;
 }
 @media (min-width: 1000px) {
@@ -463,6 +513,7 @@ input::placeholder {
   --brand: #111111;
   --accent: #ffffff;
   --on-brand: #ffffff;
+  --on-accent: #111111;
   min-height: 100svh;
   border-top: 3px solid var(--brand);
   box-shadow: inset 0 3px var(--accent), inset 0 4px var(--line);
@@ -555,7 +606,7 @@ input::placeholder {
 }
 .organization-name { font-weight: 700; overflow-wrap: anywhere; }
 .wordmark { font-weight: 400; }
-.masthead-divider { color: #a0a0a0; font-size: 20px; }
+.masthead-divider { color: var(--muted); font-size: 20px; }
 @media (max-width: 800px) {
   .masthead { margin-bottom: 26px; }
   .organization-name, .wordmark { font-size: 25px; }
