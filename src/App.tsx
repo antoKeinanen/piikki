@@ -22,7 +22,7 @@ import {
   saveDatabase,
   supportsDirectFiles,
 } from "./database-file";
-import { Ledger, loadRecovery, createExample } from "./ledger";
+import { Ledger } from "./ledger";
 import {
   formatAmount,
   parseAmount,
@@ -71,13 +71,6 @@ function CashierApp() {
     setAmount("");
 
     setAction("charge");
-  }
-  function recovery() {
-    try {
-      return loadRecovery();
-    } catch {
-      return undefined;
-    }
   }
   const [fileName, setFileName] = useState("");
   const [selected, setSelected] = useState<string>();
@@ -167,15 +160,12 @@ function CashierApp() {
       );
     }
   }
-  async function start(example: boolean) {
+  async function start() {
     if (fileBusy || mutation.isPending) return;
     setFileBusy(true);
     try {
-      const next = example ? await createExample() : await Ledger.open();
-      const saved = await saveDatabase(
-        next,
-        example ? "example.sqlite" : "customers.sqlite",
-      );
+      const next = await Ledger.open();
+      const saved = await saveDatabase(next, "customers.sqlite");
       activate(saved.ledger);
       setFileName(saved.name);
       setLinkedFile(true);
@@ -308,45 +298,13 @@ function CashierApp() {
             Avaa tietokanta
           </Button>
           <span className="drop-label">tai pudota SQLite-tiedosto tähän</span>
-          <Flex gap="3">
-            <Button
-              variant="ghost"
-              disabled={fileBusy}
-              onClick={() => void start(false)}
-            >
-              Luo tietokanta
-            </Button>
-            <Button
-              variant="ghost"
-              disabled={fileBusy}
-              onClick={() => void start(true)}
-            >
-              Kokeile esimerkkiä
-            </Button>
-          </Flex>
-          {recovery() && (
-            <Button
-              variant="plain"
-              disabled={fileBusy}
-              onClick={async () => {
-                try {
-                  const recovered = await Ledger.open(recovery());
-                  const saved = await saveDatabase(
-                    recovered,
-                    "recovered.sqlite",
-                  );
-                  activate(saved.ledger);
-                  setFileName(saved.name);
-                  setLinkedFile(true);
-                  setDirty(false);
-                } catch (e) {
-                  setError(String(e));
-                }
-              }}
-            >
-              Palauta paikallinen kopio
-            </Button>
-          )}
+          <Button
+            variant="ghost"
+            disabled={fileBusy}
+            onClick={() => void start()}
+          >
+            Luo tietokanta
+          </Button>
           {error && (
             <Text role="alert" className="error">
               {error}

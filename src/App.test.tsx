@@ -10,6 +10,7 @@ import {
 import { ChakraProvider, defaultSystem } from "@chakra-ui/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import App from "./App";
+import { createExample } from "./ledger";
 import * as fileAccess from "./database-file";
 
 vi.mock("sql.js/dist/sql-wasm.wasm?url", () => ({
@@ -54,12 +55,12 @@ function mount() {
 it("charges immediately, hides IDs and filenames, and opens branding settings", async () => {
   vi.spyOn(fileAccess, "fileAccessProblem").mockReturnValue(undefined);
   vi.spyOn(fileAccess, "supportsDirectFiles").mockReturnValue(true);
-  vi.spyOn(fileAccess, "saveDatabase").mockImplementation(async (ledger) => ({
-    ledger,
+  vi.spyOn(fileAccess, "pickDatabase").mockResolvedValue({
+    ledger: await createExample(),
     name: "example.sqlite",
-  }));
+  });
   mount();
-  fireEvent.click(screen.getByRole("button", { name: "Kokeile esimerkkiä" }));
+  fireEvent.click(screen.getByRole("button", { name: "Avaa tietokanta" }));
   const balance = await screen.findByLabelText("Saldo");
   expect(balance.textContent).toBe("42,50");
   expect(screen.queryByText("1001")).toBeNull();
