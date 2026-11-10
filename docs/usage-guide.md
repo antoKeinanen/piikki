@@ -2,7 +2,7 @@
 
 Open a database, select a customer, and charge or deposit an amount. Changes save to the SQLite file automatically. Use **Lataa varmuuskopio** when you want a separate copy.
 
-The screenshots show the current Finnish interface. The numbered circles and outlines in each screenshot identify the controls described below. Screenshots use sample accounts. Amounts display two decimal places without currency symbols. Enter `8.50` to subtract 850 of the smallest credit units. You can also enter `8,50`.
+The screenshots show the current Finnish interface. The numbered circles and outlines in each screenshot identify the controls described below. Screenshots use sample accounts with a deep teal primary color and a warm ivory background (`#F7F4EC`). Amounts display two decimal places without currency symbols. Enter `8.50` to subtract 850 of the smallest credit units. You can also enter `8,50`.
 
 ## 1. Open or create a database
 
@@ -128,7 +128,7 @@ A transaction can be reversed once. The reversal itself has no **Peru** button. 
 4. Choose the **Taustaväri** at **2** for page and dialog backgrounds.
 5. Select **Tallenna** at **3** to apply and save the changes.
 
-The button is disabled until the organization name, logo, or a color changes. This screenshot shows a new primary value of `#263AA5` before it is saved. The organization name, logo, and colors are stored in the SQLite database and return when that file is reopened. Text colors adjust to meet a 4.5:1 contrast ratio; control borders and focus indicators meet at least 3:1.
+The button is disabled until the organization name, logo, or a color changes. This screenshot shows a new primary value of `#185C53` before it is saved. The organization name, logo, and colors are stored in the SQLite database and return when that file is reopened. Text colors adjust to meet a 4.5:1 contrast ratio; control borders and focus indicators meet at least 3:1.
 
 Select **Valmis** to close Settings. The browser compatibility screen displays the Piikki wordmark with the default colors.
 

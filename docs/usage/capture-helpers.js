@@ -59,7 +59,7 @@ async function seed() {
   directory = await navigator.storage.getDirectory();
   file = await directory.getFileHandle("piikki-guide-sample.sqlite", { create: true });
   const ledger = await createExample();
-  await ledger.saveBranding({ organization: "Esimerkkiosakunta", primary: "#3549d8", secondary: "#f0e4a3" });
+  await ledger.saveBranding({ organization: "Esimerkkiosakunta", primary: "#246c61", secondary: "#f7f4ec" });
   const stream = await file.createWritable();
   await stream.write(new Uint8Array(ledger.export()));
   await stream.close();
@@ -138,7 +138,7 @@ const stages = {
   async "10"() {
     await click("Asetukset");
     await waitFor(dialog);
-    await fill('[aria-label="Pääväri"]', "#263aa5");
+    await fill('[aria-label="Pääväri"]', "#185c53");
     annotate(['[aria-label="Pääväri"]', '[aria-label="Taustaväri"]', [button("Tallenna", dialog())]]);
   },
   async "11"() {
@@ -177,7 +177,7 @@ const stages = {
     if (snapshot.customers.find((c) => c.name === "Aino Korhonen")?.balance !== 4400 ||
         snapshot.customers.find((c) => c.name === "Mila Example")?.balance !== 0 ||
         !snapshot.presets.some((p) => p.cents === 425) ||
-        snapshot.branding.primary !== "#263aa5") throw Error("Saved guide data did not match");
+        snapshot.branding.primary !== "#185c53") throw Error("Saved guide data did not match");
   },
   async "15"() {
     annotate([".compatibility-title", ".compatibility-explanation", ".compatibility-actions", ".compatibility-details"]);
@@ -196,15 +196,15 @@ export const guide = {
   },
   async onboarding() {
     await fill('[role="dialog"] input:not([type="file"]):not([type="color"])', "Esimerkkiosakunta");
-    await fill('[aria-label="Pääväri"]', "#3549d8");
-    await fill('[aria-label="Taustaväri"]', "#f0e4a3");
+    await fill('[aria-label="Pääväri"]', "#246c61");
+    await fill('[aria-label="Taustaväri"]', "#f7f4ec");
     annotate(['[role="dialog"] input:not([type="file"]):not([type="color"])', '[type="file"]:not([hidden])', '[aria-label="Pääväri"]', '[aria-label="Taustaväri"]', [button("Luo tietokanta", dialog())]]);
   },
   async compatibility() {
     // Reuse Vite's existing module URLs so React and Chakra share one instance.
     const urls = performance.getEntriesByType("resource").map((entry) => entry.name);
     const loaded = (part) => {
-      const url = urls.find((value) => value.includes(part) && value.includes("?"));
+      const url = urls.find((value) => value.split("?")[0].endsWith(part.replace(/\?$/, "")));
       if (!url) throw Error("Module not loaded: " + part);
       return url;
     };
