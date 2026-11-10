@@ -33,3 +33,9 @@ npm run build
 The tests run real SQLite imports, transactions, reversals, and exports. No backend is required. The production build includes the SQLite WASM asset.
 
 See [architecture](docs/architecture.md) for module ownership and [the schema](src/ledger.ts) for the version 1 database contract. Amounts are whole-number credits in the smallest denomination. The UI shows two decimal places without currency symbols, units, or product names.
+
+## Deploy to Vercel
+
+Import the repository into Vercel with the **Vite** preset and **Node.js 24.x**. The checked-in configuration uses `npm ci`, `npm run build`, and the `dist` output directory. No environment variables or backend are required.
+
+See [the deployment guide](docs/deployment.md) for Git and CLI deployment steps and verification.
