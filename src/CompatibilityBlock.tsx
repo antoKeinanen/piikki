@@ -15,45 +15,50 @@ export function CompatibilityBlock({ problem }: { problem: string }) {
   }
   return (
     <main className="compatibility-page">
+      <header className="masthead" aria-label="KyO">
+        <span className="organization-name">KyO</span>
+        <span className="masthead-divider" aria-hidden="true">/</span>
+        <span className="wordmark">Piikki</span>
+      </header>
       <section
         className="compatibility-content"
-        aria-label="Browser compatibility"
+        aria-label="Selaimen yhteensopivuus"
       >
         <div className="compatibility-rule" aria-hidden="true" />
         <Text className="compatibility-title">
           {secure
-            ? "A different browser is needed."
-            : "A secure connection is needed."}
+            ? "Tarvitset toisen selaimen."
+            : "Tarvitset suojatun yhteyden."}
         </Text>
         <Text className="compatibility-explanation">
           {secure
-            ? "Each change saves directly to your SQLite file. This browser does not support the file access it needs."
-            : "HTTPS is needed to open and save your SQLite file."}
+            ? "Muutokset tallentuvat suoraan SQLite-tiedostoosi. Tämä selain ei tue tarvittavaa tiedostojen käsittelyä."
+            : "SQLite-tiedoston avaaminen ja tallentaminen vaatii HTTPS-yhteyden."}
         </Text>
         <Text className="compatibility-next">
           {secure
-            ? "Copy the link and open it in another browser, or on your cashier device."
-            : "Open this page over HTTPS, or use localhost when running it on your device."}
+            ? "Kopioi linkki ja avaa se toisessa selaimessa tai kassalaitteella."
+            : "Avaa sivu HTTPS-yhteydellä tai käytä omalla laitteellasi localhost-osoitetta."}
         </Text>
         <div className="compatibility-actions">
           {secure ? (
             <Button className="primary" onClick={() => void copyLink()}>
-              {copied ? "Link copied" : "Copy link"}
+              {copied ? "Linkki kopioitu" : "Kopioi linkki"}
             </Button>
           ) : (
             <Button className="primary" asChild>
               <a href={window.location.href.replace(/^http:/, "https:")}>
-                Open secure page
+                Avaa suojattu sivu
               </a>
             </Button>
           )}
           <Button variant="ghost" onClick={() => window.location.reload()}>
-            Check again
+            Tarkista uudelleen
           </Button>
         </div>
         {showLink && (
           <Input
-            aria-label="App link"
+            aria-label="Sovelluksen linkki"
             className="compatibility-link"
             readOnly
             value={window.location.href}
@@ -61,9 +66,9 @@ export function CompatibilityBlock({ problem }: { problem: string }) {
           />
         )}
         <details className="compatibility-details">
-          <summary>Why is access blocked?</summary>
+          <summary>Miksi käyttö on estetty?</summary>
           <Text>
-            {problem} The app stays closed so changes cannot be left unsaved.
+            {problem} Sovellus pysyy suljettuna, jotta muutokset eivät jää tallentamatta.
           </Text>
         </details>
       </section>

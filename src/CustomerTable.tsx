@@ -44,32 +44,31 @@ export function CustomerTable({
     <section className="customers">
       <Flex gap="3" className="search-row">
         <Input
-          aria-label="Find a customer"
-          placeholder="Find a customer"
+          aria-label="Hae henkilöä"
+          placeholder="Hae henkilöä"
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
         />
         <Button variant="ghost" disabled={disabled} onClick={add}>
-          Add customer
+          Lisää henkilö
         </Button>
         <Button variant="ghost" disabled={disabled} onClick={settings}>
-          Settings
+          Asetukset
         </Button>
       </Flex>
       <Table.Root size="lg">
         <Table.Header>
           <Table.Row>
-            <Table.ColumnHeader>
+            <Table.ColumnHeader aria-sort={sorting[0]?.id === "name" ? (sorting[0].desc ? "descending" : "ascending") : "none"}>
               <button onClick={() => table.getColumn("name")?.toggleSorting()}>
-                Customer{" "}
-                {sorting[0]?.id === "name" ? (sorting[0].desc ? "↓" : "↑") : ""}
+                Nimi
               </button>
             </Table.ColumnHeader>
-            <Table.ColumnHeader textAlign="right">
+            <Table.ColumnHeader textAlign="right" aria-sort={sorting[0]?.id === "balance" ? (sorting[0].desc ? "descending" : "ascending") : "none"}>
               <button
                 onClick={() => table.getColumn("balance")?.toggleSorting()}
               >
-                Balance
+                Saldo
               </button>
             </Table.ColumnHeader>
           </Table.Row>
@@ -110,7 +109,7 @@ export function CustomerTable({
       </Table.Root>
       {!table.getRowModel().rows.length && (
         <Text p="8" color="gray.500">
-          No customers found.
+          Ei hakutuloksia.
         </Text>
       )}
     </section>

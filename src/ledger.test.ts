@@ -59,8 +59,8 @@ describe("cashier ledger", () => {
   it("rejects incompatible files and parses decimal credits", async () => {
     await expect(Ledger.open(new Uint8Array([1, 2, 3]))).rejects.toThrow();
     expect(parseAmount("8.50")).toBe(850);
-    expect(formatAmount(850)).toBe("8.50");
-    expect(formatAmount(0)).toBe("0.00");
+    expect(formatAmount(850)).toBe("8,50");
+    expect(formatAmount(0)).toBe("0,00");
     expect(parseAmount("0,29")).toBe(29);
     for (const input of ["0", "-1", "1.005", "1e3", ""])
       expect(() => parseAmount(input)).toThrow();
@@ -122,14 +122,33 @@ describe("direct persistence", () => {
 it("stores the two branding colors in SQLite without changing balances", async () => {
   const ledger = await Ledger.open();
   await ledger.addCustomer("Aino", "");
-  await ledger.saveBranding({ primary: "#102030", secondary: "#eeddcc" });
+  await ledger.saveBranding({ organization: "Testiosakunta", primary: "#102030", secondary: "#eeddcc" });
   const reopened = await Ledger.open(ledger.export());
   expect(reopened.snapshot().branding).toEqual({
+    organization: "Testiosakunta",
     primary: "#102030",
     secondary: "#eeddcc",
   });
   expect(reopened.snapshot().customers[0].balance).toBe(0);
   await expect(
-    ledger.saveBranding({ primary: "invalid", secondary: "#ffffff" }),
+    ledger.saveBranding({ organization: "Testiosakunta", primary: "invalid", secondary: "#ffffff" }),
   ).rejects.toThrow();
+});
+
+it("keeps logos with their database, supports replacement and removal, and rejects remote URLs", async () => {
+  const ledger = await Ledger.open();
+  const initial = ledger.snapshot().branding;
+  expect(initial.logo).toBeUndefined();
+  const logo = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=";
+  await ledger.saveBranding({ ...initial, logo });
+  const reopened = await Ledger.open(ledger.export());
+  expect(reopened.snapshot().branding.logo).toBe(logo);
+  expect((await Ledger.open()).snapshot().branding.logo).toBeUndefined();
+  const replacement = "data:image/svg+xml;base64," + btoa('<svg xmlns="http://www.w3.org/2000/svg"/>');
+  await reopened.saveBranding({ ...initial, logo: replacement });
+  expect((await Ledger.open(reopened.export())).snapshot().branding.logo).toBe(replacement);
+  await expect(reopened.saveBranding({ ...initial, logo: "https://example.com/logo.png" })).rejects.toThrow();
+  expect(reopened.snapshot().branding.logo).toBe(replacement);
+  await reopened.saveBranding(initial);
+  expect((await Ledger.open(reopened.export())).snapshot().branding.logo).toBeUndefined();
 });

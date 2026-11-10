@@ -59,60 +59,68 @@ it("charges immediately, hides IDs and filenames, and opens branding settings", 
     name: "example.sqlite",
   }));
   mount();
-  fireEvent.click(screen.getByRole("button", { name: "Try example" }));
-  const balance = await screen.findByLabelText("Available balance");
-  expect(balance.textContent).toBe("42.50");
+  fireEvent.click(screen.getByRole("button", { name: "Kokeile esimerkkiä" }));
+  const balance = await screen.findByLabelText("Saldo");
+  expect(balance.textContent).toBe("42,50");
   expect(screen.queryByText("1001")).toBeNull();
   expect(screen.queryByText("example.sqlite")).toBeNull();
-  fireEvent.click(screen.getByRole("button", { name: "Charge 8.50" }));
-  await waitFor(() => expect(balance.textContent).toBe("34.00"));
+  fireEvent.click(screen.getByRole("button", { name: "Veloita 8,50" }));
+  await waitFor(() => expect(balance.textContent).toBe("34,00"));
   expect(screen.queryByRole("dialog")).toBeNull();
-  fireEvent.click(screen.getByRole("button", { name: "Deposit" }));
-  fireEvent.change(screen.getByLabelText("Amount"), {
+  fireEvent.click(screen.getByRole("button", { name: "Lisää saldoa" }));
+  fireEvent.change(screen.getByLabelText("Summa"), {
     target: { value: "10.00" },
   });
-  fireEvent.click(screen.getByRole("button", { name: "Deposit 10.00" }));
-  await waitFor(() => expect(balance.textContent).toBe("44.00"));
+  fireEvent.click(screen.getByRole("button", { name: "Lisää saldoa 10,00" }));
+  await waitFor(() => expect(balance.textContent).toBe("44,00"));
   expect(screen.queryByRole("dialog")).toBeNull();
-  fireEvent.click(screen.getByRole("button", { name: "Settings" }));
-  expect(await screen.findByRole("dialog", { name: "Settings" })).toBeTruthy();
-  expect(screen.getByLabelText("Primary color")).toBeTruthy();
-  expect(screen.getByLabelText("Secondary color")).toBeTruthy();
-  fireEvent.change(screen.getByLabelText("Primary color"), {
+  fireEvent.click(screen.getByRole("button", { name: "Asetukset" }));
+  expect(await screen.findByRole("dialog", { name: "Asetukset" })).toBeTruthy();
+  expect(screen.getByLabelText("Pääväri")).toBeTruthy();
+  expect(screen.getByLabelText("Toinen väri")).toBeTruthy();
+  const logo = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=";
+  fireEvent.change(screen.getByLabelText("Logo"), {
+    target: { files: [new File([Uint8Array.from(atob(logo.split(",")[1]), (c) => c.charCodeAt(0))], "logo.png", { type: "image/png" })] },
+  });
+  await screen.findByAltText("Logon esikatselu");
+  fireEvent.change(screen.getByLabelText("Osakunta"), { target: { value: "Testiosakunta" } });
+  fireEvent.change(screen.getByLabelText("Pääväri"), {
     target: { value: "#102030" },
   });
-  fireEvent.click(screen.getByRole("button", { name: "Save colors" }));
+  fireEvent.click(screen.getByRole("button", { name: "Tallenna" }));
   await waitFor(() =>
     expect(document.querySelector(".app")?.getAttribute("style")).toContain(
       "#102030",
     ),
   );
-  fireEvent.click(screen.getByRole("tab", { name: "Quick charges" }));
-  expect(await screen.findByLabelText("Quick charge amount")).toBeTruthy();
-  fireEvent.change(screen.getByLabelText("Quick charge amount"), {
+  fireEvent.click(screen.getByRole("tab", { name: "Pikaveloitukset" }));
+  expect(await screen.findByLabelText("Pikaveloituksen summa")).toBeTruthy();
+  fireEvent.change(screen.getByLabelText("Pikaveloituksen summa"), {
     target: { value: "4.25" },
   });
-  fireEvent.click(screen.getByRole("button", { name: "Add amount" }));
-  await screen.findByText("4.25");
-  fireEvent.click(screen.getByRole("button", { name: "Done" }));
+  fireEvent.click(screen.getByRole("button", { name: "Lisää summa" }));
+  await screen.findByText("4,25");
+  fireEvent.click(screen.getByRole("button", { name: "Valmis" }));
   await waitFor(() =>
     expect(
       document.querySelector('[role="dialog"][data-state="open"]'),
     ).toBeNull(),
   );
-  fireEvent.click(screen.getByRole("button", { name: "Charge" }));
+  expect(screen.getByRole("banner", { name: "Testiosakunta" })).toBeTruthy();
+  expect(screen.getByAltText("Testiosakunta logo").getAttribute("src")).toBe(logo);
+  fireEvent.click(screen.getByRole("button", { name: "Veloita" }));
   expect(
-    await screen.findByRole("button", { name: "Charge 4.25" }),
+    await screen.findByRole("button", { name: "Veloita 4,25" }),
   ).toBeTruthy();
 });
 
 it("blocks the app when required file access is missing, regardless of browser name", () => {
   mount();
   expect(
-    screen.getByRole("region", { name: "Browser compatibility" }),
+    screen.getByRole("region", { name: "Selaimen yhteensopivuus" }),
   ).toBeTruthy();
-  expect(screen.queryByRole("button", { name: "Open database" })).toBeNull();
-  expect(screen.queryByLabelText("Find a customer")).toBeNull();
+  expect(screen.queryByRole("button", { name: "Avaa tietokanta" })).toBeNull();
+  expect(screen.queryByLabelText("Hae henkilöä")).toBeNull();
   expect(localStorage.length).toBe(0);
 });
 
@@ -122,9 +130,9 @@ it('offers a copyable link when the browser cannot open files', async () => {
   Object.defineProperty(navigator, 'clipboard', {configurable:true, value:{writeText}});
   try {
     mount();
-    fireEvent.click(screen.getByRole('button', {name:'Copy link'}));
-    await screen.findByRole('button', {name:'Link copied'});
+    fireEvent.click(screen.getByRole('button', {name:'Kopioi linkki'}));
+    await screen.findByRole('button', {name:'Linkki kopioitu'});
     expect(writeText).toHaveBeenCalledWith(window.location.href);
-    expect(screen.queryByRole('button', {name:'Open database'})).toBeNull();
+    expect(screen.queryByRole('button', {name:'Avaa tietokanta'})).toBeNull();
   } finally { vi.unstubAllGlobals(); }
 });

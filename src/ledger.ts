@@ -80,8 +80,20 @@ export class Ledger {
           "SELECT primary_color AS [primary], secondary_color AS [secondary] FROM branding WHERE id=1",
         )[0]
       : undefined;
+    const hasIdentity = this.rows(
+      "SELECT name FROM sqlite_master WHERE type='table' AND name='organization'",
+    ).length > 0;
+    const identity = hasIdentity
+      ? this.rows("SELECT name AS organization FROM organization WHERE id=1")[0]
+      : undefined;
+    const hasLogo = this.rows(
+      "SELECT name FROM sqlite_master WHERE type='table' AND name='organization_logo'",
+    ).length > 0;
+    const logo = hasLogo
+      ? this.rows("SELECT data AS logo FROM organization_logo WHERE id=1")[0]
+      : undefined;
     return {
-      branding: branding ? BrandingSchema.parse(branding) : defaultBranding,
+      branding: BrandingSchema.parse({ ...defaultBranding, ...branding, ...identity, ...logo }),
       customers: this.rows(
         "SELECT c.*, COALESCE(SUM(e.cents),0) balance FROM customers c LEFT JOIN entries e ON e.customer_id=c.id GROUP BY c.id ORDER BY c.name COLLATE NOCASE",
       ).map((row) => CustomerSchema.parse(row)),
@@ -225,7 +237,25 @@ export class Ledger {
     const branding = BrandingSchema.parse(input);
     return this.change(() => {
       this.db.run(
+        "CREATE TABLE IF NOT EXISTS organization_logo(id INTEGER PRIMARY KEY CHECK(id=1), data TEXT NOT NULL)",
+      );
+      if (branding.logo) {
+        this.db.run(
+          "INSERT INTO organization_logo VALUES(1,?) ON CONFLICT(id) DO UPDATE SET data=excluded.data",
+          [branding.logo],
+        );
+      } else {
+        this.db.run("DELETE FROM organization_logo WHERE id=1");
+      }
+      this.db.run(
         "CREATE TABLE IF NOT EXISTS branding(id INTEGER PRIMARY KEY CHECK(id=1), primary_color TEXT NOT NULL, secondary_color TEXT NOT NULL)",
+      );
+      this.db.run(
+        "CREATE TABLE IF NOT EXISTS organization(id INTEGER PRIMARY KEY CHECK(id=1), name TEXT NOT NULL)",
+      );
+      this.db.run(
+        "INSERT INTO organization VALUES(1,?) ON CONFLICT(id) DO UPDATE SET name=excluded.name",
+        [branding.organization],
       );
       this.db.run(
         "INSERT INTO branding VALUES(1,?,?) ON CONFLICT(id) DO UPDATE SET primary_color=excluded.primary_color,secondary_color=excluded.secondary_color",

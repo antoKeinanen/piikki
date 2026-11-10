@@ -124,7 +124,7 @@ function CashierApp() {
     if (!supportsDirectFiles()) return;
     if (
       dirty &&
-      !window.confirm("Open another database without saving this copy?")
+      !window.confirm("Avataanko toinen tietokanta tallentamatta tätä kopiota?")
     )
       return;
     setFileBusy(true);
@@ -147,7 +147,7 @@ function CashierApp() {
     if (mutation.isPending || fileBusy) return;
     if (
       dirty &&
-      !window.confirm("Open another database without downloading a backup?")
+      !window.confirm("Avataanko toinen tietokanta lataamatta varmuuskopiota?")
     )
       return;
     try {
@@ -163,7 +163,7 @@ function CashierApp() {
       setError("");
     } catch (e) {
       setError(
-        e instanceof Error ? e.message : "Could not open this database.",
+        e instanceof Error ? e.message : "Tietokannan avaaminen epäonnistui.",
       );
     }
   }
@@ -207,7 +207,7 @@ function CashierApp() {
     try {
       const cents = preset ?? parseAmount(amount);
       if (kind === "charge" && cents > customer.balance)
-        throw new Error("Not enough balance for this charge.");
+        throw new Error("Saldo ei riitä veloitukseen.");
       setError("");
       mutation.mutate(
         () =>
@@ -215,7 +215,7 @@ function CashierApp() {
             customerId: customer.id,
             cents,
             kind,
-            label: kind === "charge" ? "Charge" : "Deposit",
+            label: kind === "charge" ? "Veloita" : "Lisää saldoa",
           }),
         { onSuccess: () => setAmount("") },
       );
@@ -246,17 +246,17 @@ function CashierApp() {
   const fileControls = (
     <>
       <Text className="file-saving-help">
-        Changes save to your database file automatically.
+        Muutokset tallentuvat automaattisesti.
       </Text>
       <Button
         variant="outline"
         disabled={busy}
         onClick={() => void chooseDatabase()}
       >
-        Open database
+        Avaa tietokanta
       </Button>
       <Button variant="outline" disabled={busy} onClick={download}>
-        Download backup
+        Lataa varmuuskopio
       </Button>
       {error && (
         <Text role="alert" className="error">
@@ -289,6 +289,14 @@ function CashierApp() {
       }}
     >
       {fileInput}
+      <header className="masthead" aria-label={branding.organization}>
+        {ledger && branding.logo && (
+          <img className="organization-logo" src={branding.logo} alt={`${branding.organization} logo`} />
+        )}
+        <span className="organization-name">{branding.organization}</span>
+        <span className="masthead-divider" aria-hidden="true">/</span>
+        <span className="wordmark">Piikki</span>
+      </header>
       {!ledger ? (
         <main className="welcome">
           <Button
@@ -297,23 +305,23 @@ function CashierApp() {
             disabled={fileBusy}
             onClick={() => void chooseDatabase()}
           >
-            Open database
+            Avaa tietokanta
           </Button>
-          <span className="drop-label">or drop a SQLite file here</span>
+          <span className="drop-label">tai pudota SQLite-tiedosto tähän</span>
           <Flex gap="3">
             <Button
               variant="ghost"
               disabled={fileBusy}
               onClick={() => void start(false)}
             >
-              Create database
+              Luo tietokanta
             </Button>
             <Button
               variant="ghost"
               disabled={fileBusy}
               onClick={() => void start(true)}
             >
-              Try example
+              Kokeile esimerkkiä
             </Button>
           </Flex>
           {recovery() && (
@@ -336,7 +344,7 @@ function CashierApp() {
                 }
               }}
             >
-              Restore local copy
+              Palauta paikallinen kopio
             </Button>
           )}
           {error && (
@@ -365,19 +373,19 @@ function CashierApp() {
               setModal({ kind: "settings" });
             }}
           />
-          <section className="account" aria-label="Selected customer">
+          <section className="account" aria-label="Valittu henkilö">
             {customer ? (
               <>
                 <div className="account-summary">
                   <Text className="account-name">{customer.name}</Text>
-                  <Text className="balance" aria-label="Available balance">
+                  <Text className="balance" aria-label="Saldo">
                     {formatAmount(customer.balance)}
                   </Text>
                 </div>
                 <Flex
                   className="mode"
                   role="group"
-                  aria-label="Transaction type"
+                  aria-label="Tapahtuman tyyppi"
                 >
                   <Button
                     variant="plain"
@@ -390,7 +398,7 @@ function CashierApp() {
                       setError("");
                     }}
                   >
-                    Charge
+                    Veloita
                   </Button>
                   <Button
                     variant="plain"
@@ -403,7 +411,7 @@ function CashierApp() {
                       setError("");
                     }}
                   >
-                    Deposit
+                    Lisää saldoa
                   </Button>
                 </Flex>
                 {action === "charge" && !!data?.presets.length && (
@@ -413,7 +421,7 @@ function CashierApp() {
                         key={p.id}
                         variant="outline"
                         className="quick-charge"
-                        aria-label={`Charge ${formatAmount(p.cents)}`}
+                        aria-label={`Veloita ${formatAmount(p.cents)}`}
                         disabled={busy || p.cents > customer.balance}
                         onClick={() => post("charge", p.cents)}
                       >
@@ -432,14 +440,14 @@ function CashierApp() {
                   <FormField
                     label={
                       action === "charge"
-                        ? "Custom amount"
-                        : "Amount to deposit"
+                        ? "Muu summa"
+                        : "Lisättävä summa"
                     }
                   >
                     <Input
-                      aria-label="Amount"
+                      aria-label="Summa"
                       inputMode="decimal"
-                      placeholder="0.00"
+                      placeholder="0,00"
                       value={amount}
                       disabled={busy}
                       onChange={(e) => setAmount(e.target.value)}
@@ -450,7 +458,7 @@ function CashierApp() {
                     type="submit"
                     disabled={!amount || busy}
                   >
-                    {action === "charge" ? "Charge" : "Deposit"}
+                    {action === "charge" ? "Veloita" : "Lisää saldoa"}
                     {amount && /^\d+([.,]\d{1,2})?$/.test(amount)
                       ? ` ${formatAmount(Math.round(Number(amount.replace(",", ".")) * 100))}`
                       : ""}
@@ -461,9 +469,9 @@ function CashierApp() {
                     {error}
                   </Text>
                 )}
-                <div className="history" aria-label="Transaction history">
+                <div className="history" aria-label="Tapahtumat">
                   {!entries.length && (
-                    <Text className="empty-history">No transactions yet.</Text>
+                    <Text className="empty-history">Ei tapahtumia.</Text>
                   )}
                   {entries.map((entry) => (
                     <div
@@ -473,19 +481,19 @@ function CashierApp() {
                       <div>
                         <Text className="entry-label">
                           {entry.reversal_of
-                            ? "Reversal"
+                            ? "Hyvitys"
                             : entry.cents < 0
-                              ? "Charge"
-                              : "Deposit"}
+                              ? "Veloitus"
+                              : "Saldon lisäys"}
                         </Text>
                         <Text className="entry-date">
-                          {new Date(entry.created_at).toLocaleString("en-GB", {
+                          {new Date(entry.created_at).toLocaleString("fi-FI", {
                             day: "numeric",
                             month: "short",
                             hour: "2-digit",
                             minute: "2-digit",
                           })}
-                          {entry.reversed ? " · Reversed" : ""}
+                          {entry.reversed ? " · Peruttu" : ""}
                         </Text>
                       </div>
                       <Text className="entry-amount">
@@ -506,7 +514,7 @@ function CashierApp() {
                             });
                           }}
                         >
-                          Undo
+                          Peru
                         </Button>
                       ) : (
                         <span />
@@ -516,7 +524,7 @@ function CashierApp() {
                 </div>
               </>
             ) : (
-              <Text className="empty-account">Select or add a customer.</Text>
+              <Text className="empty-account">Valitse tai lisää henkilö.</Text>
             )}
             {error && !customer && (
               <Text role="alert" className="error">
@@ -546,10 +554,10 @@ function CashierApp() {
               style={brandStyle}
               aria-label={
                 modal?.kind === "settings"
-                  ? "Settings"
+                  ? "Asetukset"
                   : modal?.kind === "customer"
-                    ? "Add customer"
-                    : "Reverse transaction"
+                    ? "Lisää henkilö"
+                    : "Peru tapahtuma"
               }
             >
               <Dialog.Body>
@@ -564,7 +572,7 @@ function CashierApp() {
                       );
                     }}
                   >
-                    <FormField label="Customer name">
+                    <FormField label="Nimi">
                       <Input
                         autoFocus
                         required
@@ -577,7 +585,7 @@ function CashierApp() {
                       type="submit"
                       disabled={!name.trim() || busy}
                     >
-                      Add customer
+                      Lisää henkilö
                     </Button>
                   </form>
                 )}
@@ -594,8 +602,7 @@ function CashierApp() {
                   <div className="settings-form">
                     <Text className="reversal-name">{modal.customerName}</Text>
                     <Text>
-                      Reverse {modal.entry.cents < 0 ? "charge" : "deposit"} of{" "}
-                      {formatAmount(Math.abs(modal.entry.cents))}?
+                      Perutaanko {formatAmount(Math.abs(modal.entry.cents))} € tapahtuma?
                     </Text>
                     <Button
                       className="primary"
@@ -606,7 +613,7 @@ function CashierApp() {
                         })
                       }
                     >
-                      Reverse transaction
+                      Peru tapahtuma
                     </Button>
                   </div>
                 )}
@@ -624,7 +631,7 @@ function CashierApp() {
                     setError("");
                   }}
                 >
-                  {modal?.kind === "settings" ? "Done" : "Cancel"}
+                  {modal?.kind === "settings" ? "Valmis" : "Peruuta"}
                 </Button>
               </Dialog.Body>
             </Dialog.Content>

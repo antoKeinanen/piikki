@@ -22,14 +22,20 @@ export const EntrySchema = z.object({
   reversed: z.number().int(),
 });
 export type Entry = z.infer<typeof EntrySchema>;
+export const LogoSchema = z.string().max(1_400_000).regex(
+  /^data:image\/(?:png|jpeg|webp|svg\+xml);base64,[A-Za-z0-9+/]+={0,2}$/,
+);
 export const BrandingSchema = z.object({
+  logo: LogoSchema.optional(),
+  organization: z.string().trim().min(1).max(60).default("KyO"),
   primary: z.string().regex(/^#[0-9a-fA-F]{6}$/),
   secondary: z.string().regex(/^#[0-9a-fA-F]{6}$/),
 });
 export type Branding = z.infer<typeof BrandingSchema>;
 export const defaultBranding: Branding = {
-  primary: "#3549D8",
-  secondary: "#F0E4A3",
+  organization: "KyO",
+  primary: "#111111",
+  secondary: "#FFFFFF",
 };
 export function readableText(hex: string) {
   const channels = [1, 3, 5].map((start) => {
@@ -49,7 +55,7 @@ export type Snapshot = {
   entries: Entry[];
 };
 export const formatAmount = (cents: number) =>
-  new Intl.NumberFormat("en-IE", {
+  new Intl.NumberFormat("fi-FI", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(cents / 100);
