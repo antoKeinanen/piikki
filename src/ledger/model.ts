@@ -5,7 +5,7 @@ export const CustomerSchema = z.object({
   reference: z.string(),
   osakunta: z.string().max(5).default(""),
   note: z.string().default(""),
-  balance: z.number().int().nonnegative(),
+  balance: z.number().int(),
 });
 export type Customer = z.infer<typeof CustomerSchema>;
 export const PresetSchema = z.object({

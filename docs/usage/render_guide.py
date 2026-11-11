@@ -43,7 +43,7 @@ for block in re.split(r'\n\s*\n', source.read_text().strip()):
     else:
         parts.append(f'<p>{inline(block)}</p>')
 
-assert image_count == 16, f'Expected 16 images, found {image_count}'
+assert image_count == 15, f'Expected 15 images, found {image_count}'
 nav = '<details class="contents"><summary>Jump to a section</summary><ul>' + ''.join(f'<li><a href="#{slug}">{html.escape(title)}</a></li>' for slug, title in headings) + '</ul></details>'
 parts.insert(2, nav)
 css = '''
