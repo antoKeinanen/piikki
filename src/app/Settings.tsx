@@ -1,30 +1,30 @@
 import { useState, type ReactNode } from "react";
 import { Tabs } from "@chakra-ui/react";
-import type { Branding, Preset, Snapshot } from "../ledger";
+import type { Branding, Product, Snapshot } from "../ledger";
 import { BrandingForm } from "../features/branding/BrandingForm";
-import { PresetEditor } from "../features/presets/PresetEditor";
+import { ProductEditor } from "../features/products/ProductEditor";
 
 export function Settings({
   snapshot,
   busy,
   files,
   saveBranding,
-  savePreset,
-  removePreset,
+  saveProduct,
+  removeProduct,
 }: {
   snapshot: Snapshot;
   busy: boolean;
   files: ReactNode;
   saveBranding(branding: Branding): Promise<void>;
-  savePreset(preset: Preset): Promise<void>;
-  removePreset(id: string): Promise<void>;
+  saveProduct(product: Product): Promise<void>;
+  removeProduct(id: string): Promise<void>;
 }) {
   const [error, setError] = useState("");
   return (
     <Tabs.Root defaultValue="branding" variant="line" className="settings-tabs">
       <Tabs.List>
         <Tabs.Trigger value="branding">Ulkoasu</Tabs.Trigger>
-        <Tabs.Trigger value="charges">Pikaveloitukset</Tabs.Trigger>
+        <Tabs.Trigger value="charges">Tuotteet</Tabs.Trigger>
         <Tabs.Trigger value="files">Tietokanta</Tabs.Trigger>
       </Tabs.List>
       <Tabs.Content value="branding">
@@ -35,11 +35,11 @@ export function Settings({
         />
       </Tabs.Content>
       <Tabs.Content value="charges">
-        <PresetEditor
-          presets={snapshot.presets}
+        <ProductEditor
+          products={snapshot.products}
           busy={busy}
-          save={savePreset}
-          remove={removePreset}
+          save={saveProduct}
+          remove={removeProduct}
           setError={setError}
         />
       </Tabs.Content>

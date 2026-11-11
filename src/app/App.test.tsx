@@ -68,7 +68,7 @@ it("charges immediately, hides IDs and filenames, and opens branding settings", 
   expect(balance.textContent).toBe("42,50");
   expect(screen.queryByText("1001")).toBeNull();
   expect(screen.queryByText("example.sqlite")).toBeNull();
-  fireEvent.click(screen.getByRole("button", { name: "Veloita 8,50" }));
+  fireEvent.click(screen.getByRole("button", { name: "Veloita Lounas 8,50" }));
   await waitFor(() => expect(balance.textContent).toBe("34,00"));
   expect(screen.queryByRole("dialog")).toBeNull();
   fireEvent.click(screen.getByRole("button", { name: "Lisää saldoa" }));
@@ -108,30 +108,41 @@ it("charges immediately, hides IDs and filenames, and opens branding settings", 
       "#102030",
     ),
   );
-  fireEvent.click(screen.getByRole("tab", { name: "Pikaveloitukset" }));
-  expect(await screen.findByLabelText("Pikaveloituksen summa")).toBeTruthy();
-  fireEvent.change(screen.getByLabelText("Pikaveloituksen summa"), {
+  fireEvent.click(screen.getByRole("tab", { name: "Tuotteet" }));
+  expect(await screen.findByLabelText("Tuotteen hinta")).toBeTruthy();
+  fireEvent.change(screen.getByLabelText("Tuotteen nimi"), { target: { value: "Kaakao" } });
+  fireEvent.change(screen.getByLabelText("Tuotteen hinta"), {
     target: { value: "4.25" },
   });
-  fireEvent.click(screen.getByRole("button", { name: "Lisää summa" }));
+  fireEvent.change(screen.getByLabelText("Kuvaus"), { target: { value: "Lämmin juoma" } });
+  fireEvent.change(screen.getByLabelText("Tuotteen kuva"), {
+    target: { files: [new File(["image"], "product.png", { type: "image/png" })] },
+  });
+  await screen.findByAltText("Tuotekuvan esikatselu");
+  fireEvent.click(screen.getByRole("button", { name: "Lisää tuote" }));
   await screen.findByText("4,25");
-  const preset = ledger.snapshot().presets.find((value) => value.cents === 425);
+  const preset = ledger.snapshot().products.find((value) => value.cents === 425);
   if (!preset) throw new Error("Preset was not saved");
-  const row = screen.getByText("4,25").closest(".preset-row");
+  const row = screen.getByText("4,25").closest(".product-row");
   if (!(row instanceof HTMLElement)) throw new Error("Preset row missing");
+  fireEvent.click(within(row).getByRole("button", { name: "Muokkaa" }));
+  fireEvent.change(screen.getByLabelText("Tuotteen hinta"), { target: { value: "4.50" } });
+  fireEvent.click(screen.getByRole("button", { name: "Tallenna tuote" }));
+  await waitFor(() => expect(ledger.snapshot().products.find((p) => p.id === preset.id)?.cents).toBe(450));
+  preset.cents = 450;
   fireEvent.click(within(row).getByRole("button", { name: "Poista" }));
-  const restore = await screen.findByRole("button", { name: "Palauta 4,25" });
+  const restore = await screen.findByRole("button", { name: "Palauta Kaakao" });
   expect(
-    ledger.snapshot().presets.some((value) => value.id === preset.id),
+    ledger.snapshot().products.some((value) => value.id === preset.id),
   ).toBe(false);
   fireEvent.click(restore);
   await waitFor(() =>
     expect(
-      ledger.snapshot().presets.find((value) => value.id === preset.id),
+      ledger.snapshot().products.find((value) => value.id === preset.id),
     ).toEqual(preset),
   );
   await waitFor(() =>
-    expect(screen.queryByRole("button", { name: "Palauta 4,25" })).toBeNull(),
+    expect(screen.queryByRole("button", { name: "Palauta Kaakao" })).toBeNull(),
   );
 
   fireEvent.click(screen.getByRole("button", { name: "Valmis" }));
@@ -146,8 +157,15 @@ it("charges immediately, hides IDs and filenames, and opens branding settings", 
   );
   fireEvent.click(screen.getByRole("button", { name: "Veloita" }));
   expect(
-    await screen.findByRole("button", { name: "Veloita 4,25" }),
+    await screen.findByRole("button", { name: "Veloita Kaakao 4,50" }),
   ).toBeTruthy();
+  fireEvent.change(screen.getByLabelText("Hae tuotetta"), { target: { value: "LÄMMIN" } });
+  expect(screen.queryByRole("button", { name: "Veloita Lounas 8,50" })).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "Veloita Kaakao 4,50" }));
+  await waitFor(() => expect(screen.getByLabelText("Saldo").textContent).toBe("39,50"));
+  expect(ledger.snapshot().entries[0].label).toBe("Kaakao");
+  const reopened = await Ledger.open(ledger.export());
+  expect(reopened.snapshot().products.find((p) => p.id === preset.id)).toEqual(preset);
 });
 
 it("blocks the app when required file access is missing, regardless of browser name", () => {
@@ -308,7 +326,7 @@ it("keeps the amount and balance after a failed save, then allows retry", async 
   );
 });
 
-it("charges below zero with custom and quick amounts and reopens the saved account", async () => {
+it("charges below zero with custom amounts and products and reopens the saved account", async () => {
   const original = await createExample();
   let saved = original.export();
   const ledger = await Ledger.open(saved, async (bytes) => {
@@ -326,7 +344,7 @@ it("charges below zero with custom and quick amounts and reopens the saved accou
   fireEvent.change(screen.getByLabelText("Summa"), { target: { value: "50" } });
   fireEvent.click(screen.getByRole("button", { name: "Veloita 50,00" }));
   await waitFor(() => expect(screen.getByLabelText("Saldo").textContent).toBe("−7,50"));
-  const quick = screen.getByRole("button", { name: "Veloita 8,50" });
+  const quick = screen.getByRole("button", { name: "Veloita Lounas 8,50" });
   expect(quick.hasAttribute("disabled")).toBe(false);
   fireEvent.click(quick);
   await waitFor(() => expect(screen.getByLabelText("Saldo").textContent).toBe("−16,00"));
@@ -401,4 +419,26 @@ it("creates customer metadata and saves, updates, and clears a note across datab
     expect((await Ledger.open(saved)).snapshot().customers[0].note).toBe(value);
     await waitFor(() => expect(screen.getByRole("button", { name: "Tallenna muistiinpano" }).hasAttribute("disabled")).toBe(true));
   }
+});
+
+it("keeps a product draft after a failed save and retries without duplicates", async () => {
+  let fail = true;
+  const ledger = await Ledger.open(undefined, async () => { if (fail) throw new Error("Product write failed"); });
+  vi.spyOn(fileAccess, "fileAccessProblem").mockReturnValue(undefined);
+  vi.spyOn(fileAccess, "supportsDirectFiles").mockReturnValue(true);
+  vi.spyOn(fileAccess, "pickDatabase").mockResolvedValue({ ledger, name: "products.sqlite" });
+  mount();
+  fireEvent.click(screen.getByRole("button", { name: "Avaa tietokanta" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Asetukset" }));
+  fireEvent.click(await screen.findByRole("tab", { name: "Tuotteet" }));
+  fireEvent.change(await screen.findByLabelText("Tuotteen nimi"), { target: { value: "Coffee" } });
+  fireEvent.change(screen.getByLabelText("Tuotteen hinta"), { target: { value: "2.50" } });
+  fireEvent.click(screen.getByRole("button", { name: "Lisää tuote" }));
+  await screen.findAllByText("Product write failed");
+  expect(ledger.snapshot().products).toEqual([]);
+  expect(screen.getByLabelText("Tuotteen nimi").getAttribute("value")).toBe("Coffee");
+  fail = false;
+  fireEvent.click(screen.getByRole("button", { name: "Lisää tuote" }));
+  await waitFor(() => expect(ledger.snapshot().products).toHaveLength(1));
+  await waitFor(() => expect(screen.getByLabelText("Tuotteen nimi").getAttribute("value")).toBe(""));
 });

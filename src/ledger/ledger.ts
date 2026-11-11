@@ -7,8 +7,8 @@ import {
   type Branding,
   CustomerSchema,
   EntrySchema,
-  PresetSchema,
-  type Preset,
+  ProductSchema,
+  type Product,
   type Snapshot,
 } from "./model";
 const engine = () =>
@@ -85,6 +85,9 @@ export class Ledger {
     const hasMetadata = this.rows(
       "SELECT name FROM sqlite_master WHERE type='table' AND name='customer_metadata'",
     ).length > 0;
+    const hasProducts = this.rows(
+      "SELECT name FROM sqlite_master WHERE type='table' AND name='product_details'",
+    ).length > 0;
     return {
       branding: BrandingSchema.parse({ ...defaultBranding, ...branding, ...identity, ...logo }),
       customers: this.rows(
@@ -92,9 +95,10 @@ export class Ledger {
          FROM customers c ${hasMetadata ? "LEFT JOIN customer_metadata m ON m.customer_id=c.id" : ""}
          LEFT JOIN entries e ON e.customer_id=c.id GROUP BY c.id ORDER BY c.name COLLATE NOCASE`,
       ).map((row) => CustomerSchema.parse(row)),
-      presets: this.rows("SELECT * FROM presets ORDER BY rowid").map((row) =>
-        PresetSchema.parse(row),
-      ),
+      products: this.rows(hasProducts
+        ? "SELECT p.*, COALESCE(d.description,'') description, COALESCE(d.image,'') image FROM presets p LEFT JOIN product_details d ON d.id=p.id ORDER BY p.rowid"
+        : "SELECT *, '' description, '' image FROM presets ORDER BY rowid"
+      ).map((row) => ProductSchema.parse(row)),
       entries: this.rows(
         "SELECT e.*, EXISTS(SELECT 1 FROM entries r WHERE r.reversal_of=e.id) reversed FROM entries e ORDER BY e.rowid DESC",
       ).map((row) => EntrySchema.parse(row)),
@@ -235,16 +239,26 @@ export class Ledger {
       );
     });
   }
-  async savePreset(preset: Preset) {
-    PresetSchema.parse(preset);
-    if (!preset.name.trim() || !Number.isSafeInteger(preset.cents))
-      throw new Error("Enter an amount greater than zero.");
-    return this.change(() =>
+  async saveProduct(input: Product) {
+    const product = ProductSchema.parse(input);
+    product.name = product.name.trim();
+    if (!product.name || product.name.length > 120)
+      throw new Error("Enter a product name of 1–120 characters.");
+    if (product.cents > 999999999)
+      throw new Error("Product price is too large.");
+    return this.change(() => {
       this.db.run(
         "INSERT INTO presets VALUES(?,?,?) ON CONFLICT(id) DO UPDATE SET name=excluded.name,cents=excluded.cents",
-        [preset.id, preset.name.trim(), preset.cents],
-      ),
-    );
+        [product.id, product.name, product.cents],
+      );
+      this.db.run(
+        "CREATE TABLE IF NOT EXISTS product_details(id TEXT PRIMARY KEY, description TEXT NOT NULL, image TEXT NOT NULL)",
+      );
+      this.db.run(
+        "INSERT INTO product_details VALUES(?,?,?) ON CONFLICT(id) DO UPDATE SET description=excluded.description,image=excluded.image",
+        [product.id, product.description, product.image],
+      );
+    });
   }
   async saveBranding(input: Branding) {
     const branding = BrandingSchema.parse(input);
@@ -276,10 +290,12 @@ export class Ledger {
       );
     });
   }
-  async removePreset(id: string) {
-    return this.change(() =>
-      this.db.run("DELETE FROM presets WHERE id=?", [id]),
-    );
+  async removeProduct(id: string) {
+    return this.change(() => {
+      this.db.run("DELETE FROM presets WHERE id=?", [id]);
+      if (this.rows("SELECT name FROM sqlite_master WHERE type='table' AND name='product_details'").length)
+        this.db.run("DELETE FROM product_details WHERE id=?", [id]);
+    });
   }
   export() {
     return this.db.export();
