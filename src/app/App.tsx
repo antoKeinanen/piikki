@@ -19,7 +19,10 @@ import { AddCustomerForm } from "../features/cashier/AddCustomerForm";
 import { ReversalConfirmation } from "../features/cashier/ReversalConfirmation";
 import { Welcome } from "../features/database/Welcome";
 import { FileControls } from "../features/database/FileControls";
+import { EventChoice } from "../features/database/EventChoice";
 type Modal =
+  | { kind: "event"; next: { ledger: Ledger; name: string } }
+  | { kind: "create-event"; branding: Branding }
   | { kind: "onboarding" }
   | { kind: "customer" }
   | { kind: "settings" }
@@ -67,7 +70,7 @@ function CashierApp() {
     return () => window.removeEventListener("beforeunload", handler);
   }, [dirty]);
   async function chooseDatabase() {
-    if (mutation.isPending || fileBusy) return;
+    if (mutation.isPending || fileBusy || modal?.kind === "event" || modal?.kind === "create-event") return;
     if (!supportsDirectFiles()) return;
     if (
       dirty &&
@@ -77,10 +80,7 @@ function CashierApp() {
     setFileBusy(true);
     try {
       const next = await pickDatabase();
-      activate(next);
-      setLinkedFile(true);
-      setDirty(false);
-      setSelected(undefined);
+      setModal({ kind: "event", next });
       setError("");
     } catch (error) {
       if (!(error instanceof DOMException && error.name === "AbortError"))
@@ -90,39 +90,51 @@ function CashierApp() {
     }
   }
   async function open(file: File) {
-    if (mutation.isPending || fileBusy) return;
+    if (mutation.isPending || fileBusy || modal?.kind === "event" || modal?.kind === "create-event") return;
     if (
       dirty &&
       !window.confirm("Avataanko toinen tietokanta lataamatta varmuuskopiota?")
     )
       return;
+    setFileBusy(true);
     try {
       const imported = await Ledger.open(
         new Uint8Array(await file.arrayBuffer()),
       );
       const next = await saveDatabase(imported, file.name);
-      activate(next);
-      setLinkedFile(true);
-      setDirty(false);
-      setSelected(undefined);
+      setModal({ kind: "event", next });
       setError("");
     } catch (e) {
       setError(
         e instanceof Error ? e.message : "Tietokannan avaaminen epäonnistui.",
       );
+    } finally {
+      setFileBusy(false);
     }
   }
   async function start(branding: Branding) {
+    setError("");
+    setModal({ kind: "create-event", branding });
+  }
+  function finishOpening(next: { ledger: Ledger; name: string }) {
+    activate(next);
+    setLinkedFile(true);
+    setDirty(false);
+    setSelected(undefined);
+    setError("");
+  }
+  async function createEvent(name: string) {
     if (fileBusy || mutation.isPending) return;
     setFileBusy(true);
     try {
-      const next = await Ledger.open();
-      await next.saveBranding(branding);
-      const saved = await saveDatabase(next, "customers.sqlite");
-      activate(saved);
-      setLinkedFile(true);
-      setDirty(false);
-      setError("");
+      if (modal?.kind === "event") {
+        await modal.next.ledger.startEvent(name);
+        finishOpening(modal.next);
+      } else if (modal?.kind === "create-event") {
+        const next = await Ledger.create({ name });
+        await next.saveBranding(modal.branding);
+        finishOpening(await saveDatabase(next, "customers.sqlite"));
+      }
     } catch (e) {
       if (!(e instanceof DOMException && e.name === "AbortError"))
         setError(e instanceof Error ? e.message : String(e));
@@ -211,11 +223,12 @@ function CashierApp() {
           </>
         )}
         <span className="wordmark">Piikki</span>
+        {data && <span className="event-name">{data.event.name}</span>}
       </header>
       {!ledger ? (
         <Welcome
           busy={fileBusy}
-          error={error}
+          error={modal ? "" : error}
           onOpen={() => void chooseDatabase()}
           onCreate={() => {
             setError("");
@@ -248,7 +261,7 @@ function CashierApp() {
             entries={entries}
             presets={data?.presets ?? []}
             busy={busy}
-            error={error}
+            error={modal ? "" : error}
             setError={setError}
             onPost={(input) => mutation.mutateAsync(() => ledger.post(input))}
             onReverse={(entry) => {
@@ -281,7 +294,9 @@ function CashierApp() {
               className={`modal ${modal?.kind === "settings" || modal?.kind === "onboarding" ? "settings-modal" : ""}`}
               style={brandStyle}
               aria-label={
-                modal?.kind === "onboarding"
+                modal?.kind === "event" || modal?.kind === "create-event"
+                  ? "Valitse tapahtuma"
+                  : modal?.kind === "onboarding"
                   ? "Organisaation tiedot"
                   : modal?.kind === "settings"
                     ? "Asetukset"
@@ -291,6 +306,19 @@ function CashierApp() {
               }
             >
               <Dialog.Body>
+                {(modal?.kind === "event" || modal?.kind === "create-event") && (
+                  <>
+                    <Dialog.Title>Valitse tapahtuma</Dialog.Title>
+                    <EventChoice
+                      previousName={modal.kind === "event" ? modal.next.ledger.latestEvent().name : undefined}
+                      busy={busy}
+                      onContinue={() => {
+                        if (modal.kind === "event") finishOpening(modal.next);
+                      }}
+                      onCreate={createEvent}
+                    />
+                  </>
+                )}
                 {modal?.kind === "onboarding" && (
                   <>
                     <Dialog.Title>Organisaation tiedot</Dialog.Title>
@@ -342,7 +370,7 @@ function CashierApp() {
                     }}
                   />
                 )}
-                {error && modal?.kind !== "settings" && (
+                {error && modal && modal.kind !== "settings" && (
                   <Text role="alert" className="error">
                     {error}
                   </Text>

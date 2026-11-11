@@ -592,6 +592,7 @@ input::placeholder {
 
 .masthead {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
   gap: 14px;
   max-width: 1320px;
@@ -627,4 +628,12 @@ input::placeholder {
   max-width: 100%;
   padding: 8px 0;
   font-size: 13px;
+}
+
+.event-name {
+  margin-left: auto;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  color: var(--muted);
+  font-size: 16px;
 }

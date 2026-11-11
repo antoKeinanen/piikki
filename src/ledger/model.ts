@@ -37,7 +37,14 @@ export const defaultBranding: Branding = {
   primary: "#111111",
   secondary: "#FFFFFF",
 };
+export const EventNameSchema = z.string().trim().min(1, "Anna tapahtuman nimi.").max(100);
+export const LedgerEventSchema = z.object({
+  id: z.string(),
+  name: EventNameSchema,
+});
+export type LedgerEvent = z.infer<typeof LedgerEventSchema>;
 export type Snapshot = {
+  event: LedgerEvent;
   branding: Branding;
   customers: Customer[];
   presets: Preset[];
