@@ -1,5 +1,5 @@
-import { brandingStyle } from "./branding";
-import { defaultBranding } from "./model";
+import { brandingStyle } from "../branding/theme";
+import { defaultBranding } from "../../ledger";
 import { useState } from "react";
 import { Button, Input, Text } from "@chakra-ui/react";
 

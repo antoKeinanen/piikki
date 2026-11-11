@@ -2,7 +2,7 @@ import { mkdtemp, readFile, writeFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { expect, it } from "vitest";
-import { Ledger } from "./ledger";
+import { Ledger } from "../ledger";
 import { connectFile } from "./database-file";
 
 it("writes a real SQLite file and rejects external edits without losing the current balance", async () => {

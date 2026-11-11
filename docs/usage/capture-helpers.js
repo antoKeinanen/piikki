@@ -1,7 +1,8 @@
 // Import this module in a preview tab served by Vite, then call guide.stage(name).
 // Capture at 1280×900. After 14, call cleanup(), then compatibility(), resize to
 // 390×844, and capture stage 15. Screenshots retain numbered DOM overlays.
-import { createExample, Ledger } from "/src/ledger.ts";
+import { Ledger } from "/src/ledger/index.ts";
+import { createExample } from "/src/test-support/example-ledger.ts";
 
 const button = (text, root = document) => [...root.querySelectorAll("button")]
   .find((node) => node.textContent.trim() === text);
@@ -211,7 +212,7 @@ export const guide = {
     const React = (await import(loaded("/react.js?"))).default;
     const dom = (await import(loaded("/react-dom_client.js?"))).default;
     const { ChakraProvider, defaultSystem } = await import(loaded("/@chakra-ui_react.js?"));
-    const { CompatibilityBlock } = await import(loaded("/src/CompatibilityBlock.tsx?"));
+    const { CompatibilityBlock } = await import(loaded("/src/features/database/CompatibilityBlock.tsx?"));
     document.querySelector("#root")?.remove();
     const root = document.createElement("div");
     document.body.append(root);

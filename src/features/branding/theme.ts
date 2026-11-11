@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
-import { contrastRatio, readableText, type Branding } from "./model";
+import { contrastRatio, readableText } from "./colors";
+import type { Branding } from "../../ledger";
 
 function mix(background: string, foreground: string, weight: number) {
   return "#" + [1, 3, 5].map((start) =>

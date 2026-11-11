@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button, Field, Flex, Input } from "@chakra-ui/react";
-import { BrandingSchema, LogoSchema, type Branding } from "./model";
+import { BrandingSchema, LogoSchema, type Branding } from "../../ledger";
 
 export function BrandingForm({
   initial, busy, save, submitLabel = "Tallenna",

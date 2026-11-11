@@ -8,7 +8,7 @@ import {
   type ColumnDef,
   type SortingState,
 } from "@tanstack/react-table";
-import { type Customer, formatAmount } from "./model";
+import { type Customer, formatAmount } from "../../ledger";
 const columns: ColumnDef<Customer>[] = [
   { accessorKey: "name" },
   { accessorKey: "balance" },

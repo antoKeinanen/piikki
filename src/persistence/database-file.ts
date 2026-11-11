@@ -1,4 +1,4 @@
-import { Ledger } from "./ledger";
+import { Ledger } from "../ledger";
 
 export function fileAccessProblem(): string | undefined {
   if (!window.isSecureContext) return "Open this app over HTTPS or localhost.";

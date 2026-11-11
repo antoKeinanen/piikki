@@ -37,42 +37,9 @@ export const defaultBranding: Branding = {
   primary: "#111111",
   secondary: "#FFFFFF",
 };
-export function relativeLuminance(hex: string) {
-  const channels = [1, 3, 5].map((start) => {
-    const channel = parseInt(hex.slice(start, start + 2), 16) / 255;
-    return channel <= 0.04045
-      ? channel / 12.92
-      : ((channel + 0.055) / 1.055) ** 2.4;
-  });
-  return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722;
-}
-export function contrastRatio(first: string, second: string) {
-  const a = relativeLuminance(first);
-  const b = relativeLuminance(second);
-  return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
-}
-export function readableText(background: string) {
-  if (contrastRatio("#111111", background) >= 4.5) return "#111111";
-  return contrastRatio("#000000", background) > contrastRatio("#ffffff", background)
-    ? "#000000"
-    : "#ffffff";
-}
 export type Snapshot = {
   branding: Branding;
   customers: Customer[];
   presets: Preset[];
   entries: Entry[];
 };
-export const formatAmount = (cents: number) =>
-  new Intl.NumberFormat("fi-FI", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(cents / 100);
-export function parseAmount(value: string): number {
-  if (!/^\d{1,7}([.,]\d{1,2})?$/.test(value.trim()))
-    throw new Error("Enter an amount with up to two decimal places.");
-  const cents = Math.round(Number(value.replace(",", ".")) * 100);
-  if (!Number.isSafeInteger(cents) || cents <= 0)
-    throw new Error("Enter an amount greater than zero.");
-  return cents;
-}

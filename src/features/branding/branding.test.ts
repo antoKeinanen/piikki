@@ -1,6 +1,7 @@
 import { expect, it } from "vitest";
-import { brandingStyle } from "./branding";
-import { contrastRatio, defaultBranding, readableText } from "./model";
+import { brandingStyle } from "./theme";
+import { contrastRatio, readableText } from "./colors";
+import { defaultBranding } from "../../ledger";
 
 it("computes accessible text for every sampled RGB background", () => {
   for (let r = 0; r <= 255; r += 17) {

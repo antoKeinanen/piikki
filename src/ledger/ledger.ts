@@ -1,3 +1,4 @@
+import { persist } from "./recovery";
 import initSqlJs, { type Database, type SqlValue } from "sql.js";
 import wasmUrl from "sql.js/dist/sql-wasm.wasm?url";
 import {
@@ -17,23 +18,12 @@ const engine = () =>
         ? `${process.cwd()}/node_modules/sql.js/dist/sql-wasm.wasm`
         : wasmUrl,
   });
-const recoveryKey = "piikki-recovery-v1";
 const schema = `
 PRAGMA foreign_keys=ON;
 PRAGMA user_version=1;
 CREATE TABLE customers(id TEXT PRIMARY KEY, name TEXT NOT NULL, reference TEXT NOT NULL);
 CREATE TABLE entries(id TEXT PRIMARY KEY, customer_id TEXT NOT NULL REFERENCES customers(id), cents INTEGER NOT NULL CHECK(cents != 0), label TEXT NOT NULL, created_at TEXT NOT NULL, reversal_of TEXT UNIQUE REFERENCES entries(id));
 CREATE TABLE presets(id TEXT PRIMARY KEY, name TEXT NOT NULL, cents INTEGER NOT NULL CHECK(cents>0));`;
-export function loadRecovery(): Uint8Array | undefined {
-  const value = localStorage.getItem(recoveryKey);
-  if (!value) return;
-  return Uint8Array.from(atob(value), (c) => c.charCodeAt(0));
-}
-function persist(bytes: Uint8Array) {
-  let binary = "";
-  for (const byte of bytes) binary += String.fromCharCode(byte);
-  localStorage.setItem(recoveryKey, btoa(binary));
-}
 export class Ledger {
   private constructor(
     private db: Database,
@@ -271,39 +261,4 @@ export class Ledger {
   export() {
     return this.db.export();
   }
-}
-export async function createExample() {
-  const ledger = await Ledger.open();
-  for (const [name, reference, balance] of [
-    ["Aino Korhonen", "1001", 4250],
-    ["Elias Nieminen", "1002", 1800],
-    ["Emma Virtanen", "1003", 3200],
-    ["Leo Mäkinen", "1004", 750],
-    ["Lilja Laine", "1005", 2600],
-    ["Noah Heikkinen", "1006", 0],
-    ["Olivia Koskinen", "1007", 5500],
-    ["Onni Järvinen", "1008", 1200],
-    ["Sofia Lehtonen", "1009", 850],
-    ["Väinö Salonen", "1010", 3000],
-  ] as const) {
-    await ledger.addCustomer(name, reference);
-    const customer = ledger
-      .snapshot()
-      .customers.find((c) => c.reference === reference);
-    if (customer && balance)
-      await ledger.post({
-        customerId: customer.id,
-        cents: balance,
-        label: "Deposit",
-        kind: "deposit",
-      });
-  }
-  for (const [name, cents] of [
-    ["250", 250],
-    ["850", 850],
-    ["350", 350],
-    ["200", 200],
-  ] as const)
-    await ledger.savePreset({ id: crypto.randomUUID(), name, cents });
-  return ledger;
 }

@@ -5,9 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
-    "build": "tsc --noEmit && vite build",
+    "build": "npm run check:boundaries && tsc --noEmit && vite build",
     "test": "vitest run",
-    "preview": "vite preview --host 127.0.0.1"
+    "preview": "vite preview --host 127.0.0.1",
+    "check:boundaries": "node scripts/check-boundaries.mjs",
+    "test:boundaries": "node --test scripts/check-boundaries.node-test.mjs"
   },
   "dependencies": {
     "@chakra-ui/react": "^3.30.0",

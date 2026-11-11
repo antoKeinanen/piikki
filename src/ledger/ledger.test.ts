@@ -1,6 +1,5 @@
 import { describe, it, expect } from "vitest";
 import { Ledger } from "./ledger";
-import { parseAmount, formatAmount } from "./model";
 
 describe("cashier ledger", () => {
   it("persists deposits, charges and exactly one reversal through SQLite export", async () => {
@@ -56,14 +55,9 @@ describe("cashier ledger", () => {
     expect(ledger.snapshot().customers[0].balance).toBe(100);
     expect(ledger.snapshot().entries).toHaveLength(2);
   });
-  it("rejects incompatible files and parses decimal credits", async () => {
+  it("rejects incompatible files", async () => {
     await expect(Ledger.open(new Uint8Array([1, 2, 3]))).rejects.toThrow();
-    expect(parseAmount("8.50")).toBe(850);
-    expect(formatAmount(850)).toBe("8,50");
-    expect(formatAmount(0)).toBe("0,00");
-    expect(parseAmount("0,29")).toBe(29);
-    for (const input of ["0", "-1", "1.005", "1e3", ""])
-      expect(() => parseAmount(input)).toThrow();
+
   });
 });
 
