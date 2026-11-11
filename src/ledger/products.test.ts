@@ -35,7 +35,7 @@ it("reads legacy presets without writing, then persists product details and pres
   expect(reopened.snapshot().products).toEqual([]);
   expect(reopened.snapshot().entries).toHaveLength(3);
   const compatible = new SQL.Database(saved);
-  expect(compatible.exec("PRAGMA user_version")[0].values).toEqual([[1]]);
+  expect(compatible.exec("PRAGMA user_version")[0].values).toEqual([[2]]);
   expect(compatible.exec("SELECT * FROM presets")).toEqual([]);
   compatible.close();
 });

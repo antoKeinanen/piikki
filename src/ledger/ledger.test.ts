@@ -192,3 +192,37 @@ it("keeps logos with their database, supports replacement and removal, and rejec
   await reopened.saveBranding(initial);
   expect((await Ledger.open(reopened.export())).snapshot().branding.logo).toBeUndefined();
 });
+
+it("requires names and keeps previous event transactions separate after export", async () => {
+  await expect(Ledger.create({ name: "   " })).rejects.toThrow();
+  const ledger = await Ledger.create({ name: "  Syysjuhla  " });
+  await ledger.addCustomer("Aino", "1");
+  await ledger.saveProduct({ id: "tea", name: "Tea", cents: 200, description: "", image: "" });
+  const previous = ledger.snapshot();
+  const customerId = previous.customers[0].id;
+  await ledger.post({ customerId, cents: 1000, kind: "deposit", label: "Cash" });
+  const deposit = ledger.snapshot().entries[0];
+  await expect(ledger.startEvent("  ")).rejects.toThrow();
+  expect(ledger.latestEvent().name).toBe("Syysjuhla");
+  await ledger.startEvent("Talvijuhla");
+  expect(ledger.snapshot().customers[0].balance).toBe(0);
+  expect(ledger.snapshot().entries).toEqual([]);
+  expect(ledger.snapshot().products).toEqual(previous.products);
+  await expect(ledger.reverse(deposit.id)).rejects.toThrow();
+  await ledger.post({ customerId, cents: 100, kind: "charge", label: "Tea" });
+  expect(ledger.snapshot().customers[0].balance).toBe(-100);
+  await ledger.post({ customerId, cents: 500, kind: "deposit", label: "Cash" });
+  const reopened = await Ledger.open(ledger.export());
+  expect(reopened.latestEvent().name).toBe("Talvijuhla");
+  expect(reopened.snapshot().customers[0].balance).toBe(400);
+  expect(reopened.snapshot(previous.event.id).customers[0].balance).toBe(1000);
+  expect(reopened.snapshot(previous.event.id).entries).toEqual([deposit]);
+});
+
+it("rolls back event creation when the database file cannot be saved", async () => {
+  const original = await Ledger.create({ name: "Syysjuhla" });
+  const ledger = await Ledger.open(original.export(), async () => { throw new Error("Disk full"); });
+  await expect(ledger.startEvent("Talvijuhla")).rejects.toThrow("Disk full");
+  expect(ledger.latestEvent()).toEqual(original.latestEvent());
+  expect((await Ledger.open(ledger.export())).latestEvent()).toEqual(original.latestEvent());
+});

@@ -3,6 +3,8 @@ import initSqlJs, { type Database, type SqlValue } from "sql.js";
 import wasmUrl from "sql.js/dist/sql-wasm.wasm?url";
 import {
   BrandingSchema,
+  EventNameSchema,
+  LedgerEventSchema,
   defaultBranding,
   type Branding,
   CustomerSchema,
@@ -20,9 +22,11 @@ const engine = () =>
   });
 const schema = `
 PRAGMA foreign_keys=ON;
-PRAGMA user_version=1;
+PRAGMA user_version=2;
+CREATE TABLE events(id TEXT PRIMARY KEY, name TEXT NOT NULL CHECK(length(trim(name)) BETWEEN 1 AND 100));
+INSERT INTO events VALUES('initial','Ensimmäinen tapahtuma');
 CREATE TABLE customers(id TEXT PRIMARY KEY, name TEXT NOT NULL, reference TEXT NOT NULL);
-CREATE TABLE entries(id TEXT PRIMARY KEY, customer_id TEXT NOT NULL REFERENCES customers(id), cents INTEGER NOT NULL CHECK(cents != 0), label TEXT NOT NULL, created_at TEXT NOT NULL, reversal_of TEXT UNIQUE REFERENCES entries(id));
+CREATE TABLE entries(id TEXT PRIMARY KEY, customer_id TEXT NOT NULL REFERENCES customers(id), cents INTEGER NOT NULL CHECK(cents != 0), label TEXT NOT NULL, created_at TEXT NOT NULL, reversal_of TEXT UNIQUE REFERENCES entries(id), event_id TEXT NOT NULL REFERENCES events(id));
 CREATE TABLE presets(id TEXT PRIMARY KEY, name TEXT NOT NULL, cents INTEGER NOT NULL CHECK(cents>0));`;
 export class Ledger {
   private constructor(
@@ -40,6 +44,15 @@ export class Ledger {
       if (!bytes) db.run(schema);
       db.run("PRAGMA foreign_keys=ON");
       const ledger = new Ledger(db, (data) => new SQL.Database(data), writer);
+      if (ledger.rows("PRAGMA user_version")[0]?.user_version === 1) {
+        db.run(`BEGIN;
+          CREATE TABLE events(id TEXT PRIMARY KEY, name TEXT NOT NULL CHECK(length(trim(name)) BETWEEN 1 AND 100));
+          INSERT INTO events VALUES('initial','Aiempi tapahtuma');
+          ALTER TABLE entries ADD COLUMN event_id TEXT REFERENCES events(id);
+          UPDATE entries SET event_id='initial';
+          PRAGMA user_version=2;
+          COMMIT;`);
+      }
       ledger.validate();
       return ledger;
     } catch (error) {
@@ -48,6 +61,21 @@ export class Ledger {
         `Could not open this database. ${error instanceof Error ? error.message : "Invalid SQLite file."}`,
       );
     }
+  }
+  static async create({ name }: { name: string }): Promise<Ledger> {
+    const eventName = EventNameSchema.parse(name);
+    const ledger = await Ledger.open();
+    ledger.db.run("UPDATE events SET name=? WHERE id='initial'", [eventName]);
+    return ledger;
+  }
+  latestEvent() {
+    return LedgerEventSchema.parse(this.rows("SELECT * FROM events ORDER BY rowid DESC LIMIT 1")[0]);
+  }
+  async startEvent(name: string) {
+    const eventName = EventNameSchema.parse(name);
+    return this.change(() => {
+      this.db.run("INSERT INTO events VALUES(?,?)", [crypto.randomUUID(), eventName]);
+    });
   }
   private rows(sql: string, params: SqlValue[] = []) {
     const statement = this.db.prepare(sql);
@@ -60,7 +88,7 @@ export class Ledger {
       statement.free();
     }
   }
-  snapshot(): Snapshot {
+  snapshot(eventId = this.latestEvent().id): Snapshot {
     const hasBranding =
       this.rows(
         "SELECT name FROM sqlite_master WHERE type='table' AND name='branding'",
@@ -82,6 +110,7 @@ export class Ledger {
     const logo = hasLogo
       ? this.rows("SELECT data AS logo FROM organization_logo WHERE id=1")[0]
       : undefined;
+    const event = LedgerEventSchema.parse(this.rows("SELECT * FROM events WHERE id=?", [eventId])[0]);
     const hasMetadata = this.rows(
       "SELECT name FROM sqlite_master WHERE type='table' AND name='customer_metadata'",
     ).length > 0;
@@ -89,54 +118,61 @@ export class Ledger {
       "SELECT name FROM sqlite_master WHERE type='table' AND name='product_details'",
     ).length > 0;
     return {
+      event,
       branding: BrandingSchema.parse({ ...defaultBranding, ...branding, ...identity, ...logo }),
       customers: this.rows(
         `SELECT c.*, ${hasMetadata ? "COALESCE(m.osakunta,'') osakunta, COALESCE(m.note,'') note," : ""} COALESCE(SUM(e.cents),0) balance
          FROM customers c ${hasMetadata ? "LEFT JOIN customer_metadata m ON m.customer_id=c.id" : ""}
-         LEFT JOIN entries e ON e.customer_id=c.id GROUP BY c.id ORDER BY c.name COLLATE NOCASE`,
+         LEFT JOIN entries e ON e.customer_id=c.id AND e.event_id=? GROUP BY c.id ORDER BY c.name COLLATE NOCASE`, [event.id],
       ).map((row) => CustomerSchema.parse(row)),
       products: this.rows(hasProducts
         ? "SELECT p.*, COALESCE(d.description,'') description, COALESCE(d.image,'') image FROM presets p LEFT JOIN product_details d ON d.id=p.id ORDER BY p.rowid"
         : "SELECT *, '' description, '' image FROM presets ORDER BY rowid"
       ).map((row) => ProductSchema.parse(row)),
       entries: this.rows(
-        "SELECT e.*, EXISTS(SELECT 1 FROM entries r WHERE r.reversal_of=e.id) reversed FROM entries e ORDER BY e.rowid DESC",
+        "SELECT e.*, EXISTS(SELECT 1 FROM entries r WHERE r.reversal_of=e.id) reversed FROM entries e WHERE e.event_id=? ORDER BY e.rowid DESC", [event.id],
       ).map((row) => EntrySchema.parse(row)),
     };
   }
   private validate() {
-    if (this.rows("PRAGMA user_version")[0]?.user_version !== 1)
+    if (this.rows("PRAGMA user_version")[0]?.user_version !== 2)
       throw new Error("This file is not a supported Piikki database.");
     if (
       this.rows("PRAGMA integrity_check")[0]?.integrity_check !== "ok" ||
       this.rows("PRAGMA foreign_key_check").length
     )
       throw new Error("This database contains invalid data.");
-    const data = this.snapshot();
-    const entries = new Map(data.entries.map((entry) => [entry.id, entry]));
-    const reversed = new Set<string>();
-    for (const entry of data.entries) {
-      if (
-        !Number.isSafeInteger(entry.cents) ||
-        !entry.cents ||
-        !data.customers.some((c) => c.id === entry.customer_id)
-      )
-        throw new Error("The database contains an invalid transaction.");
-      if (entry.reversal_of !== null) {
-        const original = entries.get(entry.reversal_of);
+    if (this.rows("SELECT id FROM entries WHERE event_id IS NULL").length)
+      throw new Error("A transaction is missing its event.");
+    const events = this.rows("SELECT * FROM events").map((row) => LedgerEventSchema.parse(row));
+    if (!events.length) throw new Error("The database has no event.");
+    for (const event of events) {
+      const data = this.snapshot(event.id);
+      const entries = new Map(data.entries.map((entry) => [entry.id, entry]));
+      const reversed = new Set<string>();
+      for (const entry of data.entries) {
         if (
-          !original ||
-          original.reversal_of !== null ||
-          original.customer_id !== entry.customer_id ||
-          original.cents !== -entry.cents ||
-          reversed.has(original.id)
+          !Number.isSafeInteger(entry.cents) ||
+          !entry.cents ||
+          !data.customers.some((c) => c.id === entry.customer_id)
         )
-          throw new Error("The database contains an invalid reversal.");
-        reversed.add(original.id);
+          throw new Error("The database contains an invalid transaction.");
+        if (entry.reversal_of !== null) {
+          const original = entries.get(entry.reversal_of);
+          if (
+            !original ||
+            original.reversal_of !== null ||
+            original.customer_id !== entry.customer_id ||
+            original.cents !== -entry.cents ||
+            reversed.has(original.id)
+          )
+            throw new Error("The database contains an invalid reversal.");
+          reversed.add(original.id);
+        }
       }
+      if (data.customers.some((c) => !Number.isSafeInteger(c.balance)))
+        throw new Error("The database contains an invalid balance.");
     }
-    if (data.customers.some((c) => !Number.isSafeInteger(c.balance)))
-      throw new Error("The database contains an invalid balance.");
   }
   private saving = false;
   private async change(operation: () => void) {
@@ -177,13 +213,14 @@ export class Ledger {
         (c) => c.id === input.customerId,
       );
       if (!customer) throw new Error("Customer no longer exists.");
-      this.db.run("INSERT INTO entries VALUES(?,?,?,?,?,NULL)", [
+      this.db.run("INSERT INTO entries(id,customer_id,cents,label,created_at,reversal_of,event_id) VALUES(?,?,?,?,?,NULL,?)", [
         crypto.randomUUID(),
         input.customerId,
         input.kind === "charge" ? -input.cents : input.cents,
         input.label.trim() ||
           (input.kind === "charge" ? "Purchase" : "Deposit"),
         new Date().toISOString(),
+        this.latestEvent().id,
       ]);
     });
   }
@@ -192,13 +229,14 @@ export class Ledger {
       const entry = this.snapshot().entries.find((e) => e.id === id);
       if (!entry || entry.reversed || entry.reversal_of)
         throw new Error("This transaction cannot be reversed.");
-      this.db.run("INSERT INTO entries VALUES(?,?,?,?,?,?)", [
+      this.db.run("INSERT INTO entries(id,customer_id,cents,label,created_at,reversal_of,event_id) VALUES(?,?,?,?,?,?,?)", [
         crypto.randomUUID(),
         entry.customer_id,
         -entry.cents,
         `Undo ${entry.label}`,
         new Date().toISOString(),
         entry.id,
+        this.latestEvent().id,
       ]);
     });
   }
