@@ -410,7 +410,8 @@ it("creates customer metadata and saves, updates, and clears a note across datab
   fireEvent.change(osakunta, { target: { value: "ABCDE" } });
   fireEvent.click(within(dialog).getByRole("button", { name: "Lisää henkilö" }));
   const note = await screen.findByLabelText("Muistiinpano");
-  expect(screen.getByText("ABCDE")).toBeTruthy();
+  expect(screen.getByRole("cell", { name: "ABCDE" })).toBeTruthy();
+  expect(within(screen.getByRole("region", { name: "Valittu henkilö" })).getByText("Aino • ABCDE")).toBeTruthy();
   expect(note.textContent).toBe("");
   for (const value of ["First\nSecond", "Updated", ""]) {
     fireEvent.change(note, { target: { value } });

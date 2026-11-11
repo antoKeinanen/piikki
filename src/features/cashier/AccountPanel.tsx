@@ -80,12 +80,11 @@ export function AccountPanel({
       {customer ? (
         <>
           <div className="account-summary">
-            <Text className="account-name">{customer.name}</Text>
+            <Text className="account-name">{customer.name}{customer.osakunta && ` • ${customer.osakunta}`}</Text>
             <Text className="balance" aria-label="Saldo">
               {formatAmount(customer.balance)}
             </Text>
           </div>
-          {customer.osakunta && <Text>{customer.osakunta}</Text>}
           <CustomerNoteForm
             key={customer.id}
             customer={customer}
