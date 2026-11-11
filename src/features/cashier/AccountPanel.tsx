@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Button, Field, Flex, Input, Text } from "@chakra-ui/react";
+import { CustomerNoteForm } from "./CustomerNoteForm";
 import {
   formatAmount,
   parseAmount,
@@ -32,6 +33,7 @@ export function AccountPanel({
   setError,
   onPost,
   onReverse,
+  onSaveNote,
 }: {
   selectionRevision: number;
   customer: Customer | undefined;
@@ -42,6 +44,7 @@ export function AccountPanel({
   setError(message: string): void;
   onPost(input: Parameters<Ledger["post"]>[0]): Promise<void>;
   onReverse(entry: Entry): void;
+  onSaveNote(customerId: string, note: string): Promise<void>;
 }) {
   const [amount, setAmount] = useState("");
   const [action, setAction] = useState<"charge" | "deposit">("charge");
@@ -77,11 +80,17 @@ export function AccountPanel({
       {customer ? (
         <>
           <div className="account-summary">
-            <Text className="account-name">{customer.name}</Text>
+            <Text className="account-name">{customer.name}{customer.osakunta && ` • ${customer.osakunta}`}</Text>
             <Text className="balance" aria-label="Saldo">
               {formatAmount(customer.balance)}
             </Text>
           </div>
+          <CustomerNoteForm
+            key={customer.id}
+            customer={customer}
+            busy={busy}
+            save={onSaveNote}
+          />
           <Flex className="mode" role="group" aria-label="Tapahtuman tyyppi">
             <Button
               variant="plain"

@@ -82,13 +82,18 @@ export class Ledger {
     const logo = hasLogo
       ? this.rows("SELECT data AS logo FROM organization_logo WHERE id=1")[0]
       : undefined;
+    const hasMetadata = this.rows(
+      "SELECT name FROM sqlite_master WHERE type='table' AND name='customer_metadata'",
+    ).length > 0;
     const hasProducts = this.rows(
       "SELECT name FROM sqlite_master WHERE type='table' AND name='product_details'",
     ).length > 0;
     return {
       branding: BrandingSchema.parse({ ...defaultBranding, ...branding, ...identity, ...logo }),
       customers: this.rows(
-        "SELECT c.*, COALESCE(SUM(e.cents),0) balance FROM customers c LEFT JOIN entries e ON e.customer_id=c.id GROUP BY c.id ORDER BY c.name COLLATE NOCASE",
+        `SELECT c.*, ${hasMetadata ? "COALESCE(m.osakunta,'') osakunta, COALESCE(m.note,'') note," : ""} COALESCE(SUM(e.cents),0) balance
+         FROM customers c ${hasMetadata ? "LEFT JOIN customer_metadata m ON m.customer_id=c.id" : ""}
+         LEFT JOIN entries e ON e.customer_id=c.id GROUP BY c.id ORDER BY c.name COLLATE NOCASE`,
       ).map((row) => CustomerSchema.parse(row)),
       products: this.rows(hasProducts
         ? "SELECT p.*, COALESCE(d.description,'') description, COALESCE(d.image,'') image FROM presets p LEFT JOIN product_details d ON d.id=p.id ORDER BY p.rowid"
@@ -197,15 +202,42 @@ export class Ledger {
       ]);
     });
   }
-  async addCustomer(name: string, reference: string) {
+  private ensureCustomerMetadata() {
+    this.db.run(
+      "CREATE TABLE IF NOT EXISTS customer_metadata(customer_id TEXT PRIMARY KEY REFERENCES customers(id), osakunta TEXT NOT NULL DEFAULT '' CHECK(length(osakunta)<=5), note TEXT NOT NULL DEFAULT '')",
+    );
+  }
+  async addCustomer(name: string, reference: string, osakunta = "") {
     if (!name.trim()) throw new Error("Enter a customer name.");
-    return this.change(() =>
+    if (!CustomerSchema.shape.osakunta.safeParse(osakunta).success)
+      throw new Error("Osakunta saa olla enintään 5 merkkiä.");
+    return this.change(() => {
+      const id = crypto.randomUUID();
       this.db.run("INSERT INTO customers VALUES(?,?,?)", [
-        crypto.randomUUID(),
+        id,
         name.trim(),
         reference.trim(),
-      ]),
-    );
+      ]);
+      this.ensureCustomerMetadata();
+      this.db.run(
+        "INSERT INTO customer_metadata(customer_id,osakunta) VALUES(?,?)",
+        [id, osakunta],
+      );
+    });
+  }
+  async saveCustomerNote(customerId: string, note: string) {
+    CustomerSchema.shape.note.parse(note);
+    return this.change(() => {
+      if (
+        !this.snapshot().customers.some((customer) => customer.id === customerId)
+      )
+        throw new Error("Customer no longer exists.");
+      this.ensureCustomerMetadata();
+      this.db.run(
+        "INSERT INTO customer_metadata(customer_id,note) VALUES(?,?) ON CONFLICT(customer_id) DO UPDATE SET note=excluded.note",
+        [customerId, note],
+      );
+    });
   }
   async saveProduct(input: Product) {
     const product = ProductSchema.parse(input);
