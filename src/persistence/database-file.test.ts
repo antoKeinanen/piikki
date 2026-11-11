@@ -10,7 +10,7 @@ it("writes a real SQLite file and rejects external edits without losing the curr
   const path = join(dir, "accounts.sqlite");
   try {
     const initial = await Ledger.open();
-    await initial.addCustomer("Aino", "1");
+    await initial.addCustomer("Aino", "1", "KyO");
     const id = initial.snapshot().customers[0].id;
     await writeFile(path, initial.export());
     const { ledger } = await connectFile({
@@ -42,7 +42,11 @@ it("writes a real SQLite file and rejects external edits without losing the curr
       kind: "deposit",
       label: "Deposit",
     });
+    await ledger.saveCustomerNote(id, "Persisted note\nSecond line");
     const reopened = await Ledger.open(new Uint8Array(await readFile(path)));
+    expect(reopened.snapshot().customers[0]).toMatchObject({
+      osakunta: "KyO", note: "Persisted note\nSecond line",
+    });
     expect(reopened.snapshot().customers[0].balance).toBe(2000);
     await reopened.post({
       customerId: id,

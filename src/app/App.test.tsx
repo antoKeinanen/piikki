@@ -336,3 +336,37 @@ it("preserves the active database when opening a replacement is cancelled", asyn
   );
   expect(ledger.snapshot().customers[0].balance).toBe(4250);
 });
+
+it("creates customer metadata and saves, updates, and clears a note across database reopen", async () => {
+  let saved: Uint8Array | undefined;
+  const ledger = await Ledger.open(undefined, async (bytes) => {
+    saved = new Uint8Array(bytes);
+  });
+  vi.spyOn(fileAccess, "fileAccessProblem").mockReturnValue(undefined);
+  vi.spyOn(fileAccess, "supportsDirectFiles").mockReturnValue(true);
+  vi.spyOn(fileAccess, "pickDatabase").mockImplementation(async () => ({
+    ledger: saved ? await Ledger.open(saved) : ledger,
+    name: "metadata.sqlite",
+  }));
+  mount();
+  fireEvent.click(screen.getByRole("button", { name: "Avaa tietokanta" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Lisää henkilö" }));
+  const dialog = await screen.findByRole("dialog", { name: "Lisää henkilö" });
+  fireEvent.change(within(dialog).getByLabelText("Nimi"), { target: { value: "Aino" } });
+  const osakunta = within(dialog).getByLabelText("Osakunta (valinnainen)");
+  expect(osakunta.getAttribute("maxlength")).toBe("5");
+  fireEvent.change(osakunta, { target: { value: "ABCDEF" } });
+  expect(within(dialog).getByRole("button", { name: "Lisää henkilö" }).hasAttribute("disabled")).toBe(true);
+  fireEvent.change(osakunta, { target: { value: "ABCDE" } });
+  fireEvent.click(within(dialog).getByRole("button", { name: "Lisää henkilö" }));
+  const note = await screen.findByLabelText("Muistiinpano");
+  expect(screen.getByText("ABCDE")).toBeTruthy();
+  expect(note.textContent).toBe("");
+  for (const value of ["First\nSecond", "Updated", ""]) {
+    fireEvent.change(note, { target: { value } });
+    fireEvent.click(screen.getByRole("button", { name: "Tallenna muistiinpano" }));
+    await waitFor(() => expect(ledger.snapshot().customers[0].note).toBe(value));
+    expect((await Ledger.open(saved)).snapshot().customers[0].note).toBe(value);
+    await waitFor(() => expect(screen.getByRole("button", { name: "Tallenna muistiinpano" }).hasAttribute("disabled")).toBe(true));
+  }
+});
