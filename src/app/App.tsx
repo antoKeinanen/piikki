@@ -246,7 +246,7 @@ function CashierApp() {
             selectionRevision={selectionRevision}
             customer={customer}
             entries={entries}
-            presets={data?.presets ?? []}
+            products={data?.products ?? []}
             busy={busy}
             error={error}
             setError={setError}
@@ -320,11 +320,11 @@ function CashierApp() {
                     saveBranding={(value) =>
                       mutation.mutateAsync(() => ledger.saveBranding(value))
                     }
-                    savePreset={(value) =>
-                      mutation.mutateAsync(() => ledger.savePreset(value))
+                    saveProduct={(value) =>
+                      mutation.mutateAsync(() => ledger.saveProduct(value))
                     }
-                    removePreset={(id) =>
-                      mutation.mutateAsync(() => ledger.removePreset(id))
+                    removeProduct={(id) =>
+                      mutation.mutateAsync(() => ledger.removeProduct(id))
                     }
                     files={fileControls}
                   />
