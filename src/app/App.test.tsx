@@ -118,7 +118,7 @@ it("charges immediately, hides IDs and filenames, and opens branding settings", 
   const preset = ledger.snapshot().presets.find((value) => value.cents === 425);
   if (!preset) throw new Error("Preset was not saved");
   const row = screen.getByText("4,25").closest(".preset-row");
-  if (!row) throw new Error("Preset row missing");
+  if (!(row instanceof HTMLElement)) throw new Error("Preset row missing");
   fireEvent.click(within(row).getByRole("button", { name: "Poista" }));
   const restore = await screen.findByRole("button", { name: "Palauta 4,25" });
   expect(
