@@ -50,8 +50,6 @@ export function AccountPanel({
     if (!customer || busy) return;
     try {
       const cents = preset ?? parseAmount(amount);
-      if (kind === "charge" && cents > customer.balance)
-        throw new Error("Saldo ei riitä veloitukseen.");
       setError("");
       void onPost({
         customerId: customer.id,
@@ -112,7 +110,7 @@ export function AccountPanel({
                   variant="outline"
                   className="quick-charge"
                   aria-label={`Veloita ${formatAmount(p.cents)}`}
-                  disabled={busy || p.cents > customer.balance}
+                  disabled={busy}
                   onClick={() => post("charge", p.cents)}
                 >
                   {formatAmount(p.cents)}

@@ -168,8 +168,6 @@ export class Ledger {
         (c) => c.id === input.customerId,
       );
       if (!customer) throw new Error("Customer no longer exists.");
-      if (input.kind === "charge" && customer.balance < input.cents)
-        throw new Error("Not enough balance for this charge.");
       this.db.run("INSERT INTO entries VALUES(?,?,?,?,?,NULL)", [
         crypto.randomUUID(),
         input.customerId,
@@ -185,13 +183,6 @@ export class Ledger {
       const entry = this.snapshot().entries.find((e) => e.id === id);
       if (!entry || entry.reversed || entry.reversal_of)
         throw new Error("This transaction cannot be reversed.");
-      const customer = this.snapshot().customers.find(
-        (c) => c.id === entry.customer_id,
-      );
-      if (!customer || customer.balance - entry.cents < 0)
-        throw new Error(
-          "This deposit cannot be reversed because the balance is too low.",
-        );
       this.db.run("INSERT INTO entries VALUES(?,?,?,?,?,?)", [
         crypto.randomUUID(),
         entry.customer_id,

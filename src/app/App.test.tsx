@@ -292,20 +292,52 @@ it("keeps the amount and balance after a failed save, then allows retry", async 
   );
   await screen.findByLabelText("Saldo");
   fireEvent.change(screen.getByLabelText("Summa"), {
-    target: { value: "1.23" },
+    target: { value: "50.00" },
   });
-  fireEvent.click(screen.getByRole("button", { name: "Veloita 1,23" }));
+  fireEvent.click(screen.getByRole("button", { name: "Veloita 50,00" }));
   await screen.findByText("Disk write failed");
   expect(screen.getByLabelText("Saldo").textContent).toBe("42,50");
-  expect(screen.getByLabelText("Summa").getAttribute("value")).toBe("1.23");
+  expect(screen.getByLabelText("Summa").getAttribute("value")).toBe("50.00");
   fail = false;
-  fireEvent.click(screen.getByRole("button", { name: "Veloita 1,23" }));
+  fireEvent.click(screen.getByRole("button", { name: "Veloita 50,00" }));
   await waitFor(() =>
-    expect(screen.getByLabelText("Saldo").textContent).toBe("41,27"),
+    expect(screen.getByLabelText("Saldo").textContent).toBe("−7,50"),
   );
   await waitFor(() =>
     expect(screen.getByLabelText("Summa").getAttribute("value")).toBe(""),
   );
+});
+
+it("charges below zero with custom and quick amounts and reopens the saved account", async () => {
+  const original = await createExample();
+  let saved = original.export();
+  const ledger = await Ledger.open(saved, async (bytes) => {
+    saved = new Uint8Array(bytes);
+  });
+  vi.spyOn(fileAccess, "fileAccessProblem").mockReturnValue(undefined);
+  vi.spyOn(fileAccess, "supportsDirectFiles").mockReturnValue(true);
+  const pick = vi.spyOn(fileAccess, "pickDatabase").mockResolvedValue({
+    ledger,
+    name: "test.sqlite",
+  });
+  const app = mount();
+  fireEvent.click(screen.getByRole("button", { name: "Avaa tietokanta" }));
+  await screen.findByLabelText("Saldo");
+  fireEvent.change(screen.getByLabelText("Summa"), { target: { value: "50" } });
+  fireEvent.click(screen.getByRole("button", { name: "Veloita 50,00" }));
+  await waitFor(() => expect(screen.getByLabelText("Saldo").textContent).toBe("−7,50"));
+  const quick = screen.getByRole("button", { name: "Veloita 8,50" });
+  expect(quick.hasAttribute("disabled")).toBe(false);
+  fireEvent.click(quick);
+  await waitFor(() => expect(screen.getByLabelText("Saldo").textContent).toBe("−16,00"));
+  fireEvent.click(screen.getAllByRole("button", { name: "Peru" })[0]);
+  fireEvent.click(await screen.findByRole("button", { name: "Peru tapahtuma" }));
+  await waitFor(() => expect(screen.getByLabelText("Saldo").textContent).toBe("−7,50"));
+  app.unmount();
+  pick.mockResolvedValue({ ledger: await Ledger.open(saved), name: "test.sqlite" });
+  mount();
+  fireEvent.click(screen.getByRole("button", { name: "Avaa tietokanta" }));
+  expect((await screen.findByLabelText("Saldo")).textContent).toBe("−7,50");
 });
 
 it("preserves the active database when opening a replacement is cancelled", async () => {
