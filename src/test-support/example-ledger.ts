@@ -27,11 +27,11 @@ export async function createExample() {
       });
   }
   for (const [name, cents] of [
-    ["250", 250],
-    ["850", 850],
-    ["350", 350],
-    ["200", 200],
+    ["Kahvi", 250],
+    ["Lounas", 850],
+    ["Tee", 350],
+    ["Mehu", 200],
   ] as const)
-    await ledger.savePreset({ id: crypto.randomUUID(), name, cents });
+    await ledger.saveProduct({ id: crypto.randomUUID(), name, cents, description: "", image: "" });
   return ledger;
 }

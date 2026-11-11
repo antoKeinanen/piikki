@@ -5,7 +5,7 @@ import {
   parseAmount,
   type Customer,
   type Entry,
-  type Preset,
+  type Product,
   type Ledger,
 } from "../../ledger";
 function FormField({
@@ -26,7 +26,7 @@ export function AccountPanel({
   selectionRevision,
   customer,
   entries,
-  presets,
+  products,
   busy,
   error,
   setError,
@@ -36,7 +36,7 @@ export function AccountPanel({
   selectionRevision: number;
   customer: Customer | undefined;
   entries: Entry[];
-  presets: Preset[];
+  products: Product[];
   busy: boolean;
   error: string;
   setError(message: string): void;
@@ -45,11 +45,19 @@ export function AccountPanel({
 }) {
   const [amount, setAmount] = useState("");
   const [action, setAction] = useState<"charge" | "deposit">("charge");
-  useEffect(() => setAmount(""), [customer?.id, selectionRevision]);
-  function post(kind: "charge" | "deposit", preset?: number) {
+  const [search, setSearch] = useState("");
+  const query = search.trim().toLocaleLowerCase("fi");
+  const visibleProducts = products.filter((product) =>
+    (product.name + " " + product.description).toLocaleLowerCase("fi").includes(query),
+  );
+  useEffect(() => {
+    setAmount("");
+    setSearch("");
+  }, [customer?.id, selectionRevision]);
+  function post(kind: "charge" | "deposit", product?: Product) {
     if (!customer || busy) return;
     try {
-      const cents = preset ?? parseAmount(amount);
+      const cents = product?.cents ?? parseAmount(amount);
       if (kind === "charge" && cents > customer.balance)
         throw new Error("Saldo ei riitä veloitukseen.");
       setError("");
@@ -57,7 +65,7 @@ export function AccountPanel({
         customerId: customer.id,
         cents,
         kind,
-        label: kind === "charge" ? "Veloita" : "Lisää saldoa",
+        label: product?.name ?? (kind === "charge" ? "Veloita" : "Lisää saldoa"),
       }).then(
         () => setAmount(""),
         () => {},
@@ -104,20 +112,26 @@ export function AccountPanel({
               Lisää saldoa
             </Button>
           </Flex>
-          {action === "charge" && !!presets.length && (
-            <div className="quick-charges">
-              {presets.map((p) => (
+          {action === "charge" && !!products.length && (
+            <div className="product-picker">
+              <Input aria-label="Hae tuotetta" placeholder="Hae tuotetta" value={search}
+                onChange={(e) => setSearch(e.target.value)} />
+              <div className="product-grid">
+              {visibleProducts.map((p) => (
                 <Button
                   key={p.id}
                   variant="outline"
-                  className="quick-charge"
-                  aria-label={`Veloita ${formatAmount(p.cents)}`}
+                  className="product-charge"
+                  aria-label={`Veloita ${p.name} ${formatAmount(p.cents)}`}
                   disabled={busy || p.cents > customer.balance}
-                  onClick={() => post("charge", p.cents)}
+                  onClick={() => post("charge", p)}
                 >
-                  {formatAmount(p.cents)}
+                  {p.image && <img className="product-thumbnail" src={p.image} alt="" />}
+                  <span>{p.name}<small>{formatAmount(p.cents)}</small></span>
                 </Button>
               ))}
+              </div>
+              {!visibleProducts.length && <Text>Tuotteita ei löytynyt.</Text>}
             </div>
           )}
           <form
@@ -169,7 +183,7 @@ export function AccountPanel({
                     {entry.reversal_of
                       ? "Hyvitys"
                       : entry.cents < 0
-                        ? "Veloitus"
+                        ? entry.label
                         : "Saldon lisäys"}
                   </Text>
                   <Text className="entry-date">
