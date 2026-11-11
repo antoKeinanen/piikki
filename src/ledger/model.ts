@@ -3,15 +3,11 @@ export const CustomerSchema = z.object({
   id: z.string(),
   name: z.string().min(1),
   reference: z.string(),
-  balance: z.number().int().nonnegative(),
+  osakunta: z.string().max(5).default(""),
+  note: z.string().default(""),
+  balance: z.number().int(),
 });
 export type Customer = z.infer<typeof CustomerSchema>;
-export const PresetSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  cents: z.number().int().positive(),
-});
-export type Preset = z.infer<typeof PresetSchema>;
 export const EntrySchema = z.object({
   id: z.string(),
   customer_id: z.string(),
@@ -25,6 +21,14 @@ export type Entry = z.infer<typeof EntrySchema>;
 export const LogoSchema = z.string().max(1_400_000).regex(
   /^data:image\/(?:png|jpeg|webp|svg\+xml);base64,[A-Za-z0-9+/]+={0,2}$/,
 );
+export const ProductSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  cents: z.number().int().positive(),
+  description: z.string().max(2000),
+  image: z.union([z.literal(""), LogoSchema]),
+});
+export type Product = z.infer<typeof ProductSchema>;
 export const BrandingSchema = z.object({
   logo: LogoSchema.optional(),
   organization: z.string().trim().min(1).max(60).default("KyO"),
@@ -47,6 +51,6 @@ export type Snapshot = {
   event: LedgerEvent;
   branding: Branding;
   customers: Customer[];
-  presets: Preset[];
+  products: Product[];
   entries: Entry[];
 };

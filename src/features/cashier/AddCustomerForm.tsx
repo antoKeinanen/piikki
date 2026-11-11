@@ -19,15 +19,16 @@ export function AddCustomerForm({
   save,
 }: {
   busy: boolean;
-  save(name: string): Promise<void>;
+  save(name: string, osakunta: string): Promise<void>;
 }) {
   const [name, setName] = useState("");
+  const [osakunta, setOsakunta] = useState("");
   return (
     <form
       className="settings-form"
       onSubmit={(e) => {
         e.preventDefault();
-        void save(name.trim()).catch(() => {});
+        void save(name.trim(), osakunta).catch(() => {});
       }}
     >
       <FormField label="Nimi">
@@ -38,7 +39,19 @@ export function AddCustomerForm({
           onChange={(e) => setName(e.target.value)}
         />
       </FormField>
-      <Button className="primary" type="submit" disabled={!name.trim() || busy}>
+      <FormField label="Osakunta (valinnainen)">
+        <Input
+          maxLength={5}
+          value={osakunta}
+          disabled={busy}
+          onChange={(e) => setOsakunta(e.target.value)}
+        />
+      </FormField>
+      <Button
+        className="primary"
+        type="submit"
+        disabled={!name.trim() || osakunta.length > 5 || busy}
+      >
         Lisää henkilö
       </Button>
     </form>

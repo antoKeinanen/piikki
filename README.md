@@ -1,6 +1,6 @@
 # Piikki
 
-A frontend-only cashier app for customer credit. Open a compatible SQLite file, select a customer, and apply a charge or deposit. The database never leaves the device.
+A frontend-only cashier app for customer credit. Open a compatible SQLite file, select a customer, and apply a charge or deposit. Balances can go below zero. Charges and deposit reversals do not require available credit. The database never leaves the device.
 
 ## Run locally
 

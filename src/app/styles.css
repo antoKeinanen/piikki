@@ -207,24 +207,27 @@ input:focus-visible {
   color: var(--ink);
   border-bottom-color: var(--indicator);
 }
-.quick-charges {
+.product-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 10px;
   margin-bottom: 30px;
 }
-.quick-charge {
-  height: 64px !important;
+.product-charge {
+  height: auto !important;
+  min-height: 80px;
+  padding: 12px;
+  flex-direction: column;
   border: 1px solid var(--line) !important;
   border-radius: 3px !important;
   color: var(--ink);
-  font-size: 22px !important;
+  font-size: 16px !important;
   font-weight: 500;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.6px;
   background: transparent;
 }
-.quick-charge:hover:not(:disabled) {
+.product-charge:hover:not(:disabled) {
   border-color: var(--indicator) !important;
   background: var(--brand) !important;
   color: var(--on-brand) !important;
@@ -391,35 +394,41 @@ input::placeholder {
   border-color: var(--line);
   height: 44px;
 }
-.preset-row {
+.product-row {
   display: flex;
   align-items: center;
   min-height: 56px;
   border-bottom: 1px solid var(--line);
   gap: 10px;
 }
-.preset-row > span {
+.product-row > span {
   flex: 1;
   font-size: 18px;
   font-variant-numeric: tabular-nums;
 }
-.preset-row button {
+.product-row button {
   font-size: 12px;
   color: var(--muted);
 }
-.preset-editor {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  gap: 10px;
+.product-thumbnail {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  flex-shrink: 0;
 }
-.preset-editor > div {
-  flex: 1;
-  min-width: 120px;
+.product-row small, .product-charge small {
+  display: block;
 }
-.preset-editor button {
-  height: 46px;
+.product-row > span, .product-charge > span {
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
+.product-picker {
+  display: grid;
+  gap: 12px;
+}
+
 .close-modal {
   width: 100%;
   margin-top: 28px;
@@ -471,7 +480,7 @@ input::placeholder {
   .balance {
     font-size: 36px;
   }
-  .quick-charges {
+  .product-grid {
     gap: 7px;
   }
 }
@@ -504,7 +513,7 @@ input::placeholder {
   .account-summary {
     min-height: 50px;
   }
-  .quick-charges {
+  .product-grid {
     margin-bottom: 22px;
   }
 }

@@ -9,8 +9,8 @@ import {
   type Branding,
   CustomerSchema,
   EntrySchema,
-  PresetSchema,
-  type Preset,
+  ProductSchema,
+  type Product,
   type Snapshot,
 } from "./model";
 const engine = () =>
@@ -111,15 +111,24 @@ export class Ledger {
       ? this.rows("SELECT data AS logo FROM organization_logo WHERE id=1")[0]
       : undefined;
     const event = LedgerEventSchema.parse(this.rows("SELECT * FROM events WHERE id=?", [eventId])[0]);
+    const hasMetadata = this.rows(
+      "SELECT name FROM sqlite_master WHERE type='table' AND name='customer_metadata'",
+    ).length > 0;
+    const hasProducts = this.rows(
+      "SELECT name FROM sqlite_master WHERE type='table' AND name='product_details'",
+    ).length > 0;
     return {
       event,
       branding: BrandingSchema.parse({ ...defaultBranding, ...branding, ...identity, ...logo }),
       customers: this.rows(
-        "SELECT c.*, COALESCE(SUM(e.cents),0) balance FROM customers c LEFT JOIN entries e ON e.customer_id=c.id AND e.event_id=? GROUP BY c.id ORDER BY c.name COLLATE NOCASE", [event.id],
+        `SELECT c.*, ${hasMetadata ? "COALESCE(m.osakunta,'') osakunta, COALESCE(m.note,'') note," : ""} COALESCE(SUM(e.cents),0) balance
+         FROM customers c ${hasMetadata ? "LEFT JOIN customer_metadata m ON m.customer_id=c.id" : ""}
+         LEFT JOIN entries e ON e.customer_id=c.id AND e.event_id=? GROUP BY c.id ORDER BY c.name COLLATE NOCASE`, [event.id],
       ).map((row) => CustomerSchema.parse(row)),
-      presets: this.rows("SELECT * FROM presets ORDER BY rowid").map((row) =>
-        PresetSchema.parse(row),
-      ),
+      products: this.rows(hasProducts
+        ? "SELECT p.*, COALESCE(d.description,'') description, COALESCE(d.image,'') image FROM presets p LEFT JOIN product_details d ON d.id=p.id ORDER BY p.rowid"
+        : "SELECT *, '' description, '' image FROM presets ORDER BY rowid"
+      ).map((row) => ProductSchema.parse(row)),
       entries: this.rows(
         "SELECT e.*, EXISTS(SELECT 1 FROM entries r WHERE r.reversal_of=e.id) reversed FROM entries e WHERE e.event_id=? ORDER BY e.rowid DESC", [event.id],
       ).map((row) => EntrySchema.parse(row)),
@@ -204,8 +213,6 @@ export class Ledger {
         (c) => c.id === input.customerId,
       );
       if (!customer) throw new Error("Customer no longer exists.");
-      if (input.kind === "charge" && customer.balance < input.cents)
-        throw new Error("Not enough balance for this charge.");
       this.db.run("INSERT INTO entries(id,customer_id,cents,label,created_at,reversal_of,event_id) VALUES(?,?,?,?,?,NULL,?)", [
         crypto.randomUUID(),
         input.customerId,
@@ -222,13 +229,6 @@ export class Ledger {
       const entry = this.snapshot().entries.find((e) => e.id === id);
       if (!entry || entry.reversed || entry.reversal_of)
         throw new Error("This transaction cannot be reversed.");
-      const customer = this.snapshot().customers.find(
-        (c) => c.id === entry.customer_id,
-      );
-      if (!customer || customer.balance - entry.cents < 0)
-        throw new Error(
-          "This deposit cannot be reversed because the balance is too low.",
-        );
       this.db.run("INSERT INTO entries(id,customer_id,cents,label,created_at,reversal_of,event_id) VALUES(?,?,?,?,?,?,?)", [
         crypto.randomUUID(),
         entry.customer_id,
@@ -240,26 +240,63 @@ export class Ledger {
       ]);
     });
   }
-  async addCustomer(name: string, reference: string) {
-    if (!name.trim()) throw new Error("Enter a customer name.");
-    return this.change(() =>
-      this.db.run("INSERT INTO customers VALUES(?,?,?)", [
-        crypto.randomUUID(),
-        name.trim(),
-        reference.trim(),
-      ]),
+  private ensureCustomerMetadata() {
+    this.db.run(
+      "CREATE TABLE IF NOT EXISTS customer_metadata(customer_id TEXT PRIMARY KEY REFERENCES customers(id), osakunta TEXT NOT NULL DEFAULT '' CHECK(length(osakunta)<=5), note TEXT NOT NULL DEFAULT '')",
     );
   }
-  async savePreset(preset: Preset) {
-    PresetSchema.parse(preset);
-    if (!preset.name.trim() || !Number.isSafeInteger(preset.cents))
-      throw new Error("Enter an amount greater than zero.");
-    return this.change(() =>
+  async addCustomer(name: string, reference: string, osakunta = "") {
+    if (!name.trim()) throw new Error("Enter a customer name.");
+    if (!CustomerSchema.shape.osakunta.safeParse(osakunta).success)
+      throw new Error("Osakunta saa olla enintään 5 merkkiä.");
+    return this.change(() => {
+      const id = crypto.randomUUID();
+      this.db.run("INSERT INTO customers VALUES(?,?,?)", [
+        id,
+        name.trim(),
+        reference.trim(),
+      ]);
+      this.ensureCustomerMetadata();
+      this.db.run(
+        "INSERT INTO customer_metadata(customer_id,osakunta) VALUES(?,?)",
+        [id, osakunta],
+      );
+    });
+  }
+  async saveCustomerNote(customerId: string, note: string) {
+    CustomerSchema.shape.note.parse(note);
+    return this.change(() => {
+      if (
+        !this.snapshot().customers.some((customer) => customer.id === customerId)
+      )
+        throw new Error("Customer no longer exists.");
+      this.ensureCustomerMetadata();
+      this.db.run(
+        "INSERT INTO customer_metadata(customer_id,note) VALUES(?,?) ON CONFLICT(customer_id) DO UPDATE SET note=excluded.note",
+        [customerId, note],
+      );
+    });
+  }
+  async saveProduct(input: Product) {
+    const product = ProductSchema.parse(input);
+    product.name = product.name.trim();
+    if (!product.name || product.name.length > 120)
+      throw new Error("Enter a product name of 1–120 characters.");
+    if (product.cents > 999999999)
+      throw new Error("Product price is too large.");
+    return this.change(() => {
       this.db.run(
         "INSERT INTO presets VALUES(?,?,?) ON CONFLICT(id) DO UPDATE SET name=excluded.name,cents=excluded.cents",
-        [preset.id, preset.name.trim(), preset.cents],
-      ),
-    );
+        [product.id, product.name, product.cents],
+      );
+      this.db.run(
+        "CREATE TABLE IF NOT EXISTS product_details(id TEXT PRIMARY KEY, description TEXT NOT NULL, image TEXT NOT NULL)",
+      );
+      this.db.run(
+        "INSERT INTO product_details VALUES(?,?,?) ON CONFLICT(id) DO UPDATE SET description=excluded.description,image=excluded.image",
+        [product.id, product.description, product.image],
+      );
+    });
   }
   async saveBranding(input: Branding) {
     const branding = BrandingSchema.parse(input);
@@ -291,10 +328,12 @@ export class Ledger {
       );
     });
   }
-  async removePreset(id: string) {
-    return this.change(() =>
-      this.db.run("DELETE FROM presets WHERE id=?", [id]),
-    );
+  async removeProduct(id: string) {
+    return this.change(() => {
+      this.db.run("DELETE FROM presets WHERE id=?", [id]);
+      if (this.rows("SELECT name FROM sqlite_master WHERE type='table' AND name='product_details'").length)
+        this.db.run("DELETE FROM product_details WHERE id=?", [id]);
+    });
   }
   export() {
     return this.db.export();

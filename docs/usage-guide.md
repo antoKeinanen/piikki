@@ -69,7 +69,7 @@ A quick-charge button subtracts its amount immediately. There is no charge confi
 2. In **Veloita** mode, select the `8.50` quick-charge button at **1** once.
 3. Check the updated balance at **2** and the new history entry at **3**.
 
-In this example, `42.50` becomes `34.00`. The history records a charge of `−8.50`. Buttons are disabled while the change saves. A quick-charge button is also disabled if the customer cannot cover its amount.
+In this example, `42.50` becomes `34.00`. The history records a charge of `−8.50`. Buttons are disabled while the change saves. Quick charges remain available when the balance is zero or negative.
 
 If you select the wrong amount, use **Peru** on that transaction. See section 8.
 
@@ -106,7 +106,7 @@ The change applies without another confirmation. In this example, `31.75` become
 3. Check the customer and amount in area **1**. This example reverses the custom charge of `2.25`.
 4. Select **Peru tapahtuma** at **2** to apply the reversal. Select **Peruuta** to leave the transaction unchanged.
 
-Undo has its own confirmation because it changes an existing transaction. Reversing a charge adds the amount back. Reversing a deposit subtracts it. A deposit can be reversed only when the current balance covers the full amount being removed.
+Undo has its own confirmation because it changes an existing transaction. Reversing a charge adds the amount back. Reversing a deposit subtracts it. A deposit can be reversed even when this makes the balance negative.
 
 ## 9. Check a reversal in the history
 
@@ -168,15 +168,11 @@ You do not need a download after each change. A downloaded backup is a separate 
 
 When you return to the app after closing or reloading it, open your working SQLite file again. The app does not remember writable file handles between visits. Keep one app instance editing a file at a time. Copies edited separately do not merge.
 
-## 14. Handle a rejected charge or failed save
+## 14. Charge below zero or handle a failed save
 
-![Annotated rejected charge showing the unchanged 44.00 balance, attempted 999.00 charge, and insufficient-balance message.](usage/images/14-insufficient-balance.png)
+A charge can exceed the current balance. Charging `999.00` from a balance of `44.00` saves a new balance of `−955.00`. You can continue charging a customer whose balance is already negative. Deposits increase the balance toward zero or above it.
 
-1. Check the unchanged balance at **1**.
-2. Check the entered amount at **2**. Here, a charge of `999.00` exceeds the `44.00` balance.
-3. Read the error at **3**, then correct the amount or record a deposit after receiving payment.
-
-A rejected charge does not change the balance or add a transaction.
+Enter a positive amount with at most two decimal places. An invalid amount does not change the balance or add a transaction.
 
 If a file write fails, the app restores the previous balance and shows an error. Restore write access or file availability before retrying. If the file changed outside the app, reopen the latest file rather than overwriting it. If a file cannot open, check that it is a compatible database and that you granted write access.
 

@@ -17,6 +17,10 @@ it("migrates a version one database without losing its ledger or settings", asyn
     INSERT INTO entries VALUES('charge','aino',-200,'Tea','2026-11-11',NULL);
     INSERT INTO entries VALUES('undo','aino',200,'Undo Tea','2026-11-11','charge');
     INSERT INTO presets VALUES('tea','Tea',200);
+    CREATE TABLE customer_metadata(customer_id TEXT PRIMARY KEY REFERENCES customers(id), osakunta TEXT NOT NULL, note TEXT NOT NULL);
+    INSERT INTO customer_metadata VALUES('aino','ESO','Remember tea');
+    CREATE TABLE product_details(id TEXT PRIMARY KEY, description TEXT NOT NULL, image TEXT NOT NULL);
+    INSERT INTO product_details VALUES('tea','Hot tea','data:image/png;base64,YQ==');
   `);
   const original = db.export();
   db.close();
@@ -26,10 +30,14 @@ it("migrates a version one database without losing its ledger or settings", asyn
   expect(previous.customers[0].balance).toBe(1000);
   expect(previous.entries).toHaveLength(3);
   expect(previous.branding.organization).toBe("Testiosakunta");
+  expect(previous.customers[0]).toMatchObject({ osakunta: "ESO", note: "Remember tea" });
+  expect(previous.products[0]).toMatchObject({ description: "Hot tea", image: "data:image/png;base64,YQ==" });
   await ledger.startEvent("Uusi juhla");
-  await ledger.post({ customerId: "aino", cents: 300, kind: "deposit", label: "Cash" });
+  expect(ledger.snapshot().customers[0]).toMatchObject({ balance: 0, osakunta: "ESO", note: "Remember tea" });
+  expect(ledger.snapshot().products).toEqual(previous.products);
+  await ledger.post({ customerId: "aino", cents: 300, kind: "charge", label: "Tea" });
   const reopened = await Ledger.open(ledger.export());
   expect(reopened.snapshot(previous.event.id)).toEqual(previous);
-  expect(reopened.snapshot().customers[0].balance).toBe(300);
+  expect(reopened.snapshot().customers[0].balance).toBe(-300);
   expect((await Ledger.open(original)).snapshot()).toEqual(previous);
 });

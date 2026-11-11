@@ -259,11 +259,14 @@ function CashierApp() {
             selectionRevision={selectionRevision}
             customer={customer}
             entries={entries}
-            presets={data?.presets ?? []}
+            products={data?.products ?? []}
             busy={busy}
             error={modal ? "" : error}
             setError={setError}
             onPost={(input) => mutation.mutateAsync(() => ledger.post(input))}
+            onSaveNote={(customerId, note) =>
+              mutation.mutateAsync(() => ledger.saveCustomerNote(customerId, note))
+            }
             onReverse={(entry) => {
               setError("");
               setModal({
@@ -333,9 +336,9 @@ function CashierApp() {
                 {modal?.kind === "customer" && (
                   <AddCustomerForm
                     busy={busy}
-                    save={async (name) => {
+                    save={async (name, osakunta) => {
                       await mutation.mutateAsync(() =>
-                        ledger?.addCustomer(name, ""),
+                        ledger?.addCustomer(name, "", osakunta),
                       );
                       setModal(undefined);
                     }}
@@ -348,11 +351,11 @@ function CashierApp() {
                     saveBranding={(value) =>
                       mutation.mutateAsync(() => ledger.saveBranding(value))
                     }
-                    savePreset={(value) =>
-                      mutation.mutateAsync(() => ledger.savePreset(value))
+                    saveProduct={(value) =>
+                      mutation.mutateAsync(() => ledger.saveProduct(value))
                     }
-                    removePreset={(id) =>
-                      mutation.mutateAsync(() => ledger.removePreset(id))
+                    removeProduct={(id) =>
+                      mutation.mutateAsync(() => ledger.removeProduct(id))
                     }
                     files={fileControls}
                   />

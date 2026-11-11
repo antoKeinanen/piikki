@@ -11,6 +11,7 @@ import {
 import { type Customer, formatAmount } from "../../ledger";
 const columns: ColumnDef<Customer>[] = [
   { accessorKey: "name" },
+  { accessorKey: "osakunta" },
   { accessorKey: "balance" },
 ];
 export function CustomerTable({
@@ -64,6 +65,11 @@ export function CustomerTable({
                 Nimi
               </button>
             </Table.ColumnHeader>
+            <Table.ColumnHeader aria-sort={sorting[0]?.id === "osakunta" ? (sorting[0].desc ? "descending" : "ascending") : "none"}>
+              <button onClick={() => table.getColumn("osakunta")?.toggleSorting()}>
+                Osakunta
+              </button>
+            </Table.ColumnHeader>
             <Table.ColumnHeader textAlign="right" aria-sort={sorting[0]?.id === "balance" ? (sorting[0].desc ? "descending" : "ascending") : "none"}>
               <button
                 onClick={() => table.getColumn("balance")?.toggleSorting()}
@@ -94,6 +100,7 @@ export function CustomerTable({
                   </span>
                 </button>
               </Table.Cell>
+              <Table.Cell>{row.original.osakunta}</Table.Cell>
               <Table.Cell
                 textAlign="right"
                 fontWeight="600"

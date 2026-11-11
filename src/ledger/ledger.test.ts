@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { Ledger } from "./ledger";
+import initSqlJs from "sql.js";
 
 describe("cashier ledger", () => {
   it("persists deposits, charges and exactly one reversal through SQLite export", async () => {
@@ -26,34 +27,79 @@ describe("cashier ledger", () => {
     expect(reopened.snapshot().customers[0].balance).toBe(2000);
     expect(reopened.snapshot().entries).toHaveLength(3);
   });
-  it("rejects overdrafts and reversal of spent deposits without changing the database", async () => {
-    const ledger = await Ledger.open();
+  it("charges from zero and below zero and reverses spent deposits after reopening", async () => {
+    let ledger = await Ledger.open();
     await ledger.addCustomer("Aino", "");
     const id = ledger.snapshot().customers[0].id;
-    await ledger.post({
-      customerId: id,
-      cents: 500,
-      kind: "deposit",
-      label: "Cash",
-    });
+    const post = (cents: number, kind: "charge" | "deposit") =>
+      ledger.post({ customerId: id, cents, kind, label: kind });
+    await post(500, "charge");
+    expect(ledger.snapshot().customers[0].balance).toBe(-500);
+    await post(400, "charge");
+    expect(ledger.snapshot().customers[0].balance).toBe(-900);
+    await post(300, "deposit");
     const deposit = ledger.snapshot().entries[0];
-    await ledger.post({
-      customerId: id,
-      cents: 400,
-      kind: "charge",
-      label: "Tea",
-    });
-    await expect(
-      ledger.post({
-        customerId: id,
-        cents: 101,
-        kind: "charge",
-        label: "Snack",
-      }),
-    ).rejects.toThrow();
-    await expect(ledger.reverse(deposit.id)).rejects.toThrow();
-    expect(ledger.snapshot().customers[0].balance).toBe(100);
-    expect(ledger.snapshot().entries).toHaveLength(2);
+    expect(ledger.snapshot().customers[0].balance).toBe(-600);
+    ledger = await Ledger.open(ledger.export());
+    expect(ledger.snapshot().customers[0].balance).toBe(-600);
+    await ledger.reverse(deposit.id);
+    expect(ledger.snapshot().customers[0].balance).toBe(-900);
+    await expect(ledger.reverse(deposit.id)).rejects.toThrow("cannot be reversed");
+    await expect(ledger.reverse(ledger.snapshot().entries[0].id)).rejects.toThrow("cannot be reversed");
+    const charge = ledger.snapshot().entries.find((entry) => entry.cents === -400);
+    if (!charge) throw new Error("Charge missing");
+    await ledger.reverse(charge.id);
+    const reopened = await Ledger.open(ledger.export());
+    expect(reopened.snapshot().customers[0].balance).toBe(-500);
+    expect(reopened.snapshot().entries).toHaveLength(5);
+  });
+  it.each([0, -1, 1.5, NaN, Infinity, 1000000000, Number.MAX_SAFE_INTEGER + 1])(
+    "rejects invalid amount %s without changing a negative account",
+    async (cents) => {
+      const ledger = await Ledger.open();
+      await ledger.addCustomer("Aino", "");
+      const customerId = ledger.snapshot().customers[0].id;
+      await ledger.post({ customerId, cents: 100, kind: "charge", label: "Tea" });
+      const before = ledger.snapshot();
+      for (const kind of ["charge", "deposit"] as const) {
+        await expect(ledger.post({ customerId, cents, kind, label: "Invalid" })).rejects.toThrow();
+      }
+      await expect(ledger.post({ customerId: "missing", cents: 100, kind: "charge", label: "Invalid" })).rejects.toThrow("Customer no longer exists");
+      await expect(ledger.reverse("missing")).rejects.toThrow("cannot be reversed");
+      expect(ledger.snapshot()).toEqual(before);
+    },
+  );
+  it("allows reversal of a spent deposit to take a positive balance below zero", async () => {
+    const ledger = await Ledger.open();
+    await ledger.addCustomer("Aino", "");
+    const customerId = ledger.snapshot().customers[0].id;
+    await ledger.post({ customerId, cents: 500, kind: "deposit", label: "Cash" });
+    const deposit = ledger.snapshot().entries[0];
+    await ledger.post({ customerId, cents: 400, kind: "charge", label: "Tea" });
+    await ledger.reverse(deposit.id);
+    const reopened = await Ledger.open(ledger.export());
+    expect(reopened.snapshot().customers[0].balance).toBe(-400);
+    expect(reopened.snapshot().entries).toHaveLength(3);
+  });
+  it.each([
+    "UPDATE entries SET cents=-1.5 WHERE reversal_of IS NULL",
+    "UPDATE entries SET cents=-9007199254740992 WHERE reversal_of IS NULL",
+    "UPDATE entries SET cents=-101 WHERE reversal_of IS NOT NULL",
+    "UPDATE entries SET customer_id='missing' WHERE reversal_of IS NULL",
+  ])("rejects corrupt imported account data after %s", async (sql) => {
+    const ledger = await Ledger.open();
+    await ledger.addCustomer("Aino", "");
+    const customerId = ledger.snapshot().customers[0].id;
+    await ledger.post({ customerId, cents: 100, kind: "charge", label: "Tea" });
+    await ledger.reverse(ledger.snapshot().entries[0].id);
+    const SQL = await initSqlJs();
+    const db = new SQL.Database(ledger.export());
+    try {
+      db.run(sql);
+      await expect(Ledger.open(db.export())).rejects.toThrow("Could not open this database");
+    } finally {
+      db.close();
+    }
   });
   it("rejects incompatible files", async () => {
     await expect(Ledger.open(new Uint8Array([1, 2, 3]))).rejects.toThrow();
@@ -98,7 +144,7 @@ describe("direct persistence", () => {
     });
     const charge = {
       customerId: id,
-      cents: 850,
+      cents: 2850,
       kind: "charge",
       label: "Charge",
     } as const;
@@ -108,7 +154,7 @@ describe("direct persistence", () => {
     fails = false;
     await ledger.post(charge);
     const reopened = await Ledger.open(saved);
-    expect(reopened.snapshot().customers[0].balance).toBe(1150);
+    expect(reopened.snapshot().customers[0].balance).toBe(-850);
     expect(reopened.snapshot().entries).toHaveLength(2);
   });
 });
@@ -151,7 +197,7 @@ it("requires names and keeps previous event transactions separate after export",
   await expect(Ledger.create({ name: "   " })).rejects.toThrow();
   const ledger = await Ledger.create({ name: "  Syysjuhla  " });
   await ledger.addCustomer("Aino", "1");
-  await ledger.savePreset({ id: "tea", name: "Tea", cents: 200 });
+  await ledger.saveProduct({ id: "tea", name: "Tea", cents: 200, description: "", image: "" });
   const previous = ledger.snapshot();
   const customerId = previous.customers[0].id;
   await ledger.post({ customerId, cents: 1000, kind: "deposit", label: "Cash" });
@@ -161,13 +207,14 @@ it("requires names and keeps previous event transactions separate after export",
   await ledger.startEvent("Talvijuhla");
   expect(ledger.snapshot().customers[0].balance).toBe(0);
   expect(ledger.snapshot().entries).toEqual([]);
-  expect(ledger.snapshot().presets).toEqual(previous.presets);
+  expect(ledger.snapshot().products).toEqual(previous.products);
   await expect(ledger.reverse(deposit.id)).rejects.toThrow();
-  await expect(ledger.post({ customerId, cents: 100, kind: "charge", label: "Tea" })).rejects.toThrow();
+  await ledger.post({ customerId, cents: 100, kind: "charge", label: "Tea" });
+  expect(ledger.snapshot().customers[0].balance).toBe(-100);
   await ledger.post({ customerId, cents: 500, kind: "deposit", label: "Cash" });
   const reopened = await Ledger.open(ledger.export());
   expect(reopened.latestEvent().name).toBe("Talvijuhla");
-  expect(reopened.snapshot().customers[0].balance).toBe(500);
+  expect(reopened.snapshot().customers[0].balance).toBe(400);
   expect(reopened.snapshot(previous.event.id).customers[0].balance).toBe(1000);
   expect(reopened.snapshot(previous.event.id).entries).toEqual([deposit]);
 });
