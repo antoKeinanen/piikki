@@ -39,11 +39,11 @@ it("writes a real SQLite file and rejects external edits without losing the curr
     await ledger.post({
       customerId: id,
       cents: 2000,
-      kind: "deposit",
-      label: "Deposit",
+      kind: "charge",
+      label: "Charge",
     });
     const reopened = await Ledger.open(new Uint8Array(await readFile(path)));
-    expect(reopened.snapshot().customers[0].balance).toBe(2000);
+    expect(reopened.snapshot().customers[0].balance).toBe(-2000);
     await reopened.post({
       customerId: id,
       cents: 100,
@@ -59,9 +59,9 @@ it("writes a real SQLite file and rejects external edits without losing the curr
         label: "Charge",
       }),
     ).rejects.toThrow("changed outside this app");
-    expect(ledger.snapshot().customers[0].balance).toBe(2000);
+    expect(ledger.snapshot().customers[0].balance).toBe(-2000);
     const external = await Ledger.open(new Uint8Array(await readFile(path)));
-    expect(external.snapshot().customers[0].balance).toBe(1900);
+    expect(external.snapshot().customers[0].balance).toBe(-2100);
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
