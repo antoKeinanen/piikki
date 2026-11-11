@@ -3,7 +3,7 @@ export const CustomerSchema = z.object({
   id: z.string(),
   name: z.string().min(1),
   reference: z.string(),
-  balance: z.number().int().nonnegative(),
+  balance: z.number().int(),
 });
 export type Customer = z.infer<typeof CustomerSchema>;
 export const EntrySchema = z.object({

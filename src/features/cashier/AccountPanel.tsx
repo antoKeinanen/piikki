@@ -58,8 +58,6 @@ export function AccountPanel({
     if (!customer || busy) return;
     try {
       const cents = product?.cents ?? parseAmount(amount);
-      if (kind === "charge" && cents > customer.balance)
-        throw new Error("Saldo ei riitä veloitukseen.");
       setError("");
       void onPost({
         customerId: customer.id,
@@ -123,7 +121,7 @@ export function AccountPanel({
                   variant="outline"
                   className="product-charge"
                   aria-label={`Veloita ${p.name} ${formatAmount(p.cents)}`}
-                  disabled={busy || p.cents > customer.balance}
+                  disabled={busy}
                   onClick={() => post("charge", p)}
                 >
                   {p.image && <img className="product-thumbnail" src={p.image} alt="" />}
