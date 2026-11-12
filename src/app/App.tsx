@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { Box, Button, Dialog, Portal, Text } from "@chakra-ui/react";
 import { useLedgerSession } from "./useLedgerSession";
 import {
@@ -13,6 +13,10 @@ import { brandingStyle } from "../features/branding/theme";
 import { CompatibilityBlock } from "../features/database/CompatibilityBlock";
 import { BrandingForm } from "../features/branding/BrandingForm";
 import { Settings } from "./Settings";
+// Charts are only needed on the statistics view, so keep them out of the first load.
+const EventStats = lazy(() =>
+  import("./EventStats").then((module) => ({ default: module.EventStats })),
+);
 import { CustomerTable } from "../features/cashier/CustomerTable";
 import { AccountPanel } from "../features/cashier/AccountPanel";
 import { AddCustomerForm } from "../features/cashier/AddCustomerForm";
@@ -49,9 +53,11 @@ function CashierApp() {
   const fileName = active.kind === "active" ? active.name : "";
   function activate(next: { ledger: Ledger; name: string }) {
     activateSession(next);
+    setView("cashier");
     setModal(undefined);
   }
   const [selected, setSelected] = useState<string>();
+  const [view, setView] = useState<"cashier" | "stats">("cashier");
   const [modal, setModal] = useState<Modal>();
   const [dragging, setDragging] = useState(false);
 
@@ -224,6 +230,16 @@ function CashierApp() {
         )}
         <span className="wordmark">Piikki</span>
         {data && <span className="event-name">{data.event.name}</span>}
+        {ledger && (
+          <Button
+            variant="ghost"
+            className="view-switch"
+            disabled={busy}
+            onClick={() => setView(view === "stats" ? "cashier" : "stats")}
+          >
+            {view === "stats" ? "Kassa" : "Tilastot"}
+          </Button>
+        )}
       </header>
       {!ledger ? (
         <Welcome
@@ -235,6 +251,13 @@ function CashierApp() {
             setModal({ kind: "onboarding" });
           }}
         />
+      ) : view === "stats" ? (
+        <Suspense fallback={null}>
+          <EventStats
+            ledger={ledger}
+            revision={active.kind === "active" ? active.revision : 0}
+          />
+        </Suspense>
       ) : (
         <main className="workspace">
           <CustomerTable

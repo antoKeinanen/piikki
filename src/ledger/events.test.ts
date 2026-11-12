@@ -41,3 +41,10 @@ it("migrates a version one database without losing its ledger or settings", asyn
   expect(reopened.snapshot().customers[0].balance).toBe(-300);
   expect((await Ledger.open(original)).snapshot()).toEqual(previous);
 });
+
+it("lists events from oldest to newest", async () => {
+  const ledger = await Ledger.create({ name: "Alkujuhla" });
+  await ledger.startEvent("Toinen juhla");
+  expect(ledger.events().map((event) => event.name)).toEqual(["Alkujuhla", "Toinen juhla"]);
+  expect(ledger.events().at(-1)).toEqual(ledger.latestEvent());
+});
