@@ -564,3 +564,76 @@ it("keeps a product draft after a failed save and retries without duplicates", a
   await waitFor(() => expect(ledger.snapshot().products).toHaveLength(1));
   await waitFor(() => expect(screen.getByLabelText("Tuotteen nimi").getAttribute("value")).toBe(""));
 });
+it("shows statistics per event and switches back to the cashier", async () => {
+  const ledger = await createExample();
+  const aino = ledger.snapshot().customers.find((c) => c.reference === "1001");
+  if (!aino) throw new Error("Example customer missing");
+  const post = (label: string, cents: number) =>
+    ledger.post({ customerId: aino.id, cents, label, kind: "charge" });
+  await post("Lounas", 850);
+  await post("Lounas", 850);
+  await post("Kahvi", 250);
+  const undone = ledger.snapshot().entries.find((e) => e.label === "Kahvi");
+  if (!undone) throw new Error("Charge missing");
+  await ledger.reverse(undone.id);
+  await ledger.startEvent("Uusi juhla");
+  vi.spyOn(fileAccess, "fileAccessProblem").mockReturnValue(undefined);
+  vi.spyOn(fileAccess, "supportsDirectFiles").mockReturnValue(true);
+  vi.spyOn(fileAccess, "pickDatabase").mockResolvedValue({
+    ledger,
+    name: "example.sqlite",
+  });
+  mount();
+  fireEvent.click(screen.getByRole("button", { name: "Avaa tietokanta" }));
+  await continueEvent();
+  await screen.findByLabelText("Saldo");
+  fireEvent.click(screen.getByRole("button", { name: "Tilastot" }));
+  const tiles = () =>
+    Object.fromEntries(
+      [...document.querySelectorAll(".stat-tile")].map((tile) => [
+        tile.querySelector(".stat-label")?.textContent,
+        tile.querySelector(".stat-value")?.textContent,
+      ]),
+    );
+  const comparison = () =>
+    [...document.querySelectorAll(".chart-table-plain tbody tr")].map((row) => [
+      row.querySelector("th")?.textContent,
+      row.getAttribute("aria-current"),
+    ]);
+  await screen.findByText("Tässä tapahtumassa ei ole vielä myyntiä.");
+  expect(tiles()).toMatchObject({ Myynti: "0,00", Ostoja: "0", Ostajia: "0", Velkaa: "0,00" });
+  expect(screen.queryByRole("heading", { name: "Tuotteet" })).toBeNull();
+  expect(comparison()).toEqual([
+    ["Uusi juhla", "true"],
+    ["Ensimmäinen tapahtuma", null],
+  ]);
+  const select = screen.getByLabelText("Tapahtuma");
+  expect([...select.querySelectorAll("option")].map((o) => o.textContent)).toEqual([
+    "Uusi juhla",
+    "Ensimmäinen tapahtuma",
+  ]);
+  fireEvent.change(select, {
+    target: { value: ledger.events()[0].id },
+  });
+  await screen.findByRole("heading", { name: "Tuotteet" });
+  expect(tiles()).toEqual({
+    Myynti: "17,00",
+    Ostoja: "2",
+    Keskiosto: "8,50",
+    Ostajia: "1",
+    "Saldoa lisätty": "231,50",
+    "Saldoa jäljellä": "214,50",
+    Velkaa: "0,00",
+    "Perutut ostot": "1",
+  });
+  expect(comparison()[1]).toEqual(["Ensimmäinen tapahtuma", "true"]);
+  const products = screen.getByLabelText("Myynti tuotteittain").textContent;
+  expect(products).toContain("Lounas");
+  expect(products).toContain("2 kpl");
+  expect(products).not.toContain("Kahvi");
+  expect(screen.getByLabelText("Eniten ostaneet henkilöt").textContent).toContain("Aino Korhonen");
+  expect(screen.getByText("Näytä taulukkona")).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "Kassa" }));
+  expect(await screen.findByLabelText("Saldo")).toBeTruthy();
+  expect(document.querySelector(".stats")).toBeNull();
+});

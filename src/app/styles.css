@@ -646,3 +646,89 @@ input::placeholder {
   color: var(--muted);
   font-size: 16px;
 }
+
+.view-switch { align-self: center; }
+
+.stats {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+.stats-filter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 28px;
+}
+.stats h1,
+.stat-section h2 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.stats-filter select {
+  border-color: var(--line);
+  background: var(--accent);
+  color: var(--ink);
+}
+.stat-tiles {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+.stat-tile { padding: 18px 20px 16px 0; }
+.stat-label { color: var(--muted); font-size: 14px; }
+.stat-value {
+  margin-top: 4px;
+  font-size: 30px;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+}
+.stat-note-line { color: var(--muted); font-size: 13px; }
+.stat-panels {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 440px), 1fr));
+  column-gap: 48px;
+}
+.stat-section { margin-top: 36px; min-width: 0; }
+.stat-wide { grid-column: 1 / -1; }
+.stat-hint { margin: 4px 0 14px; color: var(--muted); font-size: 14px; }
+.stat-panels > .empty-history { grid-column: 1 / -1; margin-top: 36px; }
+.chart-value { fill: var(--ink); font-size: 12px; }
+.chart-table { margin-top: 12px; font-size: 14px; }
+.chart-table summary { cursor: pointer; color: var(--muted); }
+.chart-table table,
+.chart-table-plain {
+  width: 100%;
+  margin-top: 8px;
+  border-collapse: collapse;
+}
+.chart-table-plain { margin-top: 16px; }
+.chart-table th,
+.chart-table td,
+.chart-table-plain th,
+.chart-table-plain td {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  font-weight: 400;
+}
+.chart-table thead th,
+.chart-table-plain thead th { color: var(--muted); font-size: 13px; }
+.chart-table .number,
+.chart-table-plain .number {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.chart-table-plain tr[aria-current="true"] th,
+.chart-table-plain tr[aria-current="true"] td { font-weight: 600; }
+.stats-note { margin-top: 36px; color: var(--muted); font-size: 13px; }
+@media (max-width: 800px) {
+  .stat-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .stat-tile { padding-right: 12px; }
+  .stat-value { font-size: 26px; }
+}

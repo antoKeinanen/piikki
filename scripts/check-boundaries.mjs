@@ -8,8 +8,9 @@ const group = (name) => name.startsWith('features/')
   ? name.split('/').slice(0, 2).join('/') : name.split('/')[0];
 const dependencies = {
   'main.tsx': ['app'],
-  app: ['ledger', 'persistence', 'features/cashier', 'features/branding', 'features/products', 'features/database'],
+  app: ['ledger', 'persistence', 'features/analytics', 'features/cashier', 'features/branding', 'features/products', 'features/database'],
   persistence: ['ledger'],
+  'features/analytics': ['ledger'],
   'features/cashier': ['ledger'],
   'features/branding': ['ledger'],
   'features/products': ['ledger'],

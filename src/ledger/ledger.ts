@@ -68,6 +68,11 @@ export class Ledger {
     ledger.db.run("UPDATE events SET name=? WHERE id='initial'", [eventName]);
     return ledger;
   }
+  events() {
+    return this.rows("SELECT * FROM events ORDER BY rowid").map((row) =>
+      LedgerEventSchema.parse(row),
+    );
+  }
   latestEvent() {
     return LedgerEventSchema.parse(this.rows("SELECT * FROM events ORDER BY rowid DESC LIMIT 1")[0]);
   }
