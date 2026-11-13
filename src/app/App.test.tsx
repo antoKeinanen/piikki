@@ -146,7 +146,13 @@ it("charges immediately, hides IDs and filenames, and opens branding settings", 
   const row = screen.getByText("4,25").closest(".product-row");
   if (!(row instanceof HTMLElement)) throw new Error("Preset row missing");
   fireEvent.click(within(row).getByRole("button", { name: "Muokkaa" }));
-  fireEvent.change(screen.getByLabelText("Nimikkeen summa"), { target: { value: "4.50" } });
+  const item = row.closest(".product-item");
+  if (!(item instanceof HTMLElement)) throw new Error("Preset item missing");
+  expect(item.classList.contains("editing")).toBe(true);
+  expect(within(row).getByText("Muokataan")).toBeTruthy();
+  expect(within(item).getByLabelText("Nimikkeen nimi")).toBe(document.activeElement);
+  expect(screen.queryByRole("button", { name: "Lisää nimike" })).toBeNull();
+  fireEvent.change(within(item).getByLabelText("Nimikkeen summa"), { target: { value: "4.50" } });
   fireEvent.click(screen.getByRole("button", { name: "Tallenna nimike" }));
   await waitFor(() => expect(ledger.snapshot().products.find((p) => p.id === preset.id)?.cents).toBe(450));
   preset.cents = 450;
@@ -811,6 +817,29 @@ it("opens product categories before their products", async () => {
   fireEvent.click(screen.getByRole("button", { name: /Takaisin/ }));
   fireEvent.change(screen.getByLabelText("Hae nimikettä"), { target: { value: "lonk" } });
   expect(screen.getByRole("button", { name: "Veloita Lonkero 3,50" })).toBeTruthy();
+});
+
+it("reuses an existing product category with one tap", async () => {
+  const ledger = await createExample();
+  await ledger.saveProduct({ id: "olut", name: "Olut", cents: 300, description: "", image: "", category: "Tölkki" });
+  vi.spyOn(fileAccess, "fileAccessProblem").mockReturnValue(undefined);
+  vi.spyOn(fileAccess, "supportsDirectFiles").mockReturnValue(true);
+  vi.spyOn(fileAccess, "pickDatabase").mockResolvedValue({ ledger, name: "example.sqlite" });
+  mount();
+  fireEvent.click(screen.getByRole("button", { name: "Avaa tietokanta" }));
+  await continueEvent();
+  fireEvent.click(await screen.findByRole("button", { name: "Asetukset" }));
+  fireEvent.click(await screen.findByRole("tab", { name: "Nimikkeet" }));
+  fireEvent.change(await screen.findByLabelText("Nimikkeen nimi"), { target: { value: "Siideri" } });
+  fireEvent.change(screen.getByLabelText("Nimikkeen summa"), { target: { value: "3.50" } });
+  const chips = screen.getByRole("group", { name: "Aiemmat kategoriat" });
+  fireEvent.click(within(chips).getByRole("button", { name: "Tölkki" }));
+  expect(screen.getByLabelText("Kategoria (valinnainen)").getAttribute("value")).toBe("Tölkki");
+  expect(within(chips).getByRole("button", { name: "Tölkki" }).getAttribute("aria-pressed")).toBe("true");
+  fireEvent.click(screen.getByRole("button", { name: "Lisää nimike" }));
+  await waitFor(() =>
+    expect(ledger.snapshot().products.find((p) => p.name === "Siideri")?.category).toBe("Tölkki"),
+  );
 });
 
 it("logs out, closing the database and forgetting the operator", async () => {
