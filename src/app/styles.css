@@ -492,6 +492,61 @@ input::placeholder {
   font-size: 12px;
   color: var(--muted);
 }
+.product-item.editing {
+  border-left: 3px solid var(--indicator, var(--ink));
+  padding-left: 14px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+}
+.product-item.editing > .product-row > span:not(.product-editing-badge) {
+  font-weight: 600;
+}
+.product-row > .product-editing-badge {
+  flex: none;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0 12px;
+}
+.product-edit-panel {
+  padding: 20px 0 24px;
+}
+.product-new {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.product-section-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.category-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+.category-chip {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink);
+  font-size: 13px;
+  padding: 6px 14px;
+}
+.category-chip:hover:not(:disabled) {
+  border-color: var(--indicator, var(--ink));
+}
+.category-chip.selected {
+  border-color: var(--indicator, var(--ink));
+  box-shadow: inset 0 0 0 1px var(--indicator, var(--ink));
+  font-weight: 600;
+}
 .product-thumbnail {
   width: 40px;
   height: 40px;
