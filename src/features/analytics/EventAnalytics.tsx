@@ -112,8 +112,8 @@ export function EventAnalytics({
         )}
       </div>
       <Text className="stats-note">
-        Luvuissa ei ole mukana peruttuja ostoja eikä niiden hyvityksiä. Saldo ja velka koskevat
-        vain valittua tapahtumaa.
+        Luvuissa ei ole mukana peruttuja ostoja eikä niiden hyvityksiä. Saldo ja velka ovat
+        tilanne valitun tapahtuman lopussa, ja niihin sisältyvät aiemmat tapahtumat.
       </Text>
     </main>
   );

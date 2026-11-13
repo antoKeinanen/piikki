@@ -128,7 +128,9 @@ export class Ledger {
       customers: this.rows(
         `SELECT c.*, ${hasMetadata ? "COALESCE(m.osakunta,'') osakunta, COALESCE(m.note,'') note," : ""} COALESCE(SUM(e.cents),0) balance
          FROM customers c ${hasMetadata ? "LEFT JOIN customer_metadata m ON m.customer_id=c.id" : ""}
-         LEFT JOIN entries e ON e.customer_id=c.id AND e.event_id=? GROUP BY c.id ORDER BY c.name COLLATE NOCASE`, [event.id],
+         LEFT JOIN entries e ON e.customer_id=c.id
+           AND e.event_id IN (SELECT id FROM events WHERE rowid <= (SELECT rowid FROM events WHERE id=?))
+         GROUP BY c.id ORDER BY c.name COLLATE NOCASE`, [event.id],
       ).map((row) => CustomerSchema.parse(row)),
       products: this.rows(hasProducts
         ? "SELECT p.*, COALESCE(d.description,'') description, COALESCE(d.image,'') image FROM presets p LEFT JOIN product_details d ON d.id=p.id ORDER BY p.rowid"

@@ -193,7 +193,7 @@ it("keeps logos with their database, supports replacement and removal, and rejec
   expect((await Ledger.open(reopened.export())).snapshot().branding.logo).toBeUndefined();
 });
 
-it("requires names and keeps previous event transactions separate after export", async () => {
+it("requires names and keeps previous event transactions separate while balances carry over", async () => {
   await expect(Ledger.create({ name: "   " })).rejects.toThrow();
   const ledger = await Ledger.create({ name: "  Syysjuhla  " });
   await ledger.addCustomer("Aino", "1");
@@ -205,16 +205,16 @@ it("requires names and keeps previous event transactions separate after export",
   await expect(ledger.startEvent("  ")).rejects.toThrow();
   expect(ledger.latestEvent().name).toBe("Syysjuhla");
   await ledger.startEvent("Talvijuhla");
-  expect(ledger.snapshot().customers[0].balance).toBe(0);
+  expect(ledger.snapshot().customers[0].balance).toBe(1000);
   expect(ledger.snapshot().entries).toEqual([]);
   expect(ledger.snapshot().products).toEqual(previous.products);
   await expect(ledger.reverse(deposit.id)).rejects.toThrow();
   await ledger.post({ customerId, cents: 100, kind: "charge", label: "Tea" });
-  expect(ledger.snapshot().customers[0].balance).toBe(-100);
+  expect(ledger.snapshot().customers[0].balance).toBe(900);
   await ledger.post({ customerId, cents: 500, kind: "deposit", label: "Cash" });
   const reopened = await Ledger.open(ledger.export());
   expect(reopened.latestEvent().name).toBe("Talvijuhla");
-  expect(reopened.snapshot().customers[0].balance).toBe(400);
+  expect(reopened.snapshot().customers[0].balance).toBe(1400);
   expect(reopened.snapshot(previous.event.id).customers[0].balance).toBe(1000);
   expect(reopened.snapshot(previous.event.id).entries).toEqual([deposit]);
 });

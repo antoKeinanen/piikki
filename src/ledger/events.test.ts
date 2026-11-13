@@ -33,12 +33,13 @@ it("migrates a version one database without losing its ledger or settings", asyn
   expect(previous.customers[0]).toMatchObject({ osakunta: "ESO", note: "Remember tea" });
   expect(previous.products[0]).toMatchObject({ description: "Hot tea", image: "data:image/png;base64,YQ==" });
   await ledger.startEvent("Uusi juhla");
-  expect(ledger.snapshot().customers[0]).toMatchObject({ balance: 0, osakunta: "ESO", note: "Remember tea" });
+  expect(ledger.snapshot().customers[0]).toMatchObject({ balance: 1000, osakunta: "ESO", note: "Remember tea" });
   expect(ledger.snapshot().products).toEqual(previous.products);
   await ledger.post({ customerId: "aino", cents: 300, kind: "charge", label: "Tea" });
   const reopened = await Ledger.open(ledger.export());
   expect(reopened.snapshot(previous.event.id)).toEqual(previous);
-  expect(reopened.snapshot().customers[0].balance).toBe(-300);
+  expect(reopened.snapshot().customers[0].balance).toBe(700);
+  expect(reopened.snapshot().entries).toHaveLength(1);
   expect((await Ledger.open(original)).snapshot()).toEqual(previous);
 });
 
@@ -47,4 +48,16 @@ it("lists events from oldest to newest", async () => {
   await ledger.startEvent("Toinen juhla");
   expect(ledger.events().map((event) => event.name)).toEqual(["Alkujuhla", "Toinen juhla"]);
   expect(ledger.events().at(-1)).toEqual(ledger.latestEvent());
+});
+
+it("carries balances over from earlier events but not from later ones", async () => {
+  const ledger = await Ledger.create({ name: "Alkujuhla" });
+  await ledger.addCustomer("Aino", "1001");
+  const customerId = ledger.snapshot().customers[0].id;
+  const first = ledger.latestEvent().id;
+  await ledger.post({ customerId, cents: 1000, kind: "deposit", label: "" });
+  await ledger.startEvent("Toinen juhla");
+  await ledger.post({ customerId, cents: 250, kind: "charge", label: "Tea" });
+  expect(ledger.snapshot().customers[0].balance).toBe(750);
+  expect(ledger.snapshot(first).customers[0].balance).toBe(1000);
 });

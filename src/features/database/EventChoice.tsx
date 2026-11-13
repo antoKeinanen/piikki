@@ -15,7 +15,7 @@ export function EventChoice({ previousName, busy, onContinue, onCreate }: {
         <Button disabled={busy} onClick={onContinue} whiteSpace="normal" height="auto" minH="10" py="2" overflowWrap="anywhere">
           Jatka tapahtumaa {previousName}
         </Button>
-        <Text>Uusi tapahtuma aloittaa saldot nollasta. Aiemmat tapahtumat säilyvät tietokannassa.</Text>
+        <Text>Saldot jatkuvat edellisestä tapahtumasta. Aiemmat tapahtumat säilyvät tietokannassa.</Text>
       </>}
       <form onSubmit={(event) => {
         event.preventDefault();

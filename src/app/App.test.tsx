@@ -405,7 +405,7 @@ it("preserves the active database when opening a replacement is cancelled", asyn
   expect(ledger.snapshot().customers[0].balance).toBe(4250);
 });
 
-it("shows the previous event name and creates a named event with fresh balances", async () => {
+it("shows the previous event name and creates a named event that keeps the previous balances", async () => {
   const ledger = await createExample();
   const previous = ledger.snapshot();
   vi.spyOn(fileAccess, "fileAccessProblem").mockReturnValue(undefined);
@@ -421,7 +421,7 @@ it("shows the previous event name and creates a named event with fresh balances"
   expect(create.hasAttribute("disabled")).toBe(true);
   fireEvent.change(screen.getByLabelText("Tapahtuman nimi"), { target: { value: "  Talvijuhla  " } });
   fireEvent.click(create);
-  await waitFor(() => expect(screen.getByLabelText("Saldo").textContent).toBe("0,00"));
+  await waitFor(() => expect(screen.getByLabelText("Saldo").textContent).toBe("42,50"));
   expect(screen.getByText("Talvijuhla")).toBeTruthy();
   expect(ledger.snapshot(previous.event.id)).toEqual(previous);
   expect((await Ledger.open(ledger.export())).latestEvent().name).toBe("Talvijuhla");
@@ -446,7 +446,7 @@ it("keeps the choice and previous event after a failed event save and allows ret
   expect(screen.getByLabelText("Tapahtuman nimi").getAttribute("value")).toBe("Talvijuhla");
   fail = false;
   fireEvent.click(screen.getByRole("button", { name: "Luo uusi tapahtuma" }));
-  await waitFor(() => expect(screen.getByLabelText("Saldo").textContent).toBe("0,00"));
+  await waitFor(() => expect(screen.getByLabelText("Saldo").textContent).toBe("42,50"));
 });
 
 it("cancels the event choice without activating or changing the selected file", async () => {
