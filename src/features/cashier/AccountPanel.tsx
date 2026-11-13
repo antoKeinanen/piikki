@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Button, Field, Flex, Input, Text } from "@chakra-ui/react";
 import { CustomerNoteForm } from "./CustomerNoteForm";
 import bustedImage from "./busted.jpg";
@@ -78,6 +78,16 @@ export function AccountPanel({
       : !browsing || product.category === (openCategory ?? ""),
   );
   const shownCategories = browsing && openCategory === undefined ? categories : [];
+  // Each time the category list appears, every category shows a random photo from its products.
+  const categoryImages = useMemo(() => {
+    const images = new Map<string, string>();
+    for (const name of shownCategories) {
+      const photos = products.filter((p) => p.category === name && p.image).map((p) => p.image);
+      if (photos.length) images.set(name, photos[Math.floor(Math.random() * photos.length)]);
+    }
+    return images;
+    // shownCategories is rebuilt on every render, so its contents form the key instead.
+  }, [products, shownCategories.join("\u0000"), customer?.id, selectionRevision]);
   useEffect(() => {
     // A new person always starts from a charge with an empty form.
     setAction("charge");
@@ -239,6 +249,7 @@ export function AccountPanel({
                     disabled={busy}
                     onClick={() => setCategory(name)}
                   >
+                    {categoryImages.has(name) && <img className="product-thumbnail" src={categoryImages.get(name)} alt="" />}
                     <span>
                       {name} ›
                       <small>{products.filter((p) => p.category === name).length} nimikettä</small>

@@ -819,6 +819,30 @@ it("opens product categories before their products", async () => {
   expect(screen.getByRole("button", { name: "Veloita Lonkero 3,50" })).toBeTruthy();
 });
 
+it("shows a random product photo on each category", async () => {
+  const ledger = await createExample();
+  const olut = "data:image/png;base64,T0w=";
+  const lonkero = "data:image/png;base64,TE8=";
+  await ledger.saveProduct({ id: "olut", name: "Olut", cents: 300, description: "", image: olut, category: "Tölkki" });
+  await ledger.saveProduct({ id: "lonkero", name: "Lonkero", cents: 350, description: "", image: lonkero, category: "Tölkki" });
+  await ledger.saveProduct({ id: "vesi", name: "Vesi", cents: 100, description: "", image: "", category: "Muut" });
+  vi.spyOn(fileAccess, "fileAccessProblem").mockReturnValue(undefined);
+  vi.spyOn(fileAccess, "supportsDirectFiles").mockReturnValue(true);
+  vi.spyOn(fileAccess, "pickDatabase").mockResolvedValue({ ledger, name: "example.sqlite" });
+  const random = vi.spyOn(Math, "random").mockReturnValue(0);
+  mount();
+  fireEvent.click(screen.getByRole("button", { name: "Avaa tietokanta" }));
+  await continueEvent("Aino Korhonen");
+  const photo = () => screen.getByRole("button", { name: "Kategoria Tölkki" }).querySelector("img")?.getAttribute("src");
+  expect(photo()).toBe(olut);
+  expect(screen.getByRole("button", { name: "Kategoria Muut" }).querySelector("img")).toBeNull();
+  random.mockReturnValue(0.9);
+  fireEvent.click(screen.getByRole("button", { name: "Kategoria Tölkki" }));
+  fireEvent.click(screen.getByRole("button", { name: /Takaisin/ }));
+  expect(photo()).toBe(lonkero);
+  random.mockRestore();
+});
+
 it("reuses an existing product category with one tap", async () => {
   const ledger = await createExample();
   await ledger.saveProduct({ id: "olut", name: "Olut", cents: 300, description: "", image: "", category: "Tölkki" });
