@@ -1,6 +1,6 @@
-# Use the customer balance app
+# Use the balance app
 
-Open a database, select a customer, and charge or deposit an amount. Changes save to the SQLite file automatically. Use **Lataa varmuuskopio** when you want a separate copy.
+Open a database, select a person, and charge or deposit an amount. Changes save to the SQLite file automatically. Use **Lataa varmuuskopio** when you want a separate copy.
 
 The screenshots show the current Finnish interface. The numbered circles and outlines in each screenshot identify the controls described below. Screenshots use sample accounts with a deep teal primary color and a warm ivory background (`#F7F4EC`). Amounts display two decimal places without currency symbols. Enter `8.50` to subtract 850 of the smallest credit units. You can also enter `8,50`.
 
@@ -9,7 +9,7 @@ The screenshots show the current Finnish interface. The numbered circles and out
 ![Annotated start screen showing Open database and Create database.](usage/images/01-open-database.png)
 
 1. Select **Avaa tietokanta** at callout **1** and choose an existing compatible SQLite file. Allow read and write access when the browser asks.
-2. To start with no customers, select **Luo tietokanta** at **2**. Complete the organization setup below, then choose a save location and filename.
+2. To start with no people, select **Luo tietokanta** at **2**. Complete the organization setup below, then choose a save location and filename.
 
 ![Annotated organization setup with organization name, logo, primary color, background color, and Create database.](usage/images/01b-organization-setup.png)
 
@@ -25,39 +25,39 @@ You can also drop a compatible SQLite file onto the page. The app then asks for 
 
 ## 2. Find your way around the workspace
 
-![Annotated workspace showing search and settings, selected customer, balance, quick charges, custom amount, and history.](usage/images/02-workspace.png)
+![Annotated workspace showing search and settings, selected person, balance, quick charges, custom amount, and history.](usage/images/02-workspace.png)
 
 1. Use the search field, **Lisää henkilö**, and **Asetukset** in area **1**.
-2. Select a customer in the table at **2**. The highlighted row identifies the selected account.
-3. Check the customer's name and current balance at **3** before entering a transaction.
+2. Select a person in the table at **2**. The highlighted row identifies the selected account.
+3. Check the person's name and current balance at **3** before entering a transaction.
 4. Select an amount at **4** to charge it immediately.
 5. Enter another amount at **5**, then select the labeled charge or deposit button.
 6. Review transactions at **6**. Newest entries appear first, with an **Peru** button beside entries that can be reversed.
 
-The table and account panel show the same saved balance. The app does not display customer IDs, product names, or the active filename. Select **Nimi** or **Saldo** in the table's column labels to change its sort order.
+The table and account panel show the same saved balance. The app does not display person IDs, item names, or the active filename. Select **Nimi** or **Saldo** in the table's column labels to change its sort order.
 
-## 3. Search for and select a customer
+## 3. Search for and select a person
 
 ![Annotated search result for Elias with the matching row selected and his balance displayed.](usage/images/03-find-customer.png)
 
-1. Enter part of the customer's name in the search field at **1**.
+1. Enter part of the person's name in the search field at **1**.
 2. Select the matching name at **2**.
 3. Check the name and balance at **3**. In this example, Elias has `18.00`.
 
-Typing in search filters the table. It does not select a different customer by itself. Clear the search field to show everyone again. If no names match, check the spelling or enter a shorter part of the name.
+Typing in search filters the table. It does not select a different person by itself. Clear the search field to show everyone again. If no names match, check the spelling or enter a shorter part of the name.
 
 The remaining transaction examples use Aino, whose starting balance is `42.50`.
 
-## 4. Add a customer
+## 4. Add a person
 
-![Annotated Add customer dialog with a name entered and the submit button marked.](usage/images/04-add-customer.png)
+![Annotated Add person dialog with a name entered and the submit button marked.](usage/images/04-add-customer.png)
 
 1. Select **Lisää henkilö** beside the search field.
-2. Enter the customer's name at **1**. Use a name the cashier can distinguish from other accounts.
+2. Enter the person's name at **1**. Use a name you can distinguish from other accounts.
 3. Select **Lisää henkilö** at **2** to save it. Select **Peruuta** to leave without adding anyone.
-4. Find and select the new customer in the table.
+4. Find and select the new person in the table.
 
-A new customer's balance starts at `0.00`. Use a deposit to add their initial credit. Adding a customer does not change the currently selected account. Customer names cannot currently be edited or removed through the UI.
+A new person's balance starts at `0.00`. Use a deposit to add their initial credit. Adding a person does not change the currently selected account. Names cannot currently be edited or removed through the UI.
 
 ## 5. Apply a quick charge
 
@@ -65,7 +65,7 @@ A quick-charge button subtracts its amount immediately. There is no charge confi
 
 ![Annotated completed quick charge showing the 8.50 shortcut, updated balance, and saved history entry.](usage/images/05-quick-charge.png)
 
-1. Select the customer and check their name.
+1. Select the person and check their name.
 2. In **Veloita** mode, select the `8.50` quick-charge button at **1** once.
 3. Check the updated balance at **2** and the new history entry at **3**.
 
@@ -87,11 +87,11 @@ Use a positive amount with no more than two decimal places. Zero, negative value
 
 ## 7. Record a deposit
 
-Record a deposit after receiving the customer's payment. The app records credit; it does not collect payment from a bank or card.
+Record a deposit when someone adds to their balance. The app only records balances; it does not move any money.
 
 ![Annotated deposit form with Deposit mode, an amount of 10.00, and the Deposit 10.00 button marked.](usage/images/07-deposit.png)
 
-1. Check the customer's name and select **Lisää saldoa** at **1**.
+1. Check the person's name and select **Lisää saldoa** at **1**.
 2. Enter `10.00` in **Lisättävä summa** at **2**.
 3. Select **Lisää saldoa 10,00** at **3** once.
 
@@ -99,11 +99,11 @@ The change applies without another confirmation. In this example, `31.75` become
 
 ## 8. Undo a transaction
 
-![Annotated reversal dialog identifying the customer and amount, with Reverse transaction marked.](usage/images/08-confirm-undo.png)
+![Annotated reversal dialog identifying the person and amount, with Reverse transaction marked.](usage/images/08-confirm-undo.png)
 
-1. Find the transaction in the selected customer's history.
+1. Find the transaction in the selected person's history.
 2. Select **Peru** beside that entry.
-3. Check the customer and amount in area **1**. This example reverses the custom charge of `2.25`.
+3. Check the person and amount in area **1**. This example reverses the custom charge of `2.25`.
 4. Select **Peru tapahtuma** at **2** to apply the reversal. Select **Peruuta** to leave the transaction unchanged.
 
 Undo has its own confirmation because it changes an existing transaction. Reversing a charge adds the amount back. Reversing a deposit subtracts it. A deposit can be reversed even when this makes the balance negative.
@@ -143,7 +143,7 @@ Select **Valmis** to close Settings. The browser compatibility screen displays t
 
 To change an existing amount, select **Muokkaa** beside it. Enter the replacement amount and select **Tallenna summa**. Select **Peruuta muokkaus** to leave it unchanged.
 
-Select **Valmis** and return to **Veloita** mode to use the saved shortcuts. Quick-charge settings change future buttons only. They do not alter past transactions or customer balances.
+Select **Valmis** and return to **Veloita** mode to use the saved shortcuts. Quick-charge settings change future buttons only. They do not alter past transactions or anyone's balance.
 
 ## 12. Remove and restore a quick-charge amount
 
@@ -160,7 +160,7 @@ The restore button holds only the most recently removed amount during that Setti
 ![Annotated Database settings showing the automatic-save explanation, Open database, and Download backup.](usage/images/13-save-and-backup.png)
 
 1. Open **Asetukset**, then select **Tietokanta**.
-2. Read the save behavior at **1**. Charges, deposits, reversals, settings, and new customers save to the opened file automatically.
+2. Read the save behavior at **1**. Charges, deposits, reversals, settings, and new people save to the opened file automatically.
 3. Select **Lataa varmuuskopio** at **3** when you want an additional SQLite copy. Wait for the browser to finish the download.
 4. To switch files, select **Avaa tietokanta** at **2**, choose the file, and grant write access.
 
@@ -170,7 +170,7 @@ When you return to the app after closing or reloading it, open your working SQLi
 
 ## 14. Charge below zero or handle a failed save
 
-A charge can exceed the current balance. Charging `999.00` from a balance of `44.00` saves a new balance of `−955.00`. You can continue charging a customer whose balance is already negative. Deposits increase the balance toward zero or above it.
+A charge can exceed the current balance. Charging `999.00` from a balance of `44.00` saves a new balance of `−955.00`. You can continue charging a person whose balance is already negative. Deposits increase the balance toward zero or above it.
 
 Enter a positive amount with at most two decimal places. An invalid amount does not change the balance or add a transaction.
 
@@ -180,8 +180,8 @@ If a file write fails, the app restores the previous balance and shows an error.
 
 ![Annotated mobile compatibility screen showing the blocked state, explanation, copy and recheck actions, and expandable details.](usage/images/15-unsupported-browser.png)
 
-1. Read the blocked state at **1** and the file-access explanation at **2**. The cashier workspace is unavailable when required capabilities are missing.
-2. Select **Kopioi linkki** in area **3**, then open that link in another browser or on the cashier device. The button changes to **Linkki kopioitu** after a successful copy. If copying is unavailable, a selectable link field appears.
+1. Read the blocked state at **1** and the file-access explanation at **2**. The workspace is unavailable when required capabilities are missing.
+2. Select **Kopioi linkki** in area **3**, then open that link in another browser or on another device. The button changes to **Linkki kopioitu** after a successful copy. If copying is unavailable, a selectable link field appears.
 3. Select **Tarkista uudelleen** at **3** to reload and repeat the capability check.
 4. Expand **Miksi käyttö on estetty?** at **4** for the specific reason.
 
@@ -193,7 +193,7 @@ The app checks actual browser APIs, not browser names. It also checks write perm
 
 These are screenshots of the running app with numbered annotations added over its controls. Desktop screenshots use a 1280 by 900 viewport. The compatibility screenshot uses a 390 by 844 viewport.
 
-For capture automation, a temporary browser-managed SQLite file supplied a real writable file handle in place of the native file picker. No production accounts were used. The app's writer saved each example transaction. Reopening the file confirmed Aino's final balance of `44.00`, the new customer's `0.00` balance, the restored `4.25` shortcut, and the saved primary color. A backup download also completed. The temporary browser file was removed afterward.
+For capture automation, a temporary browser-managed SQLite file supplied a real writable file handle in place of the native file picker. No production accounts were used. The app's writer saved each example transaction. Reopening the file confirmed Aino's final balance of `44.00`, the new person's `0.00` balance, the restored `4.25` shortcut, and the saved primary color. A backup download also completed. The temporary browser file was removed afterward.
 
 The native external-file picker and permission dialogs are described in the guide but are not captured. The unsupported-browser screenshot renders the app’s compatibility component with the missing-file-API explanation. No app source changes or browser-storage fallback were added for this guide.
 

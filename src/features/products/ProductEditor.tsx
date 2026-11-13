@@ -81,12 +81,12 @@ export function ProductEditor({
         }, reset);
       }}>
         <Field.Root>
-          <Field.Label>Tuotteen nimi</Field.Label>
+          <Field.Label>Nimikkeen nimi</Field.Label>
           <Input required maxLength={120} disabled={disabled} value={draft.name}
             onChange={(e) => setDraft({ ...draft, name: e.target.value })} />
         </Field.Root>
         <Field.Root>
-          <Field.Label>Tuotteen hinta</Field.Label>
+          <Field.Label>Nimikkeen summa</Field.Label>
           <Input required inputMode="decimal" placeholder="0,00" disabled={disabled} value={draft.amount}
             onChange={(e) => setDraft({ ...draft, amount: e.target.value })} />
         </Field.Root>
@@ -96,7 +96,7 @@ export function ProductEditor({
             onChange={(e) => setDraft({ ...draft, description: e.target.value })} />
         </Field.Root>
         <Field.Root>
-          <Field.Label htmlFor="product-image">Tuotteen kuva</Field.Label>
+          <Field.Label htmlFor="product-image">Nimikkeen kuva</Field.Label>
           <input id="product-image" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml"
             disabled={disabled} onChange={(e) => {
               const file = e.currentTarget.files?.[0];
@@ -104,12 +104,12 @@ export function ProductEditor({
               e.currentTarget.value = "";
             }} />
           {draft.image && <>
-            <img className="logo-preview" src={draft.image} alt="Tuotekuvan esikatselu" />
+            <img className="logo-preview" src={draft.image} alt="Nimikkeen kuvan esikatselu" />
             <Button variant="ghost" disabled={disabled} onClick={() => setDraft({ ...draft, image: "" })}>Poista kuva</Button>
           </>}
         </Field.Root>
         <Button type="submit" className="primary" disabled={disabled || !draft.name.trim() || !draft.amount}>
-          {editing ? "Tallenna tuote" : "Lisää tuote"}
+          {editing ? "Tallenna nimike" : "Lisää nimike"}
         </Button>
         {editing && <Button variant="ghost" disabled={disabled} onClick={reset}>Peruuta muokkaus</Button>}
       </form>

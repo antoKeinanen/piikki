@@ -1,6 +1,6 @@
-# Cashier ledger
+# Balance ledger
 
-The app runs entirely in the browser. SQL.js opens and exports actual SQLite bytes. React and Chakra own the controls. TanStack Query owns refreshed snapshots and TanStack Table owns customer filtering.
+The app runs entirely in the browser. SQL.js opens and exports actual SQLite bytes. React and Chakra own the controls. TanStack Query owns refreshed snapshots and TanStack Table owns person filtering.
 
 ## Usage contract
 
@@ -22,15 +22,15 @@ src/persistence/database-file.ts owns browser file handles. It opens the native 
 
 The UI keeps file selection separate from database commands. Supported file-picker sessions autosave. Dropped and new databases must attach a verified destination before activation. Recovery and sample startup controls are not exposed. Unsupported browsers are blocked. File handles are session-local and are not remembered across reloads.
 
-Amounts are integer credits in the smallest denomination. Balances and charge controls display two decimal places without currency units or product names; the existing reversal confirmation still includes a euro symbol. Existing database label fields remain compatible but are hidden. Reversals append the exact opposite entry and cannot themselves be reversed. Balances are signed integers derived from entries. Charges and deposit reversals can take a balance below zero. Amount inputs remain positive. Negative balances need no schema migration because balances are not stored separately. The database must have schema version 1 and the tables defined in src/ledger/ledger.ts. Import checks SQLite integrity, foreign keys, row shapes, balances, and reversal consistency.
+Amounts are integer credits in the smallest denomination. Balances and charge controls display two decimal places without currency units or item names; the existing reversal confirmation still includes a euro symbol. Existing database label fields remain compatible but are hidden. Reversals append the exact opposite entry and cannot themselves be reversed. Balances are signed integers derived from entries. Charges and deposit reversals can take a balance below zero. Amount inputs remain positive. Negative balances need no schema migration because balances are not stored separately. The database must have schema version 1 and the tables defined in src/ledger/ledger.ts. Import checks SQLite integrity, foreign keys, row shapes, balances, and reversal consistency.
 
 ## Module map
 
 - `src/main.tsx` mounts providers and imports the global stylesheet once.
 - `src/app/App.tsx` composes screens, dialogs and file workflows. `useLedgerSession.ts` owns the active ledger/name/revision union, Query snapshots, mutation pending state and errors. Activating a database changes the query key and resets the account draft.
 - `src/app/Settings.tsx` composes branding, preset and file tabs using specific command callbacks.
-- `src/features/analytics/` owns the per-event statistics view. It draws charts with Chakra UI Charts (Recharts) and loads lazily, so the cashier's first load stays small. `summary.ts` is a pure function from a snapshot to totals, balances, debt, purchase-size bands, product and buyer rankings, and a cumulative timeline. The timeline is hourly, or daily for events longer than 48 hours. `compareEvents` adds cross-event totals and returning buyers. The summary excludes undone purchases and their reversals. Entries do not reference products, so the summary groups product sales by entry label and shows charges without a product button as "Muu summa". Charts take their colors from the branding CSS variables. `src/app/EventStats.tsx` owns the query and the event choice. `Ledger.events()` lists events, and `Ledger.snapshot(eventId)` returns any past event.
-- `src/features/cashier/` owns customer filtering, account drafts/history, add-customer input and reversal confirmation.
+- `src/features/analytics/` owns the per-event statistics view. It draws charts with Chakra UI Charts (Recharts) and loads lazily, so the main view's first load stays small. `summary.ts` is a pure function from a snapshot to totals, balances, debt, charge-size bands, item and person rankings, and a cumulative timeline. The timeline is hourly, or daily for events longer than 48 hours. `compareEvents` adds cross-event totals and returning people. The summary excludes undone charges and their reversals. Entries do not reference items, so the summary groups charges by entry label and shows charges without an item button as "Muu summa". Charts take their colors from the branding CSS variables. `src/app/EventStats.tsx` owns the query and the event choice. `Ledger.events()` lists events, and `Ledger.snapshot(eventId)` returns any past event.
+- `src/features/cashier/` owns person filtering, account drafts/history, add-person input and reversal confirmation.
 - `src/features/branding/` owns the shared onboarding/settings form, contrast calculations and React CSS variables.
 - `src/features/presets/` owns preset editing and last-deletion restore state.
 - `src/features/database/` owns welcome, file controls and compatibility UI.
@@ -46,7 +46,7 @@ A posting travels from AccountPanel through the app mutation callback to Ledger.
 
 ## Refactoring decision
 
-Feature folders were chosen over a move-only app/ui/domain/platform layout because cashier, branding and preset changes now have distinct owners. The ledger and file adapter remain cohesive rather than gaining per-feature repositories. The public Ledger API and SQLite schema are unchanged. Bootstrap providers remain inline and CSS remains one global asset.
+Feature folders were chosen over a move-only app/ui/domain/platform layout because account, branding and preset changes now have distinct owners. The ledger and file adapter remain cohesive rather than gaining per-feature repositories. The public Ledger API and SQLite schema are unchanged. Bootstrap providers remain inline and CSS remains one global asset.
 
 The refactor preserves legacy unattached recovery writes and existing file-busy behavior. File conflict detection is not an atomic cross-process lock; failed persistence restores in-memory bytes, not necessarily partially written disk bytes. Those constraints are separate from module organization.
 
@@ -59,11 +59,11 @@ The smallest safe decomposition was one UI owner and one ledger owner. Financial
 
 ## Limits
 
-Recovery is a browser-local copy for unattached sessions. Attached sessions use the selected disk file as their authority. Download a backup for transfer. Copies edited on different devices cannot merge. Amounts have no displayed currency. Preset deletion affects future shortcuts only and never changes purchase history.
+Recovery is a browser-local copy for unattached sessions. Attached sessions use the selected disk file as their authority. Download a backup for transfer. Copies edited on different devices cannot merge. Amounts have no displayed currency. Preset deletion affects future shortcuts only and never changes charge history.
 
-## Cashier UI revision
+## Account UI revision
 
-The workspace uses a customer table and account area on one flat background, separated by a line. There are no content cards. The customer name and balance are the account identity. Reference IDs and filenames are not displayed.
+The workspace uses a person table and account area on one flat background, separated by a line. There are no content cards. The person's name and balance are the account identity. Reference IDs and filenames are not displayed.
 
 Settings owns three tabs for branding, quick charges, and database actions. src/app/Settings.tsx owns their controls. The optional branding table holds one row with two hex colors. Old databases without this table use defaults until colors are saved. Readable foreground colors are derived automatically.
 

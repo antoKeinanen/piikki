@@ -37,7 +37,7 @@ export function CompatibilityBlock({ problem }: { problem: string }) {
         </Text>
         <Text className="compatibility-next">
           {secure
-            ? "Kopioi linkki ja avaa se toisessa selaimessa tai kassalaitteella."
+            ? "Kopioi linkki ja avaa se toisessa selaimessa tai toisella laitteella."
             : "Avaa sivu HTTPS-yhteydellä tai käytä omalla laitteellasi localhost-osoitetta."}
         </Text>
         <div className="compatibility-actions">

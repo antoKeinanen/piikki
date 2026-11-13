@@ -37,9 +37,9 @@ function Ranking({
 
 export function ProductRanking({ summary }: { summary: EventSummary }) {
   return (
-    <Section id="product-sales" title="Tuotteet" hint="Myynti tuotteittain, kappalemäärä nimen vieressä.">
+    <Section id="product-charged" title="Nimikkeet" hint="Veloitukset nimikkeittäin, kappalemäärä nimen vieressä.">
       <Ranking
-        label="Myynti tuotteittain"
+        label="Veloitukset nimikkeittäin"
         rows={summary.products.map((product) => ({
           name: product.name,
           value: product.cents,
@@ -53,16 +53,16 @@ export function ProductRanking({ summary }: { summary: EventSummary }) {
 export function CustomerRanking({ summary }: { summary: EventSummary }) {
   return (
     <Section
-      id="top-buyers"
-      title="Aktiivisimmat ostajat"
-      hint={`Kymmenen eniten ostanutta${summary.buyers > 10 ? ` ${summary.buyers} ostajasta` : ""}.`}
+      id="top-people"
+      title="Aktiivisimmat henkilöt"
+      hint={`Kymmenen eniten veloitettua${summary.people > 10 ? ` ${summary.people} henkilöstä` : ""}.`}
     >
       <Ranking
-        label="Eniten ostaneet henkilöt"
+        label="Eniten veloitetut henkilöt"
         rows={summary.topCustomers.map((customer) => ({
           name: customer.name,
           value: customer.cents,
-          detail: `${customer.purchases} ostoa`,
+          detail: `${customer.charges} veloitusta`,
         }))}
       />
     </Section>

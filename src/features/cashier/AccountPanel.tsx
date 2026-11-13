@@ -121,7 +121,7 @@ export function AccountPanel({
           </Flex>
           {action === "charge" && !!products.length && (
             <div className="product-picker">
-              <Input aria-label="Hae tuotetta" placeholder="Hae tuotetta" value={search}
+              <Input aria-label="Hae nimikettä" placeholder="Hae nimikettä" value={search}
                 onChange={(e) => setSearch(e.target.value)} />
               <div className="product-grid">
               {visibleProducts.map((p) => (
@@ -138,7 +138,7 @@ export function AccountPanel({
                 </Button>
               ))}
               </div>
-              {!visibleProducts.length && <Text>Tuotteita ei löytynyt.</Text>}
+              {!visibleProducts.length && <Text>Nimikkeitä ei löytynyt.</Text>}
             </div>
           )}
           <form

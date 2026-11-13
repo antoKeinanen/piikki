@@ -26,27 +26,27 @@ function timeRows(summary: EventSummary) {
   const labels = bucketLabels(summary.timeline, summary.unit);
   return summary.timeline.map((bucket, index) => ({
     ...labels[index],
-    sales: bucket.sales,
+    charged: bucket.charged,
     deposits: bucket.deposits,
-    purchases: bucket.purchases,
-    totalSales: bucket.totalSales,
+    charges: bucket.charges,
+    totalCharged: bucket.totalCharged,
     totalDeposits: bucket.totalDeposits,
   }));
 }
 
 const axis = { axisLine: false, tickLine: false } as const;
 
-export function SalesOverTime({ summary }: { summary: EventSummary }) {
+export function ChargesOverTime({ summary }: { summary: EventSummary }) {
   const data = timeRows(summary);
   const chart = useChart({
     data,
-    series: [{ name: "sales", label: "Myynti", color: PRIMARY }],
+    series: [{ name: "charged", label: "Veloitettu", color: PRIMARY }],
   });
   return (
     <Section
       wide
-      id="sales-over-time"
-      title={summary.unit === "hour" ? "Myynti tunneittain" : "Myynti päivittäin"}
+      id="charged-over-time"
+      title={summary.unit === "hour" ? "Veloitukset tunneittain" : "Veloitukset päivittäin"}
       hint="Saldon lisäykset näkyvät kertyvissä summissa ja taulukossa."
     >
       <Chart.Root h="260px" aspectRatio="auto" chart={chart}>
@@ -57,7 +57,7 @@ export function SalesOverTime({ summary }: { summary: EventSummary }) {
           <Tooltip cursor={false} animationDuration={100} content={<ChartTooltip />} />
           <Bar
             isAnimationActive={false}
-            dataKey={chart.key("sales")}
+            dataKey={chart.key("charged")}
             fill={chart.color(PRIMARY)}
             maxBarSize={24}
             radius={[4, 4, 0, 0]}
@@ -70,8 +70,8 @@ export function SalesOverTime({ summary }: { summary: EventSummary }) {
           <thead>
             <tr>
               <th scope="col">{summary.unit === "hour" ? "Tunti" : "Päivä"}</th>
-              <th scope="col" className="number">Ostoja</th>
-              <th scope="col" className="number">Myynti</th>
+              <th scope="col" className="number">Veloituksia</th>
+              <th scope="col" className="number">Veloitettu</th>
               <th scope="col" className="number">Saldoa lisätty</th>
             </tr>
           </thead>
@@ -79,8 +79,8 @@ export function SalesOverTime({ summary }: { summary: EventSummary }) {
             {data.map((row) => (
               <tr key={row.label}>
                 <th scope="row">{row.label}</th>
-                <td className="number">{row.purchases}</td>
-                <td className="number">{formatAmount(row.sales)}</td>
+                <td className="number">{row.charges}</td>
+                <td className="number">{formatAmount(row.charged)}</td>
                 <td className="number">{formatAmount(row.deposits)}</td>
               </tr>
             ))}
@@ -96,7 +96,7 @@ export function CumulativeTotals({ summary }: { summary: EventSummary }) {
   const chart = useChart({
     data,
     series: [
-      { name: "totalSales", label: "Myyty yhteensä", color: PRIMARY },
+      { name: "totalCharged", label: "Veloitettu yhteensä", color: PRIMARY },
       { name: "totalDeposits", label: "Lisätty yhteensä", color: SECONDARY },
     ],
   });

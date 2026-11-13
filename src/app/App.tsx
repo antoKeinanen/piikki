@@ -237,7 +237,7 @@ function CashierApp() {
             disabled={busy}
             onClick={() => setView(view === "stats" ? "cashier" : "stats")}
           >
-            {view === "stats" ? "Kassa" : "Tilastot"}
+            {view === "stats" ? "Tilit" : "Tilastot"}
           </Button>
         )}
       </header>

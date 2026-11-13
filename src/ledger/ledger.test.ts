@@ -20,9 +20,9 @@ describe("cashier ledger", () => {
       label: "Lunch",
     });
     expect(ledger.snapshot().customers[0].balance).toBe(1150);
-    const purchase = ledger.snapshot().entries[0];
-    await ledger.reverse(purchase.id);
-    await expect(ledger.reverse(purchase.id)).rejects.toThrow();
+    const charge = ledger.snapshot().entries[0];
+    await ledger.reverse(charge.id);
+    await expect(ledger.reverse(charge.id)).rejects.toThrow();
     const reopened = await Ledger.open(ledger.export());
     expect(reopened.snapshot().customers[0].balance).toBe(2000);
     expect(reopened.snapshot().entries).toHaveLength(3);

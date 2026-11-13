@@ -2,9 +2,9 @@ import { NativeSelect, Text } from "@chakra-ui/react";
 import { formatAmount, type LedgerEvent } from "../../ledger";
 import type { EventComparison as Comparison, EventSummary } from "./summary";
 import { EmptyNote, CustomerRanking, ProductRanking } from "./Rankings";
-import { CumulativeTotals, SalesOverTime } from "./TimeCharts";
+import { CumulativeTotals, ChargesOverTime } from "./TimeCharts";
 import { EventComparison } from "./EventComparison";
-import { PurchaseSizes } from "./PurchaseSizes";
+import { ChargeSizes } from "./ChargeSizes";
 
 function Tile({ label, value, note }: { label: string; value: string; note?: string }) {
   return (
@@ -17,26 +17,26 @@ function Tile({ label, value, note }: { label: string; value: string; note?: str
 }
 
 function Tiles({ summary }: { summary: EventSummary }) {
-  const perBuyer = summary.buyers ? summary.purchases / summary.buyers : 0;
-  const undoneShare = summary.purchases + summary.undone
-    ? Math.round((summary.undone / (summary.purchases + summary.undone)) * 100)
+  const perPerson = summary.people ? summary.charges / summary.people : 0;
+  const undoneShare = summary.charges + summary.undone
+    ? Math.round((summary.undone / (summary.charges + summary.undone)) * 100)
     : 0;
   return (
     <div className="stat-tiles">
-      <Tile label="Myynti" value={formatAmount(summary.sales)} />
+      <Tile label="Veloitettu" value={formatAmount(summary.charged)} />
       <Tile
-        label="Ostoja"
-        value={String(summary.purchases)}
-        note={summary.purchases ? `suurin osto ${formatAmount(summary.largest)}` : undefined}
+        label="Veloituksia"
+        value={String(summary.charges)}
+        note={summary.charges ? `suurin veloitus ${formatAmount(summary.largest)}` : undefined}
       />
       <Tile
-        label="Keskiosto"
+        label="Keskiveloitus"
         value={formatAmount(summary.average)}
       />
       <Tile
-        label="Ostajia"
-        value={String(summary.buyers)}
-        note={summary.buyers ? `${perBuyer.toFixed(1).replace(".", ",")} ostoa henkilöä kohti` : undefined}
+        label="Henkilöitä"
+        value={String(summary.people)}
+        note={summary.people ? `${perPerson.toFixed(1).replace(".", ",")} veloitusta henkilöä kohti` : undefined}
       />
       <Tile
         label="Saldoa lisätty"
@@ -50,9 +50,9 @@ function Tiles({ summary }: { summary: EventSummary }) {
         note={`${summary.debtors} henkilöä`}
       />
       <Tile
-        label="Perutut ostot"
+        label="Perutut veloitukset"
         value={String(summary.undone)}
-        note={summary.undone ? `${undoneShare} % kaikista ostoista` : undefined}
+        note={summary.undone ? `${undoneShare} % kaikista veloituksista` : undefined}
       />
     </div>
   );
@@ -94,25 +94,25 @@ export function EventAnalytics({
       <div className="stat-panels">
         {summary.timeline.length > 0 && (
           <>
-            <SalesOverTime summary={summary} />
+            <ChargesOverTime summary={summary} />
             <CumulativeTotals summary={summary} />
           </>
         )}
-        {summary.purchases > 0 ? (
+        {summary.charges > 0 ? (
           <>
-            <PurchaseSizes summary={summary} />
+            <ChargeSizes summary={summary} />
             <ProductRanking summary={summary} />
             <CustomerRanking summary={summary} />
           </>
         ) : (
-          <EmptyNote>Tässä tapahtumassa ei ole vielä myyntiä.</EmptyNote>
+          <EmptyNote>Tässä tapahtumassa ei ole vielä veloituksia.</EmptyNote>
         )}
         {comparison.length > 1 && (
           <EventComparison rows={comparison} eventId={eventId} />
         )}
       </div>
       <Text className="stats-note">
-        Luvuissa ei ole mukana peruttuja ostoja eikä niiden hyvityksiä. Saldo ja velka ovat
+        Luvuissa ei ole mukana peruttuja veloituksia eikä niiden hyvityksiä. Saldo ja velka ovat
         tilanne valitun tapahtuman lopussa, ja niihin sisältyvät aiemmat tapahtumat.
       </Text>
     </main>

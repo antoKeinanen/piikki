@@ -74,7 +74,7 @@ it("rejects invalid product inputs without changing saved products", async () =>
   }
 });
 
-it("preserves legacy names and prices that predate product editing limits", async () => {
+it("preserves legacy names and amounts that predate product editing limits", async () => {
   const original = await Ledger.open();
   const SQL = await initSqlJs();
   const old = new SQL.Database(original.export());

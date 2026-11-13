@@ -64,6 +64,6 @@ a { color:var(--primary, #3549d8); }
 summary { cursor:pointer; }
 @media print { :root { color-scheme:light; } h2 { break-before:page; } img { max-height:60vh; object-fit:contain; object-position:left; } .contents { display:none; } }
 '''
-output = '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Customer balance app usage guide</title><style>' + css + '</style></head><body><main>' + '\n'.join(parts) + '</main></body></html>'
+output = '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Balance app usage guide</title><style>' + css + '</style></head><body><main>' + '\n'.join(parts) + '</main></body></html>'
 (DOCS / 'usage-guide.html').write_text(output)
 print(f'Built docs/usage-guide.html with {image_count} embedded screenshots and {len(headings)} sections.')

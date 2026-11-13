@@ -24,9 +24,9 @@ const summarize = (entries: Entry[]) => summarizeEvent({ entries, customers });
 
 it("summarizes an empty event", () => {
   expect(summarize([])).toMatchObject({
-    sales: 0,
-    purchases: 0,
-    buyers: 0,
+    charged: 0,
+    charges: 0,
+    people: 0,
     average: 0,
     largest: 0,
     deposits: 0,
@@ -36,7 +36,7 @@ it("summarizes an empty event", () => {
   });
 });
 
-it("counts sales, buyers and deposits and ignores undone entries", () => {
+it("counts charges, people and deposits and ignores undone entries", () => {
   const summary = summarize([
     entry({ customer_id: "a", cents: 1000, label: "Lisää saldoa" }),
     entry({ customer_id: "b", cents: 500, label: "Lisää saldoa", reversed: 1 }),
@@ -48,9 +48,9 @@ it("counts sales, buyers and deposits and ignores undone entries", () => {
     entry({ customer_id: "c", cents: 350, label: "Undo Tee", reversal_of: "y" }),
   ]);
   expect(summary).toMatchObject({
-    sales: 1350,
-    purchases: 3,
-    buyers: 2,
+    charged: 1350,
+    charges: 3,
+    people: 2,
     average: 450,
     largest: 850,
     undone: 1,
@@ -75,7 +75,7 @@ it("groups charges without a product under one name", () => {
   expect(summary.products).toEqual([{ name: OTHER_PRODUCT, units: 2, cents: 400 }]);
 });
 
-it("ranks buyers by spend and names unknown customers", () => {
+it("ranks people by charged total and names unknown people", () => {
   const summary = summarize([
     entry({ customer_id: "a", cents: -100 }),
     entry({ customer_id: "b", cents: -900 }),
@@ -83,13 +83,13 @@ it("ranks buyers by spend and names unknown customers", () => {
     entry({ customer_id: "gone", cents: -400 }),
   ]);
   expect(summary.topCustomers).toEqual([
-    { name: "Eino", purchases: 2, cents: 1000 },
-    { name: "Tuntematon", purchases: 1, cents: 400 },
-    { name: "Aino", purchases: 1, cents: 100 },
+    { name: "Eino", charges: 2, cents: 1000 },
+    { name: "Tuntematon", charges: 1, cents: 400 },
+    { name: "Aino", charges: 1, cents: 100 },
   ]);
 });
 
-it("sorts purchases into price bands", () => {
+it("sorts charges into size bands", () => {
   const summary = summarize(
     [150, 199, 200, 499, 500, 999, 1000, 1999, 2000, 5000].map((cents) => entry({ cents: -cents })),
   );
@@ -104,11 +104,11 @@ it("buckets by hour, filling quiet hours and keeping running totals", () => {
     entry({ created_at: "2026-11-12T20:00:00", cents: -400 }),
   ]);
   expect(summary.unit).toBe("hour");
-  expect(summary.timeline.map((bucket) => bucket.sales)).toEqual([0, 300, 0, 400]);
+  expect(summary.timeline.map((bucket) => bucket.charged)).toEqual([0, 300, 0, 400]);
   expect(summary.timeline.map((bucket) => bucket.deposits)).toEqual([1000, 0, 0, 0]);
-  expect(summary.timeline.map((bucket) => bucket.purchases)).toEqual([0, 2, 0, 1]);
-  expect(summary.timeline.map((bucket) => bucket.totalSales)).toEqual([0, 300, 300, 700]);
-  expect(summary.timeline.at(-1)).toMatchObject({ totalSales: summary.sales, totalDeposits: 1000 });
+  expect(summary.timeline.map((bucket) => bucket.charges)).toEqual([0, 2, 0, 1]);
+  expect(summary.timeline.map((bucket) => bucket.totalCharged)).toEqual([0, 300, 300, 700]);
+  expect(summary.timeline.at(-1)).toMatchObject({ totalCharged: summary.charged, totalDeposits: 1000 });
 });
 
 it("switches to daily buckets for events longer than two days", () => {
@@ -117,19 +117,19 @@ it("switches to daily buckets for events longer than two days", () => {
     entry({ created_at: "2026-11-14T12:00:00", cents: -200 }),
   ]);
   expect(summary.unit).toBe("day");
-  expect(summary.timeline.map((bucket) => bucket.sales)).toEqual([100, 0, 0, 0, 200]);
+  expect(summary.timeline.map((bucket) => bucket.charged)).toEqual([100, 0, 0, 0, 200]);
 });
 
-it("compares events and counts buyers who came back", () => {
+it("compares events and counts people who came back", () => {
   const event = (id: string) => ({ id, name: id });
-  const buyers = (...ids: string[]) =>
+  const people = (...ids: string[]) =>
     summarize(ids.map((customer_id) => entry({ customer_id, cents: -100 })));
   expect(
     compareEvents([
-      { event: event("one"), summary: buyers("a", "b") },
-      { event: event("two"), summary: buyers("b", "c", "c") },
-      { event: event("three"), summary: buyers("a", "c") },
-    ]).map(({ id, sales, purchases, buyers, returning }) => [id, sales, purchases, buyers, returning]),
+      { event: event("one"), summary: people("a", "b") },
+      { event: event("two"), summary: people("b", "c", "c") },
+      { event: event("three"), summary: people("a", "c") },
+    ]).map(({ id, charged, charges, people, returning }) => [id, charged, charges, people, returning]),
   ).toEqual([
     ["one", 200, 2, 2, 0],
     ["two", 300, 3, 2, 1],

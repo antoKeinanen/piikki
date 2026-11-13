@@ -225,7 +225,7 @@ export class Ledger {
         input.customerId,
         input.kind === "charge" ? -input.cents : input.cents,
         input.label.trim() ||
-          (input.kind === "charge" ? "Purchase" : "Deposit"),
+          (input.kind === "charge" ? "Charge" : "Deposit"),
         new Date().toISOString(),
         this.latestEvent().id,
       ]);
@@ -290,7 +290,7 @@ export class Ledger {
     if (!product.name || product.name.length > 120)
       throw new Error("Enter a product name of 1–120 characters.");
     if (product.cents > 999999999)
-      throw new Error("Product price is too large.");
+      throw new Error("Item amount is too large.");
     return this.change(() => {
       this.db.run(
         "INSERT INTO presets VALUES(?,?,?) ON CONFLICT(id) DO UPDATE SET name=excluded.name,cents=excluded.cents",

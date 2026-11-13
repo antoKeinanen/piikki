@@ -1,6 +1,6 @@
 # Piikki
 
-A frontend-only cashier app for customer credit. Open a compatible SQLite file, select a customer, and apply a charge or deposit. Balances can go below zero. Charges and deposit reversals do not require available credit. The database never leaves the device.
+A frontend-only app for keeping shared balances. Open a compatible SQLite file, select a person, and apply a charge or deposit. Balances can go below zero. Charges and deposit reversals do not require available credit. The database never leaves the device.
 
 ## Run locally
 
@@ -11,7 +11,7 @@ npm run dev
 
 Open http://localhost:5173. Select **Try example** for sample accounts, or **Create database** for an empty database. Drop an existing Piikki database anywhere in the app to open it.
 
-Settings holds the two branding colors, quick-charge amounts, and database controls. Quick-charge buttons apply immediately. Undo is attached to the original transaction and asks for confirmation. Customer IDs and the active filename stay hidden. Branding colors are saved inside the SQLite file.
+Settings holds the two branding colors, quick-charge amounts, and database controls. Quick-charge buttons apply immediately. Undo is attached to the original transaction and asks for confirmation. Person IDs and the active filename stay hidden. Branding colors are saved inside the SQLite file.
 
 ## Save your work
 
@@ -19,7 +19,7 @@ In browsers with File System Access support, select **Open database** and grant 
 
 New, recovered, sample, and dropped databases request a writable destination before opening. **Download backup** creates a separate copy.
 
-The app requires HTTPS or localhost, native file pickers, writable file handles, and writable file streams. Missing capabilities block the app before a database is opened. No browser-name detection is used. Every opened database passes a write-and-read-back check before cashier controls become available. Reopen the attached file on the next visit.
+The app requires HTTPS or localhost, native file pickers, writable file handles, and writable file streams. Missing capabilities block the app before a database is opened. No browser-name detection is used. Every opened database passes a write-and-read-back check before balance controls become available. Reopen the attached file on the next visit.
 
 Use one app instance per file. The app rejects a save if the file changed externally since opening it. This detects intervening edits but is not a cross-application SQLite locking protocol.
 
@@ -32,7 +32,7 @@ npm run build
 
 The tests run real SQLite imports, transactions, reversals, and exports. No backend is required. The production build includes the SQLite WASM asset.
 
-See [architecture](docs/architecture.md) for module ownership and [the schema](src/ledger/ledger.ts) for the version 1 database contract. Amounts are whole-number credits in the smallest denomination. The UI shows two decimal places without currency symbols, units, or product names.
+See [architecture](docs/architecture.md) for module ownership and [the schema](src/ledger/ledger.ts) for the version 1 database contract. Amounts are whole-number credits in the smallest denomination. The UI shows two decimal places without currency symbols, units, or item names.
 
 ## Deploy to Vercel
 

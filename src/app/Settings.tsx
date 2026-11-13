@@ -24,7 +24,7 @@ export function Settings({
     <Tabs.Root defaultValue="branding" variant="line" className="settings-tabs">
       <Tabs.List>
         <Tabs.Trigger value="branding">Ulkoasu</Tabs.Trigger>
-        <Tabs.Trigger value="charges">Tuotteet</Tabs.Trigger>
+        <Tabs.Trigger value="charges">Nimikkeet</Tabs.Trigger>
         <Tabs.Trigger value="files">Tietokanta</Tabs.Trigger>
       </Tabs.List>
       <Tabs.Content value="branding">

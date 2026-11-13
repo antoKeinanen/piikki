@@ -3,13 +3,13 @@ import { Bar, BarChart, CartesianGrid, LabelList, Tooltip, XAxis, YAxis } from "
 import type { EventSummary } from "./summary";
 import { GRID, PRIMARY, Section } from "./chart-style";
 
-export function PurchaseSizes({ summary }: { summary: EventSummary }) {
+export function ChargeSizes({ summary }: { summary: EventSummary }) {
   const chart = useChart({
     data: summary.sizes,
-    series: [{ name: "count", label: "Ostoja", color: PRIMARY }],
+    series: [{ name: "count", label: "Veloituksia", color: PRIMARY }],
   });
   return (
-    <Section id="purchase-sizes" title="Ostosten koko" hint="Ostojen määrä hinnan mukaan.">
+    <Section id="charge-sizes" title="Veloitusten koko" hint="Veloitusten määrä summan mukaan.">
       <Chart.Root h="240px" aspectRatio="auto" chart={chart}>
         <BarChart data={chart.data} responsive>
           <CartesianGrid vertical={false} {...GRID} />

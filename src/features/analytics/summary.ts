@@ -1,27 +1,27 @@
 import type { Customer, Entry, LedgerEvent } from "../../ledger";
 
-export type ProductSales = { name: string; units: number; cents: number };
-export type CustomerSpend = { name: string; purchases: number; cents: number };
+export type ItemTotal = { name: string; units: number; cents: number };
+export type PersonTotal = { name: string; charges: number; cents: number };
 export type SizeBand = { label: string; count: number };
 export type TimeBucket = {
   start: number;
-  sales: number;
-  purchases: number;
+  charged: number;
+  charges: number;
   deposits: number;
   /** Running totals up to and including this bucket. */
-  totalSales: number;
+  totalCharged: number;
   totalDeposits: number;
 };
 export type EventSummary = {
-  /** Charged cents, excluding undone purchases. */
-  sales: number;
-  purchases: number;
-  buyers: number;
-  buyerIds: string[];
-  /** Mean purchase in cents. */
+  /** Charged cents, excluding undone charges. */
+  charged: number;
+  charges: number;
+  people: number;
+  personIds: string[];
+  /** Mean charge in cents. */
   average: number;
   largest: number;
-  /** Purchases that were charged and then undone. */
+  /** Charges that were later undone. */
   undone: number;
   /** Deposited cents, excluding undone deposits. */
   deposits: number;
@@ -30,8 +30,8 @@ export type EventSummary = {
   held: number;
   debt: number;
   debtors: number;
-  products: ProductSales[];
-  topCustomers: CustomerSpend[];
+  products: ItemTotal[];
+  topCustomers: PersonTotal[];
   sizes: SizeBand[];
   unit: "hour" | "day";
   timeline: TimeBucket[];
@@ -40,8 +40,9 @@ export type EventSummary = {
 /** Entries do not reference products, so charges are grouped by their label. */
 export const OTHER_PRODUCT = "Muu summa";
 // Labels the cashier writes for a charge that was not a product button.
-const genericLabels = new Set(["Veloita", "Purchase"]);
-// Upper bounds, in cents, of every purchase size band but the last.
+// "Purchase" is the legacy default label stored by older versions.
+const genericLabels = new Set(["Veloita", "Charge", "Purchase"]);
+// Upper bounds, in cents, of every charge size band but the last.
 const sizeLimits = [200, 500, 1000, 2000];
 const sizeLabels = ["alle 2", "2–5", "5–10", "10–20", "yli 20"];
 const TOP_CUSTOMERS = 10;
@@ -71,29 +72,29 @@ export function summarizeEvent({
 }): EventSummary {
   // An undone entry and its reversal cancel out, so neither is counted.
   const counted = entries.filter((entry) => !entry.reversed && !entry.reversal_of);
-  const charges = counted.filter((entry) => entry.cents < 0);
+  const chargeEntries = counted.filter((entry) => entry.cents < 0);
   const deposits = counted.filter((entry) => entry.cents > 0);
-  const sales = charges.reduce((sum, charge) => sum - charge.cents, 0);
+  const charged = chargeEntries.reduce((sum, charge) => sum - charge.cents, 0);
 
-  const products = new Map<string, ProductSales>();
-  const spend = new Map<string, CustomerSpend>();
+  const products = new Map<string, ItemTotal>();
+  const totals = new Map<string, PersonTotal>();
   const names = new Map(customers.map((customer) => [customer.id, customer.name]));
   const sizes = sizeLabels.map((label) => ({ label, count: 0 }));
-  for (const charge of charges) {
+  for (const charge of chargeEntries) {
     const cents = -charge.cents;
     const name = genericLabels.has(charge.label) ? OTHER_PRODUCT : charge.label;
     const product = products.get(name) ?? { name, units: 0, cents: 0 };
     product.units += 1;
     product.cents += cents;
     products.set(name, product);
-    const customer = spend.get(charge.customer_id) ?? {
+    const customer = totals.get(charge.customer_id) ?? {
       name: names.get(charge.customer_id) ?? "Tuntematon",
-      purchases: 0,
+      charges: 0,
       cents: 0,
     };
-    customer.purchases += 1;
+    customer.charges += 1;
     customer.cents += cents;
-    spend.set(charge.customer_id, customer);
+    totals.set(charge.customer_id, customer);
     const band = sizeLimits.findIndex((limit) => cents < limit);
     sizes[band === -1 ? sizeLimits.length : band].count += 1;
   }
@@ -102,33 +103,33 @@ export function summarizeEvent({
   const first = Math.min(...times);
   const last = Math.max(...times);
   const unit = last - first > 48 * HOUR ? "day" : "hour";
-  const buckets = new Map<number, Pick<TimeBucket, "sales" | "purchases" | "deposits">>();
+  const buckets = new Map<number, Pick<TimeBucket, "charged" | "charges" | "deposits">>();
   if (counted.length)
     for (let t = floorTo(first, unit); t <= last; t = advance(t, unit))
-      buckets.set(t, { sales: 0, purchases: 0, deposits: 0 });
+      buckets.set(t, { charged: 0, charges: 0, deposits: 0 });
   counted.forEach((entry, index) => {
     const bucket = buckets.get(floorTo(times[index], unit));
     if (!bucket) return;
     if (entry.cents < 0) {
-      bucket.sales -= entry.cents;
-      bucket.purchases += 1;
+      bucket.charged -= entry.cents;
+      bucket.charges += 1;
     } else bucket.deposits += entry.cents;
   });
-  let totalSales = 0;
+  let totalCharged = 0;
   let totalDeposits = 0;
   const timeline = [...buckets].map(([start, bucket]) => {
-    totalSales += bucket.sales;
+    totalCharged += bucket.charged;
     totalDeposits += bucket.deposits;
-    return { start, ...bucket, totalSales, totalDeposits };
+    return { start, ...bucket, totalCharged, totalDeposits };
   });
 
   return {
-    sales,
-    purchases: charges.length,
-    buyers: spend.size,
-    buyerIds: [...spend.keys()],
-    average: charges.length ? Math.round(sales / charges.length) : 0,
-    largest: charges.reduce((max, charge) => Math.max(max, -charge.cents), 0),
+    charged,
+    charges: chargeEntries.length,
+    people: totals.size,
+    personIds: [...totals.keys()],
+    average: chargeEntries.length ? Math.round(charged / chargeEntries.length) : 0,
+    largest: chargeEntries.reduce((max, charge) => Math.max(max, -charge.cents), 0),
     undone: entries.filter((entry) => entry.reversed && entry.cents < 0).length,
     deposits: deposits.reduce((sum, entry) => sum + entry.cents, 0),
     depositCount: deposits.length,
@@ -138,7 +139,7 @@ export function summarizeEvent({
     products: [...products.values()].sort(
       (a, b) => b.cents - a.cents || a.name.localeCompare(b.name, "fi"),
     ),
-    topCustomers: [...spend.values()]
+    topCustomers: [...totals.values()]
       .sort((a, b) => b.cents - a.cents || a.name.localeCompare(b.name, "fi"))
       .slice(0, TOP_CUSTOMERS),
     sizes,
@@ -150,10 +151,10 @@ export function summarizeEvent({
 export type EventComparison = {
   id: string;
   name: string;
-  sales: number;
-  purchases: number;
-  buyers: number;
-  /** Buyers who also bought at an earlier event. */
+  charged: number;
+  charges: number;
+  people: number;
+  /** People who were also charged at an earlier event. */
   returning: number;
 };
 
@@ -163,14 +164,14 @@ export function compareEvents(
 ): EventComparison[] {
   const seen = new Set<string>();
   return items.map(({ event, summary }) => {
-    const returning = summary.buyerIds.filter((id) => seen.has(id)).length;
-    summary.buyerIds.forEach((id) => seen.add(id));
+    const returning = summary.personIds.filter((id) => seen.has(id)).length;
+    summary.personIds.forEach((id) => seen.add(id));
     return {
       id: event.id,
       name: event.name,
-      sales: summary.sales,
-      purchases: summary.purchases,
-      buyers: summary.buyers,
+      charged: summary.charged,
+      charges: summary.charges,
+      people: summary.people,
       returning,
     };
   });

@@ -9,7 +9,7 @@ export function EventComparison({ rows, eventId }: { rows: Row[]; eventId: strin
   const data = [...rows].reverse();
   const chart = useChart({
     data,
-    series: [{ name: "sales", label: "Myynti", color: PRIMARY }],
+    series: [{ name: "charged", label: "Veloitettu", color: PRIMARY }],
   });
   return (
     <Section
@@ -30,7 +30,7 @@ export function EventComparison({ rows, eventId }: { rows: Row[]; eventId: strin
           />
           <Bar
             isAnimationActive={false}
-            dataKey={chart.key("sales")}
+            dataKey={chart.key("charged")}
             maxBarSize={24}
             radius={[0, 4, 4, 0]}
           >
@@ -44,9 +44,9 @@ export function EventComparison({ rows, eventId }: { rows: Row[]; eventId: strin
         <thead>
           <tr>
             <th scope="col">Tapahtuma</th>
-            <th scope="col" className="number">Myynti</th>
-            <th scope="col" className="number">Ostoja</th>
-            <th scope="col" className="number">Ostajia</th>
+            <th scope="col" className="number">Veloitettu</th>
+            <th scope="col" className="number">Veloituksia</th>
+            <th scope="col" className="number">Henkilöitä</th>
             <th scope="col" className="number">Palaavia</th>
           </tr>
         </thead>
@@ -54,12 +54,12 @@ export function EventComparison({ rows, eventId }: { rows: Row[]; eventId: strin
           {data.map((row) => (
             <tr key={row.id} aria-current={row.id === eventId ? "true" : undefined}>
               <th scope="row">{row.name}</th>
-              <td className="number">{formatAmount(row.sales)}</td>
-              <td className="number">{row.purchases}</td>
-              <td className="number">{row.buyers}</td>
+              <td className="number">{formatAmount(row.charged)}</td>
+              <td className="number">{row.charges}</td>
+              <td className="number">{row.people}</td>
               <td className="number">
                 {row.returning}
-                {row.buyers ? ` (${Math.round((row.returning / row.buyers) * 100)} %)` : ""}
+                {row.people ? ` (${Math.round((row.returning / row.people) * 100)} %)` : ""}
               </td>
             </tr>
           ))}

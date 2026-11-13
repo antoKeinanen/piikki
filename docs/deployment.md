@@ -10,7 +10,7 @@
 
 The checked-in `vercel.json` sets the install command to `npm ci`, the build command to `npm run build`, and the output directory to `dist`. No environment variables, backend, database service, or Vercel Functions are required.
 
-Vercel hosts the app's HTML, CSS, JavaScript, and SQLite WASM asset. Customer database files remain on the cashier's device. The app requests access to those files through the browser.
+Vercel hosts the app's HTML, CSS, JavaScript, and SQLite WASM asset. Database files remain on the device in use. The app requests access to those files through the browser.
 
 ## Deploy from the CLI
 
@@ -26,11 +26,11 @@ Follow the prompts to link a Vercel project and create a preview deployment. Whe
 npx vercel --prod
 ```
 
-The `.vercelignore` file excludes documentation, screenshots, and SQLite databases from CLI uploads. The `.vercel/` project-link directory is ignored by Git. Keep customer files outside the repository as well.
+The `.vercelignore` file excludes documentation, screenshots, and SQLite databases from CLI uploads. The `.vercel/` project-link directory is ignored by Git. Keep database files outside the repository as well.
 
 ## Verify a deployment
 
-1. Open the deployment's HTTPS URL in the cashier's browser.
+1. Open the deployment's HTTPS URL in the browser on the device you will use.
 2. If the browser lacks required file APIs, confirm that the app shows the compatibility screen and blocks database access.
 3. In a browser with the required APIs, select **Try example** and save the sample database to a separate file.
 4. Apply a charge, close the app, and reopen that sample file. Confirm that the balance and transaction history were saved.

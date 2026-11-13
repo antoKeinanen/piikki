@@ -113,26 +113,26 @@ it("charges immediately, hides IDs and filenames, and opens branding settings", 
       "#102030",
     ),
   );
-  fireEvent.click(screen.getByRole("tab", { name: "Tuotteet" }));
-  expect(await screen.findByLabelText("Tuotteen hinta")).toBeTruthy();
-  fireEvent.change(screen.getByLabelText("Tuotteen nimi"), { target: { value: "Kaakao" } });
-  fireEvent.change(screen.getByLabelText("Tuotteen hinta"), {
+  fireEvent.click(screen.getByRole("tab", { name: "Nimikkeet" }));
+  expect(await screen.findByLabelText("Nimikkeen summa")).toBeTruthy();
+  fireEvent.change(screen.getByLabelText("Nimikkeen nimi"), { target: { value: "Kaakao" } });
+  fireEvent.change(screen.getByLabelText("Nimikkeen summa"), {
     target: { value: "4.25" },
   });
   fireEvent.change(screen.getByLabelText("Kuvaus"), { target: { value: "Lämmin juoma" } });
-  fireEvent.change(screen.getByLabelText("Tuotteen kuva"), {
+  fireEvent.change(screen.getByLabelText("Nimikkeen kuva"), {
     target: { files: [new File(["image"], "product.png", { type: "image/png" })] },
   });
-  await screen.findByAltText("Tuotekuvan esikatselu");
-  fireEvent.click(screen.getByRole("button", { name: "Lisää tuote" }));
+  await screen.findByAltText("Nimikkeen kuvan esikatselu");
+  fireEvent.click(screen.getByRole("button", { name: "Lisää nimike" }));
   await screen.findByText("4,25");
   const preset = ledger.snapshot().products.find((value) => value.cents === 425);
   if (!preset) throw new Error("Preset was not saved");
   const row = screen.getByText("4,25").closest(".product-row");
   if (!(row instanceof HTMLElement)) throw new Error("Preset row missing");
   fireEvent.click(within(row).getByRole("button", { name: "Muokkaa" }));
-  fireEvent.change(screen.getByLabelText("Tuotteen hinta"), { target: { value: "4.50" } });
-  fireEvent.click(screen.getByRole("button", { name: "Tallenna tuote" }));
+  fireEvent.change(screen.getByLabelText("Nimikkeen summa"), { target: { value: "4.50" } });
+  fireEvent.click(screen.getByRole("button", { name: "Tallenna nimike" }));
   await waitFor(() => expect(ledger.snapshot().products.find((p) => p.id === preset.id)?.cents).toBe(450));
   preset.cents = 450;
   fireEvent.click(within(row).getByRole("button", { name: "Poista" }));
@@ -164,7 +164,7 @@ it("charges immediately, hides IDs and filenames, and opens branding settings", 
   expect(
     await screen.findByRole("button", { name: "Veloita Kaakao 4,50" }),
   ).toBeTruthy();
-  fireEvent.change(screen.getByLabelText("Hae tuotetta"), { target: { value: "LÄMMIN" } });
+  fireEvent.change(screen.getByLabelText("Hae nimikettä"), { target: { value: "LÄMMIN" } });
   expect(screen.queryByRole("button", { name: "Veloita Lounas 8,50" })).toBeNull();
   fireEvent.click(screen.getByRole("button", { name: "Veloita Kaakao 4,50" }));
   await waitFor(() => expect(screen.getByLabelText("Saldo").textContent).toBe("39,50"));
@@ -552,17 +552,17 @@ it("keeps a product draft after a failed save and retries without duplicates", a
   fireEvent.click(screen.getByRole("button", { name: "Avaa tietokanta" }));
   await continueEvent();
   fireEvent.click(await screen.findByRole("button", { name: "Asetukset" }));
-  fireEvent.click(await screen.findByRole("tab", { name: "Tuotteet" }));
-  fireEvent.change(await screen.findByLabelText("Tuotteen nimi"), { target: { value: "Coffee" } });
-  fireEvent.change(screen.getByLabelText("Tuotteen hinta"), { target: { value: "2.50" } });
-  fireEvent.click(screen.getByRole("button", { name: "Lisää tuote" }));
+  fireEvent.click(await screen.findByRole("tab", { name: "Nimikkeet" }));
+  fireEvent.change(await screen.findByLabelText("Nimikkeen nimi"), { target: { value: "Coffee" } });
+  fireEvent.change(screen.getByLabelText("Nimikkeen summa"), { target: { value: "2.50" } });
+  fireEvent.click(screen.getByRole("button", { name: "Lisää nimike" }));
   await screen.findAllByText("Product write failed");
   expect(ledger.snapshot().products).toEqual([]);
-  expect(screen.getByLabelText("Tuotteen nimi").getAttribute("value")).toBe("Coffee");
+  expect(screen.getByLabelText("Nimikkeen nimi").getAttribute("value")).toBe("Coffee");
   fail = false;
-  fireEvent.click(screen.getByRole("button", { name: "Lisää tuote" }));
+  fireEvent.click(screen.getByRole("button", { name: "Lisää nimike" }));
   await waitFor(() => expect(ledger.snapshot().products).toHaveLength(1));
-  await waitFor(() => expect(screen.getByLabelText("Tuotteen nimi").getAttribute("value")).toBe(""));
+  await waitFor(() => expect(screen.getByLabelText("Nimikkeen nimi").getAttribute("value")).toBe(""));
 });
 it("shows statistics per event and switches back to the cashier", async () => {
   const ledger = await createExample();
@@ -600,9 +600,9 @@ it("shows statistics per event and switches back to the cashier", async () => {
       row.querySelector("th")?.textContent,
       row.getAttribute("aria-current"),
     ]);
-  await screen.findByText("Tässä tapahtumassa ei ole vielä myyntiä.");
-  expect(tiles()).toMatchObject({ Myynti: "0,00", Ostoja: "0", Ostajia: "0", Velkaa: "0,00" });
-  expect(screen.queryByRole("heading", { name: "Tuotteet" })).toBeNull();
+  await screen.findByText("Tässä tapahtumassa ei ole vielä veloituksia.");
+  expect(tiles()).toMatchObject({ Veloitettu: "0,00", Veloituksia: "0", Henkilöitä: "0", Velkaa: "0,00" });
+  expect(screen.queryByRole("heading", { name: "Nimikkeet" })).toBeNull();
   expect(comparison()).toEqual([
     ["Uusi juhla", "true"],
     ["Ensimmäinen tapahtuma", null],
@@ -615,25 +615,25 @@ it("shows statistics per event and switches back to the cashier", async () => {
   fireEvent.change(select, {
     target: { value: ledger.events()[0].id },
   });
-  await screen.findByRole("heading", { name: "Tuotteet" });
+  await screen.findByRole("heading", { name: "Nimikkeet" });
   expect(tiles()).toEqual({
-    Myynti: "17,00",
-    Ostoja: "2",
-    Keskiosto: "8,50",
-    Ostajia: "1",
+    Veloitettu: "17,00",
+    Veloituksia: "2",
+    Keskiveloitus: "8,50",
+    Henkilöitä: "1",
     "Saldoa lisätty": "231,50",
     "Saldoa jäljellä": "214,50",
     Velkaa: "0,00",
-    "Perutut ostot": "1",
+    "Perutut veloitukset": "1",
   });
   expect(comparison()[1]).toEqual(["Ensimmäinen tapahtuma", "true"]);
-  const products = screen.getByLabelText("Myynti tuotteittain").textContent;
+  const products = screen.getByLabelText("Veloitukset nimikkeittäin").textContent;
   expect(products).toContain("Lounas");
   expect(products).toContain("2 kpl");
   expect(products).not.toContain("Kahvi");
-  expect(screen.getByLabelText("Eniten ostaneet henkilöt").textContent).toContain("Aino Korhonen");
+  expect(screen.getByLabelText("Eniten veloitetut henkilöt").textContent).toContain("Aino Korhonen");
   expect(screen.getByText("Näytä taulukkona")).toBeTruthy();
-  fireEvent.click(screen.getByRole("button", { name: "Kassa" }));
+  fireEvent.click(screen.getByRole("button", { name: "Tilit" }));
   expect(await screen.findByLabelText("Saldo")).toBeTruthy();
   expect(document.querySelector(".stats")).toBeNull();
 });
