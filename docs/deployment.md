@@ -8,7 +8,7 @@
 4. Confirm the **Vite** framework preset and **Node.js 24.x**.
 5. Select **Deploy**.
 
-The checked-in `vercel.json` sets the install command to `npm ci`, the build command to `npm run build`, and the output directory to `dist`. No environment variables, backend, database service, or Vercel Functions are required.
+The checked-in `vercel.json` sets the install command to `npm ci`, the build command to `npm run build`, and the output directory to `dist`. No backend, database service, or Vercel Functions are required. The only environment variable is the optional `VITE_DATABASE_PASSWORD`, which turns on file encryption. It is baked into the bundle at build time and readable by anyone who can load the site, so see the README before setting it on a public deployment.
 
 Vercel hosts the app's HTML, CSS, JavaScript, and SQLite WASM asset. Database files remain on the device in use. The app requests access to those files through the browser.
 

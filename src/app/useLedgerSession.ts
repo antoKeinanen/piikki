@@ -6,10 +6,17 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import type { Ledger } from "../ledger";
+import type { OpenedDatabase, Protection } from "../persistence/database-file";
 
 type ActiveSession =
   | { kind: "closed"; revision: number }
-  | { kind: "active"; ledger: Ledger; name: string; revision: number };
+  | {
+      kind: "active";
+      ledger: Ledger;
+      name: string;
+      protection?: Protection;
+      revision: number;
+    };
 
 export function useLedgerSession({ onSaved }: { onSaved(): void }) {
   const [active, setActive] = useState<ActiveSession>({
@@ -32,12 +39,19 @@ export function useLedgerSession({ onSaved }: { onSaved(): void }) {
     },
     onError: (error) => setError(error.message),
   });
-  function activate(next: { ledger: Ledger; name: string }) {
+  function activate(next: OpenedDatabase) {
     setActive((previous) => ({
       kind: "active",
       ...next,
       revision: previous.revision + 1,
     }));
   }
-  return { active, activate, data: query.data, mutation, error, setError };
+  /** Forgets the open database so nothing of it stays readable in the app. */
+  function close() {
+    if (active.kind === "active") active.ledger.close();
+    queryClient.removeQueries({ queryKey: ["book"] });
+    setActive((previous) => ({ kind: "closed", revision: previous.revision + 1 }));
+    setError("");
+  }
+  return { active, activate, close, data: query.data, mutation, error, setError };
 }

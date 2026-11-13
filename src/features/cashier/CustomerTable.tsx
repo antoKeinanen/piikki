@@ -13,7 +13,16 @@ const columns: ColumnDef<Customer>[] = [
   { accessorKey: "name" },
   { accessorKey: "osakunta" },
   { accessorKey: "balance" },
+  {
+    id: "recent",
+    // ISO timestamps sort as text; people without entries sort last.
+    accessorFn: (customer) => customer.last_activity ?? "",
+    enableGlobalFilter: false,
+    sortDescFirst: true,
+  },
 ];
+/** The usual regulars come first: latest balance change at the top. */
+const RECENT_FIRST: SortingState = [{ id: "recent", desc: true }];
 export function CustomerTable({
   customers,
   selected,
@@ -30,7 +39,7 @@ export function CustomerTable({
   disabled: boolean;
 }) {
   const [filter, setFilter] = useState("");
-  const [sorting, setSorting] = useState<SortingState>([]);
+  const [sorting, setSorting] = useState<SortingState>(RECENT_FIRST);
   const table = useReactTable({
     data: customers,
     columns,
@@ -41,6 +50,9 @@ export function CustomerTable({
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
   });
+  const sortedBy = (id: string) =>
+    sorting[0]?.id === id ? (sorting[0].desc ? "descending" : "ascending") : "none";
+  const recent = sorting[0]?.id === "recent";
   return (
     <section className="customers">
       <Flex gap="3" className="search-row">
@@ -57,68 +69,92 @@ export function CustomerTable({
           Asetukset
         </Button>
       </Flex>
-      <Table.Root size="lg">
-        <Table.Header>
-          <Table.Row>
-            <Table.ColumnHeader aria-sort={sorting[0]?.id === "name" ? (sorting[0].desc ? "descending" : "ascending") : "none"}>
-              <button onClick={() => table.getColumn("name")?.toggleSorting()}>
-                Nimi
-              </button>
-            </Table.ColumnHeader>
-            <Table.ColumnHeader aria-sort={sorting[0]?.id === "osakunta" ? (sorting[0].desc ? "descending" : "ascending") : "none"}>
-              <button onClick={() => table.getColumn("osakunta")?.toggleSorting()}>
-                Osakunta
-              </button>
-            </Table.ColumnHeader>
-            <Table.ColumnHeader textAlign="right" aria-sort={sorting[0]?.id === "balance" ? (sorting[0].desc ? "descending" : "ascending") : "none"}>
-              <button
-                onClick={() => table.getColumn("balance")?.toggleSorting()}
-              >
-                Saldo
-              </button>
-            </Table.ColumnHeader>
-          </Table.Row>
-        </Table.Header>
-        <Table.Body>
-          {table.getRowModel().rows.map((row) => (
-            <Table.Row
-              key={row.id}
-              data-selected={row.original.id === selected}
-              className="customer-row"
-            >
-              <Table.Cell>
+      <div className="sort-row">
+        <span>Järjestys:</span>
+        <button
+          type="button"
+          aria-pressed={recent}
+          onClick={() => setSorting(RECENT_FIRST)}
+        >
+          Viimeisin tapahtuma
+        </button>
+        <button
+          type="button"
+          aria-pressed={sorting[0]?.id === "name"}
+          onClick={() => setSorting([{ id: "name", desc: false }])}
+        >
+          Aakkosjärjestys
+        </button>
+      </div>
+      <div className="customer-scroll">
+        <Table.Root size="lg" className="customer-table">
+          <colgroup>
+            <col />
+            <col className="osakunta-column" />
+            <col className="balance-column" />
+          </colgroup>
+          <Table.Header>
+            <Table.Row>
+              <Table.ColumnHeader aria-sort={sortedBy("name")}>
+                <button onClick={() => table.getColumn("name")?.toggleSorting()}>
+                  Nimi
+                </button>
+              </Table.ColumnHeader>
+              <Table.ColumnHeader aria-sort={sortedBy("osakunta")}>
+                <button onClick={() => table.getColumn("osakunta")?.toggleSorting()}>
+                  Osakunta
+                </button>
+              </Table.ColumnHeader>
+              <Table.ColumnHeader textAlign="right" aria-sort={sortedBy("balance")}>
                 <button
-                  className="customer-select"
-                  disabled={disabled}
-                  aria-pressed={row.original.id === selected}
+                  onClick={() => table.getColumn("balance")?.toggleSorting()}
+                >
+                  Saldo
+                </button>
+              </Table.ColumnHeader>
+            </Table.Row>
+          </Table.Header>
+          <Table.Body>
+            {table.getRowModel().rows.map((row) => (
+              <Table.Row
+                key={row.id}
+                data-selected={row.original.id === selected}
+                className="customer-row"
+              >
+                <Table.Cell>
+                  <button
+                    className="customer-select"
+                    disabled={disabled}
+                    aria-pressed={row.original.id === selected}
+                    onClick={() => {
+                      if (!disabled) select(row.original.id);
+                    }}
+                  >
+                    <span className="customer-name">{row.original.name}</span>
+                  </button>
+                </Table.Cell>
+                <Table.Cell className="osakunta-cell" title={row.original.osakunta || undefined}>
+                  {row.original.osakunta}
+                </Table.Cell>
+                <Table.Cell
+                  textAlign="right"
+                  fontWeight="600"
                   onClick={() => {
                     if (!disabled) select(row.original.id);
                   }}
                 >
-                  <span>
-                    <span className="customer-name">{row.original.name}</span>
-                  </span>
-                </button>
-              </Table.Cell>
-              <Table.Cell>{row.original.osakunta}</Table.Cell>
-              <Table.Cell
-                textAlign="right"
-                fontWeight="600"
-                onClick={() => {
-                  if (!disabled) select(row.original.id);
-                }}
-              >
-                {formatAmount(row.original.balance)}
-              </Table.Cell>
-            </Table.Row>
-          ))}
-        </Table.Body>
-      </Table.Root>
-      {!table.getRowModel().rows.length && (
-        <Text p="8" className="empty-history">
-          Ei hakutuloksia.
-        </Text>
-      )}
+                  {formatAmount(row.original.balance)}
+                </Table.Cell>
+              </Table.Row>
+            ))}
+          </Table.Body>
+        </Table.Root>
+        {!table.getRowModel().rows.length && (
+          <Text p="8" className="empty-history">
+            Ei hakutuloksia.
+          </Text>
+        )}
+      </div>
     </section>
   );
 }

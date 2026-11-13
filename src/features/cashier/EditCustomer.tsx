@@ -1,17 +1,21 @@
 import { Button, Text } from "@chakra-ui/react";
 import { formatAmount, type Customer } from "../../ledger";
-import { CustomerForm } from "./CustomerForm";
+import { CustomerForm, type KnownPerson } from "./CustomerForm";
 
 export function EditCustomer({
   customer,
   busy,
   save,
   remove,
+  osakunnat,
+  people,
 }: {
   customer: Customer;
   busy: boolean;
   save(name: string, osakunta: string): Promise<void>;
   remove(): Promise<void>;
+  osakunnat: string[];
+  people: KnownPerson[];
 }) {
   return (
     <div className="settings-form">
@@ -19,7 +23,10 @@ export function EditCustomer({
         busy={busy}
         initial={customer}
         submitLabel="Tallenna muutokset"
-        save={save}
+        osakunnat={osakunnat}
+        people={people}
+        selfId={customer.id}
+        save={({ name, osakunta }) => save(name, osakunta)}
       />
       <div className="delete-customer">
         <Text className="delete-customer-note">

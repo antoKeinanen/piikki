@@ -23,6 +23,15 @@ function FormField({
     </Field.Root>
   );
 }
+type PostInput = Omit<Parameters<Ledger["post"]>[0], "operator">;
+const GENERIC_CHARGE_LABELS = new Set(["Veloita", "Charge", "Purchase"]);
+function entryTitle(entry: Entry) {
+  if (entry.reversal_of) return "Hyvitys";
+  if (entry.opening) return "Alkusaldo";
+  if (entry.cents > 0) return "Saldon lisäys";
+  // Charges without a product button store a generic label.
+  return GENERIC_CHARGE_LABELS.has(entry.label) ? "Veloitus" : entry.label;
+}
 export function AccountPanel({
   selectionRevision,
   customer,
@@ -44,22 +53,37 @@ export function AccountPanel({
   busy: boolean;
   error: string;
   setError(message: string): void;
-  onPost(input: Parameters<Ledger["post"]>[0]): Promise<void>;
+  onPost(input: PostInput): Promise<void>;
   onReverse(entry: Entry): void;
   onSaveNote(customerId: string, note: string): Promise<void>;
   onEdit(): void;
   notice?: ReactNode;
 }) {
   const [amount, setAmount] = useState("");
+  const [note, setNote] = useState("");
   const [action, setAction] = useState<"charge" | "deposit">("charge");
   const [search, setSearch] = useState("");
+  const [category, setCategory] = useState<string>();
   const query = search.trim().toLocaleLowerCase("fi");
+  const categories = [...new Set(products.map((p) => p.category).filter(Boolean))];
+  // Searching looks through every product; otherwise categories come first.
+  const browsing = !query && categories.length > 0;
+  const openCategory = browsing && category !== undefined && categories.includes(category) ? category : undefined;
   const visibleProducts = products.filter((product) =>
-    (product.name + " " + product.description).toLocaleLowerCase("fi").includes(query),
+    query
+      ? (product.name + " " + product.description + " " + product.category)
+          .toLocaleLowerCase("fi")
+          .includes(query)
+      : !browsing || product.category === (openCategory ?? ""),
   );
+  const shownCategories = browsing && openCategory === undefined ? categories : [];
   useEffect(() => {
+    // A new person always starts from a charge with an empty form.
+    setAction("charge");
     setAmount("");
+    setNote("");
     setSearch("");
+    setCategory(undefined);
   }, [customer?.id, selectionRevision]);
   function post(kind: "charge" | "deposit", product?: Product) {
     if (!customer || busy) return;
@@ -71,25 +95,41 @@ export function AccountPanel({
         cents,
         kind,
         label: product?.name ?? (kind === "charge" ? "Veloita" : "Lisää saldoa"),
+        note,
       }).then(
-        () => setAmount(""),
+        () => {
+          if (!product) setAmount("");
+          setNote("");
+        },
         () => {},
       );
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     }
   }
+  function switchMode(next: "charge" | "deposit") {
+    setAction(next);
+    setAmount("");
+    setError("");
+  }
+  const validAmount = amount && /^\d+([.,]\d{1,2})?$/.test(amount.trim());
   return (
-    <section className="account" aria-label="Valittu henkilö">
+    <section
+      className={`account ${customer ? `mode-${action}` : ""}`}
+      aria-label="Valittu henkilö"
+    >
       {notice}
       {customer ? (
         <>
           <div className="account-summary">
             <div className="account-identity">
-              <Text className="account-name">{customer.name}{customer.osakunta && ` • ${customer.osakunta}`}</Text>
+              <Text className="account-name" title={customer.name}>
+                {customer.name}{customer.osakunta && ` • ${customer.osakunta}`}
+              </Text>
               <Button
                 variant="ghost"
                 size="sm"
+                className="edit-customer"
                 aria-label={`Muokkaa henkilöä ${customer.name}`}
                 disabled={busy}
                 onClick={() => {
@@ -113,53 +153,23 @@ export function AccountPanel({
           <Flex className="mode" role="group" aria-label="Tapahtuman tyyppi">
             <Button
               variant="plain"
-              className={action === "charge" ? "mode-active" : ""}
+              className={`mode-charge-tab ${action === "charge" ? "mode-active" : ""}`}
               aria-pressed={action === "charge"}
               disabled={busy}
-              onClick={() => {
-                setAction("charge");
-                setAmount("");
-                setError("");
-              }}
+              onClick={() => switchMode("charge")}
             >
-              Veloita
+              <span aria-hidden="true" className="mode-sign">−</span>Veloita
             </Button>
             <Button
               variant="plain"
-              className={action === "deposit" ? "mode-active" : ""}
+              className={`mode-deposit-tab ${action === "deposit" ? "mode-active" : ""}`}
               aria-pressed={action === "deposit"}
               disabled={busy}
-              onClick={() => {
-                setAction("deposit");
-                setAmount("");
-                setError("");
-              }}
+              onClick={() => switchMode("deposit")}
             >
-              Lisää saldoa
+              <span aria-hidden="true" className="mode-sign">+</span>Lisää saldoa
             </Button>
           </Flex>
-          {action === "charge" && !!products.length && (
-            <div className="product-picker">
-              <Input aria-label="Hae nimikettä" placeholder="Hae nimikettä" value={search}
-                onChange={(e) => setSearch(e.target.value)} />
-              <div className="product-grid">
-              {visibleProducts.map((p) => (
-                <Button
-                  key={p.id}
-                  variant="outline"
-                  className="product-charge"
-                  aria-label={`Veloita ${p.name} ${formatAmount(p.cents)}`}
-                  disabled={busy}
-                  onClick={() => post("charge", p)}
-                >
-                  {p.image && <img className="product-thumbnail" src={p.image} alt="" />}
-                  <span>{p.name}<small>{formatAmount(p.cents)}</small></span>
-                </Button>
-              ))}
-              </div>
-              {!visibleProducts.length && <Text>Nimikkeitä ei löytynyt.</Text>}
-            </div>
-          )}
           <form
             className="amount-form"
             onSubmit={(e) => {
@@ -179,14 +189,23 @@ export function AccountPanel({
                 onChange={(e) => setAmount(e.target.value)}
               />
             </FormField>
+            <FormField label="Kuvaus (valinnainen)">
+              <Input
+                aria-label="Tapahtuman kuvaus"
+                maxLength={200}
+                value={note}
+                disabled={busy}
+                onChange={(e) => setNote(e.target.value)}
+              />
+            </FormField>
             <Button
-              className="primary"
+              className="primary mode-submit"
               type="submit"
               disabled={!amount || busy}
             >
               {action === "charge" ? "Veloita" : "Lisää saldoa"}
-              {amount && /^\d+([.,]\d{1,2})?$/.test(amount)
-                ? ` ${formatAmount(Math.round(Number(amount.replace(",", ".")) * 100))}`
+              {validAmount
+                ? ` ${formatAmount(Math.round(Number(amount.trim().replace(",", ".")) * 100))}`
                 : ""}
             </Button>
           </form>
@@ -194,6 +213,53 @@ export function AccountPanel({
             <Text role="alert" className="error">
               {error}
             </Text>
+          )}
+          {action === "charge" && !!products.length && (
+            <div className="product-picker">
+              <Input aria-label="Hae nimikettä" placeholder="Hae nimikettä" value={search}
+                onChange={(e) => setSearch(e.target.value)} />
+              <div className="product-grid">
+                {openCategory !== undefined && (
+                  <Button
+                    variant="outline"
+                    className="product-charge category-back"
+                    disabled={busy}
+                    onClick={() => setCategory(undefined)}
+                  >
+                    <span>‹ Takaisin<small>{openCategory}</small></span>
+                  </Button>
+                )}
+                {shownCategories.map((name) => (
+                  <Button
+                    key={`category:${name}`}
+                    variant="outline"
+                    className="product-charge category-button"
+                    aria-label={`Kategoria ${name}`}
+                    disabled={busy}
+                    onClick={() => setCategory(name)}
+                  >
+                    <span>
+                      {name} ›
+                      <small>{products.filter((p) => p.category === name).length} nimikettä</small>
+                    </span>
+                  </Button>
+                ))}
+                {visibleProducts.map((p) => (
+                  <Button
+                    key={p.id}
+                    variant="outline"
+                    className="product-charge"
+                    aria-label={`Veloita ${p.name} ${formatAmount(p.cents)}`}
+                    disabled={busy}
+                    onClick={() => post("charge", p)}
+                  >
+                    {p.image && <img className="product-thumbnail" src={p.image} alt="" />}
+                    <span>{p.name}<small>{formatAmount(p.cents)}</small></span>
+                  </Button>
+                ))}
+              </div>
+              {!visibleProducts.length && !shownCategories.length && <Text>Nimikkeitä ei löytynyt.</Text>}
+            </div>
           )}
           <div className="history" aria-label="Tapahtumat">
             {!entries.length && (
@@ -205,13 +271,8 @@ export function AccountPanel({
                 className={`entry ${entry.reversed ? "reversed" : ""}`}
               >
                 <div>
-                  <Text className="entry-label">
-                    {entry.reversal_of
-                      ? "Hyvitys"
-                      : entry.cents < 0
-                        ? entry.label
-                        : "Saldon lisäys"}
-                  </Text>
+                  <Text className="entry-label">{entryTitle(entry)}</Text>
+                  {entry.note && <Text className="entry-note">{entry.note}</Text>}
                   <Text className="entry-date">
                     {new Date(entry.created_at).toLocaleString("fi-FI", {
                       day: "numeric",
@@ -220,9 +281,10 @@ export function AccountPanel({
                       minute: "2-digit",
                     })}
                     {entry.reversed ? " · Peruttu" : ""}
+                    {entry.operator ? ` · ${entry.operator}` : ""}
                   </Text>
                 </div>
-                <Text className="entry-amount">
+                <Text className={`entry-amount ${entry.cents > 0 ? "positive" : "negative"}`}>
                   {entry.cents > 0 ? "+" : "−"}
                   {formatAmount(Math.abs(entry.cents))}
                 </Text>

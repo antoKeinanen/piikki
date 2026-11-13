@@ -6,6 +6,8 @@ import {
   pickDatabase,
   saveDatabase,
   supportsDirectFiles,
+  unlockBytes,
+  type OpenedDatabase,
 } from "../persistence/database-file";
 import { Ledger } from "../ledger";
 import { type Customer, type Entry, type Branding, defaultBranding } from "../ledger";
@@ -26,8 +28,13 @@ import { ReversalConfirmation } from "../features/cashier/ReversalConfirmation";
 import { Welcome } from "../features/database/Welcome";
 import { FileControls } from "../features/database/FileControls";
 import { EventChoice } from "../features/database/EventChoice";
+import { OperatorPrompt } from "../features/cashier/OperatorPrompt";
+/** With no input for this long, the selected person is cleared so nobody gets charged by mistake. */
+export const IDLE_TIMEOUT_MS = 2 * 60 * 1000;
+const ACTIVITY_EVENTS = ["pointerdown", "keydown", "wheel", "touchstart", "input"] as const;
 type Modal =
-  | { kind: "event"; next: { ledger: Ledger; name: string } }
+  | { kind: "event"; next: OpenedDatabase }
+  | { kind: "operator" }
   | { kind: "create-event"; branding: Branding }
   | { kind: "onboarding" }
   | { kind: "customer" }
@@ -44,9 +51,11 @@ function CashierApp() {
   const [selectionRevision, setSelectionRevision] = useState(0);
   const [linkedFile, setLinkedFile] = useState(false);
   const [fileBusy, setFileBusy] = useState(false);
+  const [operator, setOperator] = useState("");
   const {
     active,
     activate: activateSession,
+    close: closeSession,
     data,
     mutation,
     error,
@@ -54,7 +63,8 @@ function CashierApp() {
   } = useLedgerSession({ onSaved: () => setDirty(!linkedFile) });
   const ledger = active.kind === "active" ? active.ledger : undefined;
   const fileName = active.kind === "active" ? active.name : "";
-  function activate(next: { ledger: Ledger; name: string }) {
+  const protection = active.kind === "active" ? active.protection : undefined;
+  function activate(next: OpenedDatabase) {
     activateSession(next);
     setUndo(undefined);
     setView("cashier");
@@ -70,9 +80,30 @@ function CashierApp() {
   const customer = data?.customers.find((c) => c.id === selected);
   const entries = data?.entries.filter((e) => e.customer_id === selected) ?? [];
   useEffect(() => {
-    if (data && !data.customers.some((c) => c.id === selected))
-      setSelected(data.customers[0]?.id);
+    // Nobody is selected until the cashier picks someone.
+    if (data && selected && !data.customers.some((c) => c.id === selected))
+      setSelected(undefined);
   }, [data, selected]);
+  useEffect(() => {
+    if (!selected) return;
+    const expire = () => {
+      setSelected(undefined);
+      setModal((current) =>
+        current?.kind === "reverse" || current?.kind === "edit-customer" ? undefined : current,
+      );
+    };
+    let timer = setTimeout(expire, IDLE_TIMEOUT_MS);
+    const reset = () => {
+      clearTimeout(timer);
+      timer = setTimeout(expire, IDLE_TIMEOUT_MS);
+    };
+    for (const name of ACTIVITY_EVENTS) window.addEventListener(name, reset, true);
+    return () => {
+      clearTimeout(timer);
+      for (const name of ACTIVITY_EVENTS) window.removeEventListener(name, reset, true);
+    };
+  }, [selected]);
+
   useEffect(() => {
     const handler = (e: BeforeUnloadEvent) => {
       if (dirty) e.preventDefault();
@@ -109,10 +140,11 @@ function CashierApp() {
       return;
     setFileBusy(true);
     try {
-      const imported = await Ledger.open(
+      const { plain, fileKey } = await unlockBytes(
         new Uint8Array(await file.arrayBuffer()),
       );
-      const next = await saveDatabase(imported, file.name);
+      const imported = await Ledger.open(plain);
+      const next = await saveDatabase(imported, file.name, fileKey);
       setModal({ kind: "event", next });
       setError("");
     } catch (e) {
@@ -127,12 +159,25 @@ function CashierApp() {
     setError("");
     setModal({ kind: "create-event", branding });
   }
-  function finishOpening(next: { ledger: Ledger; name: string }) {
+  function finishOpening(next: OpenedDatabase) {
     activate(next);
     setLinkedFile(true);
     setDirty(false);
     setSelected(undefined);
     setError("");
+    if (!operator) setModal({ kind: "operator" });
+  }
+  function logout() {
+    if (busy) return;
+    if (dirty && !window.confirm("Kirjaudutaanko ulos lataamatta varmuuskopiota?")) return;
+    closeSession();
+    setOperator("");
+    setSelected(undefined);
+    setUndo(undefined);
+    setModal(undefined);
+    setView("cashier");
+    setLinkedFile(false);
+    setDirty(false);
   }
   async function createEvent(name: string) {
     if (fileBusy || mutation.isPending) return;
@@ -153,9 +198,10 @@ function CashierApp() {
       setFileBusy(false);
     }
   }
-  function download() {
+  async function download() {
     if (!ledger) return;
-    const bytes = ledger.export();
+    // An encrypted database gets an encrypted backup with the same password.
+    const bytes = protection ? await protection.backup() : ledger.export();
     const url = URL.createObjectURL(
       new Blob([new Uint8Array(bytes)], { type: "application/vnd.sqlite3" }),
     );
@@ -218,9 +264,20 @@ function CashierApp() {
       busy={busy}
       error={error}
       onOpen={() => void chooseDatabase()}
-      onBackup={download}
+      onBackup={() => void download()}
     />
   );
+  const osakunnat = data
+    ? [...data.customers, ...data.removedCustomers].map((c) => c.osakunta).concat(branding.organization)
+    : [];
+  const people = data
+    ? [...data.customers, ...data.removedCustomers.map((c) => ({ ...c, removed: true }))]
+    : [];
+  function choose(id: string) {
+    setSelected(id);
+    setSelectionRevision((revision) => revision + 1);
+    setError("");
+  }
   return (
     <Box
       style={brandStyle}
@@ -266,6 +323,17 @@ function CashierApp() {
         )}
         <span className="wordmark">Piikki</span>
         {data && <span className="event-name">{data.event.name}</span>}
+        {ledger && operator && (
+          <Button
+            variant="ghost"
+            className="operator-switch"
+            aria-label={`Vuorossa ${operator}, vaihda`}
+            disabled={busy}
+            onClick={() => setModal({ kind: "operator" })}
+          >
+            <span className="operator-label">Vuorossa</span> {operator}
+          </Button>
+        )}
         {ledger && (
           <Button
             variant="ghost"
@@ -274,6 +342,11 @@ function CashierApp() {
             onClick={() => setView(view === "stats" ? "cashier" : "stats")}
           >
             {view === "stats" ? "Tilit" : "Tilastot"}
+          </Button>
+        )}
+        {ledger && (
+          <Button variant="ghost" className="logout" disabled={busy} onClick={logout}>
+            Kirjaudu ulos
           </Button>
         )}
       </header>
@@ -300,11 +373,7 @@ function CashierApp() {
             customers={data?.customers ?? []}
             selected={selected}
             disabled={busy}
-            select={(id) => {
-              setSelected(id);
-              setSelectionRevision((revision) => revision + 1);
-              setError("");
-            }}
+            select={choose}
             add={() => {
               setModal({ kind: "customer" });
             }}
@@ -322,7 +391,7 @@ function CashierApp() {
             busy={busy}
             error={modal ? "" : error}
             setError={setError}
-            onPost={(input) => mutation.mutateAsync(() => ledger.post(input))}
+            onPost={(input) => mutation.mutateAsync(() => ledger.post({ ...input, operator }))}
             onSaveNote={(customerId, note) =>
               mutation.mutateAsync(() => ledger.saveCustomerNote(customerId, note))
             }
@@ -350,7 +419,9 @@ function CashierApp() {
         unmountOnExit
         open={!!modal}
         onOpenChange={(event) => {
-          if (!event.open && !busy) {
+          if (event.open) return;
+          if (modal?.kind === "operator" && !operator) return;
+          else if (!busy) {
             setModal(undefined);
             setError("");
           }
@@ -366,6 +437,8 @@ function CashierApp() {
               aria-label={
                 modal?.kind === "event" || modal?.kind === "create-event"
                   ? "Valitse tapahtuma"
+                  : modal?.kind === "operator"
+                  ? "Kuka on vuorossa?"
                   : modal?.kind === "onboarding"
                   ? "Organisaation tiedot"
                   : modal?.kind === "settings"
@@ -378,6 +451,19 @@ function CashierApp() {
               }
             >
               <Dialog.Body>
+                {modal?.kind === "operator" && (
+                  <>
+                    <Dialog.Title>Kuka on vuorossa?</Dialog.Title>
+                    <OperatorPrompt
+                      current={operator}
+                      recent={ledger?.operators() ?? []}
+                      choose={(name) => {
+                        setOperator(name);
+                        setModal(undefined);
+                      }}
+                    />
+                  </>
+                )}
                 {(modal?.kind === "event" || modal?.kind === "create-event") && (
                   <>
                     <Dialog.Title>Valitse tapahtuma</Dialog.Title>
@@ -405,11 +491,21 @@ function CashierApp() {
                 {modal?.kind === "customer" && (
                   <CustomerForm
                     busy={busy}
-                    save={async (name, osakunta) => {
-                      await mutation.mutateAsync(() =>
-                        ledger?.addCustomer(name, "", osakunta),
-                      );
+                    withOpening
+                    osakunnat={osakunnat}
+                    people={people}
+                    onPick={(id) => {
+                      choose(id);
                       setModal(undefined);
+                    }}
+                    save={async ({ name, osakunta, openingCents }) => {
+                      if (!ledger) return;
+                      let id = "";
+                      await mutation.mutateAsync(async () => {
+                        id = await ledger.addCustomer(name, "", osakunta, { openingCents, operator });
+                      });
+                      setModal(undefined);
+                      choose(id);
                     }}
                   />
                 )}
@@ -419,6 +515,8 @@ function CashierApp() {
                     <EditCustomer
                       customer={modal.customer}
                       busy={busy}
+                      osakunnat={osakunnat}
+                      people={people}
                       save={(name, osakunta) => editCustomer(modal.customer, name, osakunta)}
                       remove={() => removeCustomer(modal.customer)}
                     />
@@ -438,7 +536,16 @@ function CashierApp() {
                       mutation.mutateAsync(() => ledger.removeProduct(id))
                     }
                     restoreCustomer={restoreCustomer}
-                    files={fileControls}
+                    files={
+                      <>
+                        {fileControls}
+                        <Text className="file-saving-help" role="status">
+                          {protection?.encrypted()
+                            ? "Tiedosto on salattu. Ilman sovelluksen salasanaa sitä ei voi lukea, myös uloskirjautumisen jälkeen."
+                            : "Tiedostoa ei salata, koska sovellukselle ei ole asetettu salasanaa."}
+                        </Text>
+                      </>
+                    }
                   />
                 )}
                 {modal?.kind === "reverse" && (
@@ -448,7 +555,7 @@ function CashierApp() {
                     busy={busy}
                     confirm={async () => {
                       await mutation.mutateAsync(() =>
-                        ledger?.reverse(modal.entry.id),
+                        ledger?.reverse(modal.entry.id, operator),
                       );
                       setModal(undefined);
                     }}
@@ -459,17 +566,19 @@ function CashierApp() {
                     {error}
                   </Text>
                 )}
-                <Button
-                  variant="ghost"
-                  className="close-modal"
-                  disabled={busy}
-                  onClick={() => {
-                    setModal(undefined);
-                    setError("");
-                  }}
-                >
-                  {modal?.kind === "settings" ? "Valmis" : "Peruuta"}
-                </Button>
+                {!(modal?.kind === "operator" && !operator) && (
+                    <Button
+                      variant="ghost"
+                      className="close-modal"
+                      disabled={busy}
+                      onClick={() => {
+                        setModal(undefined);
+                        setError("");
+                      }}
+                    >
+                      {modal?.kind === "settings" ? "Valmis" : "Peruuta"}
+                    </Button>
+                )}
               </Dialog.Body>
             </Dialog.Content>
           </Dialog.Positioner>

@@ -71,7 +71,10 @@ export function summarizeEvent({
   customers: Pick<Customer, "id" | "name" | "balance">[];
 }): EventSummary {
   // An undone entry and its reversal cancel out, so neither is counted.
-  const counted = entries.filter((entry) => !entry.reversed && !entry.reversal_of);
+  // Opening balances are carried-over debt or credit, not activity in this event.
+  const counted = entries.filter(
+    (entry) => !entry.reversed && !entry.reversal_of && !entry.opening,
+  );
   const chargeEntries = counted.filter((entry) => entry.cents < 0);
   const deposits = counted.filter((entry) => entry.cents > 0);
   const charged = chargeEntries.reduce((sum, charge) => sum - charge.cents, 0);
@@ -130,7 +133,7 @@ export function summarizeEvent({
     personIds: [...totals.keys()],
     average: chargeEntries.length ? Math.round(charged / chargeEntries.length) : 0,
     largest: chargeEntries.reduce((max, charge) => Math.max(max, -charge.cents), 0),
-    undone: entries.filter((entry) => entry.reversed && entry.cents < 0).length,
+    undone: entries.filter((entry) => entry.reversed && entry.cents < 0 && !entry.opening).length,
     deposits: deposits.reduce((sum, entry) => sum + entry.cents, 0),
     depositCount: deposits.length,
     held: customers.reduce((sum, customer) => sum + Math.max(customer.balance, 0), 0),
