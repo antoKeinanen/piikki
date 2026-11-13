@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Button, Field, Flex, Input, Text } from "@chakra-ui/react";
 import { CustomerNoteForm } from "./CustomerNoteForm";
+import bustedImage from "./busted.jpg";
 import {
   formatAmount,
   parseAmount,
@@ -308,7 +309,13 @@ export function AccountPanel({
           </div>
         </>
       ) : (
-        <Text className="empty-account">Valitse tai lisää henkilö.</Text>
+        <>
+          <Text className="empty-account">Valitse tai lisää henkilö.</Text>
+          <figure className="busted" aria-hidden="true">
+            <img src={bustedImage} alt="" />
+            <figcaption>you have been busted</figcaption>
+          </figure>
+        </>
       )}
       {error && !customer && (
         <Text role="alert" className="error">

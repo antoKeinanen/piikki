@@ -407,6 +407,25 @@ input::placeholder {
   color: var(--muted);
   font-size: 14px;
 }
+.busted {
+  margin: 0;
+  opacity: 0;
+  animation: busted-fade-in 2h linear forwards;
+  text-align: center;
+}
+.busted img {
+  max-width: 100%;
+  border-radius: 6px;
+}
+.busted figcaption {
+  margin-top: 8px;
+  font-size: 20px;
+  font-weight: 700;
+}
+@keyframes busted-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
 .error {
   color: var(--error);
   font-size: 13px;
