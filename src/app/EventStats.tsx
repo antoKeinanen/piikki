@@ -17,7 +17,14 @@ export function EventStats({
     queryKey: ["book", revision, "stats"],
     queryFn: () => {
       const events = ledger.events();
-      const summaries = events.map((event) => summarizeEvent(ledger.snapshot(event.id)));
+      const summaries = events.map((event) => {
+        // Deleted people still count towards totals and keep their names.
+        const snapshot = ledger.snapshot(event.id);
+        return summarizeEvent({
+          entries: snapshot.entries,
+          customers: [...snapshot.customers, ...snapshot.removedCustomers],
+        });
+      });
       return {
         events,
         summaries,

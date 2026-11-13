@@ -3,6 +3,7 @@ import { Tabs } from "@chakra-ui/react";
 import type { Branding, Product, Snapshot } from "../ledger";
 import { BrandingForm } from "../features/branding/BrandingForm";
 import { ProductEditor } from "../features/products/ProductEditor";
+import { RemovedCustomers } from "../features/cashier/RemovedCustomers";
 
 export function Settings({
   snapshot,
@@ -11,6 +12,7 @@ export function Settings({
   saveBranding,
   saveProduct,
   removeProduct,
+  restoreCustomer,
 }: {
   snapshot: Snapshot;
   busy: boolean;
@@ -18,6 +20,7 @@ export function Settings({
   saveBranding(branding: Branding): Promise<void>;
   saveProduct(product: Product): Promise<void>;
   removeProduct(id: string): Promise<void>;
+  restoreCustomer(id: string): Promise<void>;
 }) {
   const [error, setError] = useState("");
   return (
@@ -25,6 +28,7 @@ export function Settings({
       <Tabs.List>
         <Tabs.Trigger value="branding">Ulkoasu</Tabs.Trigger>
         <Tabs.Trigger value="charges">Nimikkeet</Tabs.Trigger>
+        <Tabs.Trigger value="removed">Poistetut</Tabs.Trigger>
         <Tabs.Trigger value="files">Tietokanta</Tabs.Trigger>
       </Tabs.List>
       <Tabs.Content value="branding">
@@ -41,6 +45,13 @@ export function Settings({
           save={saveProduct}
           remove={removeProduct}
           setError={setError}
+        />
+      </Tabs.Content>
+      <Tabs.Content value="removed">
+        <RemovedCustomers
+          customers={snapshot.removedCustomers}
+          busy={busy}
+          restore={restoreCustomer}
         />
       </Tabs.Content>
       <Tabs.Content value="files">

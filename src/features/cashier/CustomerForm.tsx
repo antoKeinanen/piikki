@@ -14,15 +14,21 @@ function FormField({
     </Field.Root>
   );
 }
-export function AddCustomerForm({
+/** Adds a person, or edits one when initial values are given. */
+export function CustomerForm({
   busy,
   save,
+  initial = { name: "", osakunta: "" },
+  submitLabel = "Lisää henkilö",
 }: {
   busy: boolean;
   save(name: string, osakunta: string): Promise<void>;
+  initial?: { name: string; osakunta: string };
+  submitLabel?: string;
 }) {
-  const [name, setName] = useState("");
-  const [osakunta, setOsakunta] = useState("");
+  const [name, setName] = useState(initial.name);
+  const [osakunta, setOsakunta] = useState(initial.osakunta);
+  const unchanged = name.trim() === initial.name && osakunta === initial.osakunta;
   return (
     <form
       className="settings-form"
@@ -36,6 +42,7 @@ export function AddCustomerForm({
           autoFocus
           required
           value={name}
+          disabled={busy}
           onChange={(e) => setName(e.target.value)}
         />
       </FormField>
@@ -50,9 +57,9 @@ export function AddCustomerForm({
       <Button
         className="primary"
         type="submit"
-        disabled={!name.trim() || osakunta.length > 5 || busy}
+        disabled={!name.trim() || osakunta.length > 5 || unchanged || busy}
       >
-        Lisää henkilö
+        {submitLabel}
       </Button>
     </form>
   );

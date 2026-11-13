@@ -51,6 +51,8 @@ export type Snapshot = {
   event: LedgerEvent;
   branding: Branding;
   customers: Customer[];
+  /** Deleted people keep their history and balance and can be restored. */
+  removedCustomers: Customer[];
   products: Product[];
   entries: Entry[];
 };

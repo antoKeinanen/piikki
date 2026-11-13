@@ -74,3 +74,9 @@ Quick charges apply immediately. Custom charges and deposits submit directly thr
 App checks the secure context and concrete picker, file-handle, and stream methods before mounting CashierApp. Missing capabilities show a blocking explanation. There is no user-agent allowlist and no download-only fallback. Opening requires permission plus an actual write, close, and read-back of unchanged SQLite bytes. New and dropped databases attach a verified writable file before activation.
 
 Before this refactor, browser verification used an actual FileSystemFileHandle in a temporary origin-private test file with the production connectFile writer. After depositing 20.00 and charging 8.50, reopening the file returned 11.50. After reversing the charge, reopening returned 20.00 with three entries. The temporary test file was removed. Native external-file picker dialogs could not be automated by the shared browser tools, so that UI portion remains unverified. Origin-private storage is used only by this test, not as application persistence.
+
+## Editing and deleting people
+
+`Ledger.updateCustomer` changes a person's name and osakunta; notes keep their own form. `Ledger.removeCustomer` never deletes rows: it adds the person to the optional `customer_removals` table, created on first use, so entries, balances and foreign keys stay intact. Snapshots list those people in `removedCustomers` instead of `customers`, so the cashier cannot charge them, while validation and statistics still see their entries. `Ledger.restoreCustomer` removes the marker and the person returns with the same balance.
+
+Every person change is undoable. After an edit or deletion the account area shows an undo notice for the latest change; undoing an edit saves the previous values back. Deleted people can also be restored at any time from the Settings "Poistetut" tab, including after a reload. Edit undo is session-local: old names are not kept in the database.

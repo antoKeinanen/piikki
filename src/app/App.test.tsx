@@ -637,3 +637,50 @@ it("shows statistics per event and switches back to the cashier", async () => {
   expect(await screen.findByLabelText("Saldo")).toBeTruthy();
   expect(document.querySelector(".stats")).toBeNull();
 });
+it("edits a person with undo, deletes with undo, and restores from settings", async () => {
+  const ledger = await createExample();
+  vi.spyOn(fileAccess, "fileAccessProblem").mockReturnValue(undefined);
+  vi.spyOn(fileAccess, "supportsDirectFiles").mockReturnValue(true);
+  vi.spyOn(fileAccess, "pickDatabase").mockResolvedValue({ ledger, name: "example.sqlite" });
+  mount();
+  fireEvent.click(screen.getByRole("button", { name: "Avaa tietokanta" }));
+  await continueEvent();
+  const account = await screen.findByRole("region", { name: "Valittu henkilö" });
+  const aino = () => ledger.snapshot().customers.find((c) => c.reference === "1001");
+
+  fireEvent.click(await screen.findByRole("button", { name: "Muokkaa henkilöä Aino Korhonen" }));
+  let dialog = await screen.findByRole("dialog", { name: "Muokkaa henkilöä" });
+  const save = within(dialog).getByRole("button", { name: "Tallenna muutokset" });
+  expect(save.hasAttribute("disabled")).toBe(true);
+  fireEvent.change(within(dialog).getByLabelText("Nimi"), { target: { value: "Aino K" } });
+  fireEvent.change(within(dialog).getByLabelText("Osakunta (valinnainen)"), { target: { value: "PO" } });
+  fireEvent.click(save);
+  await within(account).findByText("Aino K • PO");
+  expect(aino()).toMatchObject({ name: "Aino K", osakunta: "PO" });
+  fireEvent.click(within(account).getByRole("button", { name: "Kumoa muutos" }));
+  await within(account).findByText("Aino Korhonen");
+  expect(aino()).toMatchObject({ name: "Aino Korhonen", osakunta: "" });
+  expect(within(account).queryByRole("button", { name: "Kumoa muutos" })).toBeNull();
+
+  fireEvent.click(screen.getByRole("button", { name: "Muokkaa henkilöä Aino Korhonen" }));
+  dialog = await screen.findByRole("dialog", { name: "Muokkaa henkilöä" });
+  expect(within(dialog).getByText(/Saldo 42,50/)).toBeTruthy();
+  fireEvent.click(within(dialog).getByRole("button", { name: "Poista henkilö" }));
+  await waitFor(() => expect(aino()).toBeUndefined());
+  expect(screen.queryByRole("button", { name: "Aino Korhonen" })).toBeNull();
+  fireEvent.click(within(account).getByRole("button", { name: "Palauta Aino Korhonen" }));
+  await waitFor(() => expect(aino()?.balance).toBe(4250));
+  expect(within(account).getByLabelText("Saldo").textContent).toBe("42,50");
+
+  fireEvent.click(screen.getByRole("button", { name: "Muokkaa henkilöä Aino Korhonen" }));
+  dialog = await screen.findByRole("dialog", { name: "Muokkaa henkilöä" });
+  fireEvent.click(within(dialog).getByRole("button", { name: "Poista henkilö" }));
+  await waitFor(() => expect(aino()).toBeUndefined());
+  fireEvent.click(screen.getByRole("button", { name: "Asetukset" }));
+  dialog = await screen.findByRole("dialog", { name: "Asetukset" });
+  fireEvent.click(within(dialog).getByRole("tab", { name: "Poistetut" }));
+  fireEvent.click(await within(dialog).findByRole("button", { name: "Palauta Aino Korhonen" }));
+  await waitFor(() => expect(aino()?.balance).toBe(4250));
+  await within(dialog).findByText("Ei poistettuja henkilöitä.");
+  expect(within(account).queryByRole("button", { name: "Palauta Aino Korhonen" })).toBeNull();
+});

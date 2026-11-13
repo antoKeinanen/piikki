@@ -82,6 +82,9 @@ export class Ledger {
       this.db.run("INSERT INTO events VALUES(?,?)", [crypto.randomUUID(), eventName]);
     });
   }
+  private hasTable(name: string) {
+    return this.rows("SELECT name FROM sqlite_master WHERE type='table' AND name=?", [name]).length > 0;
+  }
   private rows(sql: string, params: SqlValue[] = []) {
     const statement = this.db.prepare(sql);
     try {
@@ -122,16 +125,24 @@ export class Ledger {
     const hasProducts = this.rows(
       "SELECT name FROM sqlite_master WHERE type='table' AND name='product_details'",
     ).length > 0;
+    const hasRemovals = this.hasTable("customer_removals");
+    const people = this.rows(
+      `SELECT c.*, ${hasMetadata ? "COALESCE(m.osakunta,'') osakunta, COALESCE(m.note,'') note," : ""}
+         ${hasRemovals ? "r.customer_id IS NOT NULL" : "0"} removed, COALESCE(SUM(e.cents),0) balance
+       FROM customers c ${hasMetadata ? "LEFT JOIN customer_metadata m ON m.customer_id=c.id" : ""}
+       ${hasRemovals ? "LEFT JOIN customer_removals r ON r.customer_id=c.id" : ""}
+       LEFT JOIN entries e ON e.customer_id=c.id
+         AND e.event_id IN (SELECT id FROM events WHERE rowid <= (SELECT rowid FROM events WHERE id=?))
+       GROUP BY c.id ORDER BY c.name COLLATE NOCASE`, [event.id],
+    );
+    const parse = (removed: boolean) => people
+      .filter((row) => !!row.removed === removed)
+      .map(({ removed: _, ...row }) => CustomerSchema.parse(row));
     return {
       event,
       branding: BrandingSchema.parse({ ...defaultBranding, ...branding, ...identity, ...logo }),
-      customers: this.rows(
-        `SELECT c.*, ${hasMetadata ? "COALESCE(m.osakunta,'') osakunta, COALESCE(m.note,'') note," : ""} COALESCE(SUM(e.cents),0) balance
-         FROM customers c ${hasMetadata ? "LEFT JOIN customer_metadata m ON m.customer_id=c.id" : ""}
-         LEFT JOIN entries e ON e.customer_id=c.id
-           AND e.event_id IN (SELECT id FROM events WHERE rowid <= (SELECT rowid FROM events WHERE id=?))
-         GROUP BY c.id ORDER BY c.name COLLATE NOCASE`, [event.id],
-      ).map((row) => CustomerSchema.parse(row)),
+      customers: parse(false),
+      removedCustomers: parse(true),
       products: this.rows(hasProducts
         ? "SELECT p.*, COALESCE(d.description,'') description, COALESCE(d.image,'') image FROM presets p LEFT JOIN product_details d ON d.id=p.id ORDER BY p.rowid"
         : "SELECT *, '' description, '' image FROM presets ORDER BY rowid"
@@ -161,7 +172,7 @@ export class Ledger {
         if (
           !Number.isSafeInteger(entry.cents) ||
           !entry.cents ||
-          !data.customers.some((c) => c.id === entry.customer_id)
+          ![...data.customers, ...data.removedCustomers].some((c) => c.id === entry.customer_id)
         )
           throw new Error("The database contains an invalid transaction.");
         if (entry.reversal_of !== null) {
@@ -177,7 +188,7 @@ export class Ledger {
           reversed.add(original.id);
         }
       }
-      if (data.customers.some((c) => !Number.isSafeInteger(c.balance)))
+      if ([...data.customers, ...data.removedCustomers].some((c) => !Number.isSafeInteger(c.balance)))
         throw new Error("The database contains an invalid balance.");
     }
   }
@@ -282,6 +293,47 @@ export class Ledger {
         "INSERT INTO customer_metadata(customer_id,note) VALUES(?,?) ON CONFLICT(customer_id) DO UPDATE SET note=excluded.note",
         [customerId, note],
       );
+    });
+  }
+  /** Renames a person or changes their osakunta. Notes are saved separately. */
+  async updateCustomer(customerId: string, input: { name: string; osakunta: string }) {
+    const name = input.name.trim();
+    if (!name) throw new Error("Enter a customer name.");
+    if (!CustomerSchema.shape.osakunta.safeParse(input.osakunta).success)
+      throw new Error("Osakunta saa olla enintään 5 merkkiä.");
+    return this.change(() => {
+      if (!this.snapshot().customers.some((customer) => customer.id === customerId))
+        throw new Error("Customer no longer exists.");
+      this.db.run("UPDATE customers SET name=? WHERE id=?", [name, customerId]);
+      this.ensureCustomerMetadata();
+      this.db.run(
+        "INSERT INTO customer_metadata(customer_id,osakunta) VALUES(?,?) ON CONFLICT(customer_id) DO UPDATE SET osakunta=excluded.osakunta",
+        [customerId, input.osakunta],
+      );
+    });
+  }
+  /**
+   * Hides a person from the cashier. Their entries and balance stay in the
+   * database, so restoreCustomer brings them back unchanged.
+   */
+  async removeCustomer(customerId: string) {
+    return this.change(() => {
+      if (!this.snapshot().customers.some((customer) => customer.id === customerId))
+        throw new Error("Customer no longer exists.");
+      this.db.run(
+        "CREATE TABLE IF NOT EXISTS customer_removals(customer_id TEXT PRIMARY KEY REFERENCES customers(id), removed_at TEXT NOT NULL)",
+      );
+      this.db.run("INSERT INTO customer_removals VALUES(?,?)", [
+        customerId,
+        new Date().toISOString(),
+      ]);
+    });
+  }
+  async restoreCustomer(customerId: string) {
+    return this.change(() => {
+      if (!this.snapshot().removedCustomers.some((customer) => customer.id === customerId))
+        throw new Error("This person is not deleted.");
+      this.db.run("DELETE FROM customer_removals WHERE customer_id=?", [customerId]);
     });
   }
   async saveProduct(input: Product) {

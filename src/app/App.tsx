@@ -8,7 +8,7 @@ import {
   supportsDirectFiles,
 } from "../persistence/database-file";
 import { Ledger } from "../ledger";
-import { type Entry, type Branding, defaultBranding } from "../ledger";
+import { type Customer, type Entry, type Branding, defaultBranding } from "../ledger";
 import { brandingStyle } from "../features/branding/theme";
 import { CompatibilityBlock } from "../features/database/CompatibilityBlock";
 import { BrandingForm } from "../features/branding/BrandingForm";
@@ -19,7 +19,9 @@ const EventStats = lazy(() =>
 );
 import { CustomerTable } from "../features/cashier/CustomerTable";
 import { AccountPanel } from "../features/cashier/AccountPanel";
-import { AddCustomerForm } from "../features/cashier/AddCustomerForm";
+import { CustomerForm } from "../features/cashier/CustomerForm";
+import { EditCustomer } from "../features/cashier/EditCustomer";
+import { UndoNotice, type Undo } from "../features/cashier/UndoNotice";
 import { ReversalConfirmation } from "../features/cashier/ReversalConfirmation";
 import { Welcome } from "../features/database/Welcome";
 import { FileControls } from "../features/database/FileControls";
@@ -29,6 +31,7 @@ type Modal =
   | { kind: "create-event"; branding: Branding }
   | { kind: "onboarding" }
   | { kind: "customer" }
+  | { kind: "edit-customer"; customer: Customer }
   | { kind: "settings" }
   | { kind: "reverse"; entry: Entry; customerName: string };
 export default function App() {
@@ -53,12 +56,14 @@ function CashierApp() {
   const fileName = active.kind === "active" ? active.name : "";
   function activate(next: { ledger: Ledger; name: string }) {
     activateSession(next);
+    setUndo(undefined);
     setView("cashier");
     setModal(undefined);
   }
   const [selected, setSelected] = useState<string>();
   const [view, setView] = useState<"cashier" | "stats">("cashier");
   const [modal, setModal] = useState<Modal>();
+  const [undo, setUndo] = useState<Undo>();
   const [dragging, setDragging] = useState(false);
 
   const input = useRef<HTMLInputElement>(null);
@@ -162,6 +167,37 @@ function CashierApp() {
     setDirty(false);
   }
   const busy = mutation.isPending || fileBusy;
+  async function editCustomer(before: Customer, name: string, osakunta: string) {
+    if (!ledger) return;
+    await mutation.mutateAsync(() => ledger.updateCustomer(before.id, { name, osakunta }));
+    setModal(undefined);
+    setUndo({
+      message: `Henkilön ${before.name} tiedot muutettu.`,
+      action: "Kumoa muutos",
+      run: () =>
+        mutation.mutateAsync(() =>
+          ledger.updateCustomer(before.id, { name: before.name, osakunta: before.osakunta }),
+        ),
+    });
+  }
+  async function removeCustomer(person: Customer) {
+    if (!ledger) return;
+    await mutation.mutateAsync(() => ledger.removeCustomer(person.id));
+    setModal(undefined);
+    setUndo({
+      message: `${person.name} poistettu.`,
+      action: `Palauta ${person.name}`,
+      run: () => restoreCustomer(person.id),
+      restores: person.id,
+    });
+  }
+  async function restoreCustomer(id: string) {
+    if (!ledger) return;
+    await mutation.mutateAsync(() => ledger.restoreCustomer(id));
+    setSelected(id);
+    setSelectionRevision((revision) => revision + 1);
+    setUndo((current) => (current?.restores === id ? undefined : current));
+  }
   const fileInput = (
     <input
       ref={input}
@@ -290,6 +326,14 @@ function CashierApp() {
             onSaveNote={(customerId, note) =>
               mutation.mutateAsync(() => ledger.saveCustomerNote(customerId, note))
             }
+            onEdit={() => {
+              if (customer) setModal({ kind: "edit-customer", customer });
+            }}
+            notice={
+              undo && (
+                <UndoNotice undo={undo} busy={busy} dismiss={() => setUndo(undefined)} />
+              )
+            }
             onReverse={(entry) => {
               setError("");
               setModal({
@@ -328,7 +372,9 @@ function CashierApp() {
                     ? "Asetukset"
                     : modal?.kind === "customer"
                       ? "Lisää henkilö"
-                      : "Peru tapahtuma"
+                      : modal?.kind === "edit-customer"
+                        ? "Muokkaa henkilöä"
+                        : "Peru tapahtuma"
               }
             >
               <Dialog.Body>
@@ -357,7 +403,7 @@ function CashierApp() {
                   </>
                 )}
                 {modal?.kind === "customer" && (
-                  <AddCustomerForm
+                  <CustomerForm
                     busy={busy}
                     save={async (name, osakunta) => {
                       await mutation.mutateAsync(() =>
@@ -366,6 +412,17 @@ function CashierApp() {
                       setModal(undefined);
                     }}
                   />
+                )}
+                {modal?.kind === "edit-customer" && (
+                  <>
+                    <Dialog.Title>Muokkaa henkilöä</Dialog.Title>
+                    <EditCustomer
+                      customer={modal.customer}
+                      busy={busy}
+                      save={(name, osakunta) => editCustomer(modal.customer, name, osakunta)}
+                      remove={() => removeCustomer(modal.customer)}
+                    />
+                  </>
                 )}
                 {modal?.kind === "settings" && ledger && data && (
                   <Settings
@@ -380,6 +437,7 @@ function CashierApp() {
                     removeProduct={(id) =>
                       mutation.mutateAsync(() => ledger.removeProduct(id))
                     }
+                    restoreCustomer={restoreCustomer}
                     files={fileControls}
                   />
                 )}

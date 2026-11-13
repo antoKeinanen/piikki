@@ -34,6 +34,8 @@ export function AccountPanel({
   onPost,
   onReverse,
   onSaveNote,
+  onEdit,
+  notice,
 }: {
   selectionRevision: number;
   customer: Customer | undefined;
@@ -45,6 +47,8 @@ export function AccountPanel({
   onPost(input: Parameters<Ledger["post"]>[0]): Promise<void>;
   onReverse(entry: Entry): void;
   onSaveNote(customerId: string, note: string): Promise<void>;
+  onEdit(): void;
+  notice?: ReactNode;
 }) {
   const [amount, setAmount] = useState("");
   const [action, setAction] = useState<"charge" | "deposit">("charge");
@@ -77,10 +81,25 @@ export function AccountPanel({
   }
   return (
     <section className="account" aria-label="Valittu henkilö">
+      {notice}
       {customer ? (
         <>
           <div className="account-summary">
-            <Text className="account-name">{customer.name}{customer.osakunta && ` • ${customer.osakunta}`}</Text>
+            <div className="account-identity">
+              <Text className="account-name">{customer.name}{customer.osakunta && ` • ${customer.osakunta}`}</Text>
+              <Button
+                variant="ghost"
+                size="sm"
+                aria-label={`Muokkaa henkilöä ${customer.name}`}
+                disabled={busy}
+                onClick={() => {
+                  setError("");
+                  onEdit();
+                }}
+              >
+                Muokkaa
+              </Button>
+            </div>
             <Text className="balance" aria-label="Saldo">
               {formatAmount(customer.balance)}
             </Text>
