@@ -107,9 +107,58 @@ input:focus-visible {
 .customers table {
   width: 100%;
   background: transparent;
+  /* Fixed widths keep rows and buttons in place when balances change. */
+  table-layout: fixed;
+}
+.osakunta-column { width: 30%; }
+.balance-column { width: 118px; }
+.customers tbody td {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.customer-name {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.customers {
+  display: flex;
+  flex-direction: column;
+}
+.customer-scroll {
+  min-height: 0;
+  flex: 1;
+  overflow: auto;
+  scrollbar-width: thin;
 }
 .customers thead th {
-  background: transparent;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+.sort-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: -18px 0 14px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.sort-row button {
+  padding: 4px 8px;
+  border-radius: 3px;
+  color: var(--muted);
+}
+.sort-row button[aria-pressed="true"] {
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-color: var(--indicator);
+  text-underline-offset: 4px;
+}
+.customers thead th {
+  background: var(--accent);
   padding: 0 16px 14px;
   border-bottom: 1px solid var(--line);
   font-weight: 400;
@@ -167,6 +216,19 @@ input:focus-visible {
   min-width: 0;
   padding-left: 48px;
   border-left: 1px solid var(--line);
+  --charge: #b3261e;
+  --deposit: #1b7a3a;
+  --mode: var(--line);
+}
+/* Charge is red and deposit is green, so the mode is obvious at a glance. */
+.account.mode-charge { --mode: var(--charge); border-left: 4px solid var(--mode); }
+.account.mode-deposit { --mode: var(--deposit); border-left: 4px solid var(--mode); }
+.account-summary {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--accent);
+  padding-bottom: 8px;
 }
 .account-summary {
   display: flex;
@@ -177,6 +239,9 @@ input:focus-visible {
   padding-top: 2px;
 }
 .account-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: 23px;
   font-weight: 500;
   letter-spacing: -0.5px;
@@ -204,9 +269,25 @@ input:focus-visible {
   border-bottom: 2px solid transparent;
 }
 .mode button.mode-active {
-  color: var(--ink);
-  border-bottom-color: var(--indicator);
+  color: var(--mode);
+  border-bottom: 3px solid var(--mode);
 }
+.mode-sign { margin-right: 6px; font-weight: 700; }
+.app .account .mode-submit,
+.app .account .mode-submit:hover:not(:disabled) {
+  background: var(--mode) !important;
+  border-color: var(--mode) !important;
+  color: #ffffff !important;
+}
+.entry-amount.positive { color: var(--deposit); }
+.entry-amount.negative { color: var(--charge); }
+.entry-note {
+  font-size: 13px;
+  margin-top: 2px;
+  overflow-wrap: anywhere;
+}
+.category-button { font-weight: 600 !important; }
+.category-back { color: var(--muted) !important; }
 .product-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
@@ -233,10 +314,11 @@ input:focus-visible {
   color: var(--on-brand) !important;
 }
 .amount-form {
-  display: flex;
-  align-items: flex-end;
+  display: grid;
+  grid-template-columns: minmax(90px, 1fr) minmax(120px, 1.4fr) 150px;
+  align-items: end;
   gap: 12px;
-  margin-bottom: 34px;
+  margin-bottom: 26px;
 }
 .amount-form > div {
   flex: 1;
@@ -247,7 +329,7 @@ input:focus-visible {
 }
 .amount-form button {
   height: 48px;
-  min-width: 125px;
+  width: 100%;
 }
 label {
   color: var(--muted);
@@ -460,6 +542,8 @@ input::placeholder {
   .customers,
   .account {
     max-height: calc(100vh - 156px);
+  }
+  .account {
     overflow: auto;
     scrollbar-width: thin;
   }
@@ -503,9 +587,14 @@ input::placeholder {
   .customers tbody {
     display: table-row-group;
   }
-  .customers {
+  .customer-scroll {
     max-height: 340px;
-    overflow: auto;
+  }
+  .amount-form {
+    grid-template-columns: 1fr 1fr;
+  }
+  .amount-form button {
+    grid-column: 1 / -1;
   }
   .search-row {
     margin-bottom: 18px;
@@ -734,17 +823,26 @@ input::placeholder {
 }
 .account-identity {
   display: flex;
-  align-items: baseline;
-  gap: 8px;
+  flex-direction: column;
+  align-items: flex-start;
   min-width: 0;
 }
+.edit-customer { margin-left: -8px; color: var(--muted); font-size: 12px; }
 .undo-notice {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 10;
+  max-width: min(520px, calc(100vw - 48px));
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px 0 18px;
-  margin-bottom: 18px;
-  border-bottom: 1px solid var(--line);
+  padding: 12px 16px;
+  background: var(--accent);
+  border: 1px solid var(--line);
+  border-top: 3px solid var(--brand);
+  border-radius: 4px;
+  box-shadow: 0 6px 24px rgb(0 0 0 / 0.14);
   font-size: 14px;
 }
 .undo-notice > p {
@@ -762,3 +860,29 @@ input::placeholder {
   color: var(--muted);
   font-size: 14px;
 }
+
+.operator-switch, .logout { align-self: center; font-size: 13px; }
+.operator-label { color: var(--muted); margin-right: 4px; }
+.operator-help { color: var(--muted); font-size: 14px; }
+.operator-recent { display: flex; flex-wrap: wrap; gap: 8px; }
+.name-hints {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: -12px;
+  font-size: 13px;
+}
+.name-hint-title { color: var(--muted); }
+.name-hint-warning { color: var(--error); font-weight: 600; }
+.name-hint {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  text-align: left;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+}
+.name-hint-balance { color: var(--muted); font-variant-numeric: tabular-nums; }
+.osakunta-cell { color: var(--muted); font-size: 14px; }
+.customer-row[data-selected="true"] .osakunta-cell { color: var(--on-brand); }

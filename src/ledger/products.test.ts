@@ -2,7 +2,7 @@ import initSqlJs from "sql.js";
 import { expect, it } from "vitest";
 import { Ledger } from "./ledger";
 
-const product = { id: "coffee", name: "Coffee", cents: 250, description: "Hot drink", image: "data:image/png;base64,YQ==" };
+const product = { id: "coffee", name: "Coffee", cents: 250, description: "Hot drink", image: "data:image/png;base64,YQ==", category: "" };
 
 it("reads legacy presets without writing, then persists product details and preserves charge labels", async () => {
   const SQL = await initSqlJs();
@@ -22,7 +22,7 @@ it("reads legacy presets without writing, then persists product details and pres
   let writes = 0;
   const ledger = await Ledger.open(saved, async (bytes) => { saved = bytes; writes++; });
   expect(writes).toBe(0);
-  expect(ledger.snapshot().products).toEqual([{ ...product, image: "", description: "" }]);
+  expect(ledger.snapshot().products).toEqual([{ ...product, image: "", description: "", category: "" }]);
   await ledger.saveProduct(product);
   await ledger.post({ customerId: "aino", cents: product.cents, label: product.name, kind: "charge" });
   await ledger.saveProduct({ ...product, name: "Tea", cents: 300 });
@@ -35,7 +35,7 @@ it("reads legacy presets without writing, then persists product details and pres
   expect(reopened.snapshot().products).toEqual([]);
   expect(reopened.snapshot().entries).toHaveLength(3);
   const compatible = new SQL.Database(saved);
-  expect(compatible.exec("PRAGMA user_version")[0].values).toEqual([[2]]);
+  expect(compatible.exec("PRAGMA user_version")[0].values).toEqual([[3]]);
   expect(compatible.exec("SELECT * FROM presets")).toEqual([]);
   compatible.close();
 });
@@ -84,9 +84,17 @@ it("preserves legacy names and amounts that predate product editing limits", asy
   const ledger = await Ledger.open(old.export());
   old.close();
   expect(ledger.snapshot().products).toEqual([
-    { id: "legacy", name, cents: 1000000000, description: "", image: "" },
-    { id: "blank", name: "", cents: 100, description: "", image: "" },
+    { id: "legacy", name, cents: 1000000000, description: "", image: "", category: "" },
+    { id: "blank", name: "", cents: 100, description: "", image: "", category: "" },
   ]);
   await ledger.saveProduct(product);
   expect((await Ledger.open(ledger.export())).snapshot().products).toHaveLength(3);
+});
+
+it("stores product categories", async () => {
+  const ledger = await Ledger.open();
+  await ledger.saveProduct({ id: "beer", name: "Olut", cents: 300, description: "", image: "", category: " Tölkki " });
+  await ledger.saveProduct({ id: "cider", name: "Siideri", cents: 350, description: "", image: "" });
+  const reopened = (await Ledger.open(ledger.export())).snapshot();
+  expect(reopened.products.map((p) => [p.name, p.category])).toEqual([["Olut", "Tölkki"], ["Siideri", ""]]);
 });

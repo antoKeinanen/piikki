@@ -12,6 +12,9 @@ function entry(overrides: Partial<Entry>): Entry {
     created_at: "2026-11-12T10:15:00",
     reversal_of: null,
     reversed: 0,
+    operator: "",
+    note: "",
+    opening: 0,
     ...overrides,
   };
 }
@@ -135,4 +138,14 @@ it("compares events and counts people who came back", () => {
     ["two", 300, 3, 2, 1],
     ["three", 200, 2, 2, 2],
   ]);
+});
+
+it("leaves opening balances out of sales and deposits", () => {
+  const summary = summarize([
+    entry({ cents: -400, label: "Alkusaldo", opening: 1 }),
+    entry({ customer_id: "b", cents: 900, label: "Alkusaldo", opening: 1 }),
+    entry({ cents: -250, label: "Kahvi" }),
+  ]);
+  expect(summary).toMatchObject({ charged: 250, charges: 1, deposits: 0, depositCount: 0 });
+  expect(summary.products).toEqual([{ name: "Kahvi", units: 1, cents: 250 }]);
 });

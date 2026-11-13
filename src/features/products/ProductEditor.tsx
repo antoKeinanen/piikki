@@ -11,13 +11,15 @@ export function ProductEditor({
   remove(id: string): Promise<void>;
   setError(message: string): void;
 }) {
-  const [draft, setDraft] = useState({ name: "", description: "", image: "", amount: "" });
+  const empty = { name: "", description: "", image: "", amount: "", category: "" };
+  const [draft, setDraft] = useState(empty);
   const [editing, setEditing] = useState<string>();
   const [removed, setRemoved] = useState<Product>();
   const [reading, setReading] = useState(false);
   const disabled = busy || reading;
+  const categories = [...new Set(products.map((p) => p.category).filter(Boolean))];
   function reset() {
-    setDraft({ name: "", description: "", image: "", amount: "" });
+    setDraft(empty);
     setEditing(undefined);
   }
   async function apply(operation: () => Promise<void>, done: () => void) {
@@ -52,10 +54,10 @@ export function ProductEditor({
         {products.map((p) => (
           <div className="product-row" key={p.id}>
             {p.image && <img className="product-thumbnail" src={p.image} alt="" />}
-            <span>{p.name}<small>{formatAmount(p.cents)}</small></span>
+            <span>{p.name}<small>{p.category ? `${p.category} · ` : ""}{formatAmount(p.cents)}</small></span>
             <Button variant="ghost" size="sm" disabled={disabled} onClick={() => {
               setEditing(p.id);
-              setDraft({ name: p.name, description: p.description, image: p.image, amount: (p.cents / 100).toFixed(2) });
+              setDraft({ name: p.name, description: p.description, image: p.image, amount: (p.cents / 100).toFixed(2), category: p.category });
             }}>Muokkaa</Button>
             <Button variant="ghost" size="sm" disabled={disabled} onClick={() => void apply(
               () => remove(p.id),
@@ -77,6 +79,7 @@ export function ProductEditor({
             cents: parseAmount(draft.amount),
             description: draft.description,
             image: draft.image,
+            category: draft.category,
           });
         }, reset);
       }}>
@@ -89,6 +92,15 @@ export function ProductEditor({
           <Field.Label>Nimikkeen summa</Field.Label>
           <Input required inputMode="decimal" placeholder="0,00" disabled={disabled} value={draft.amount}
             onChange={(e) => setDraft({ ...draft, amount: e.target.value })} />
+        </Field.Root>
+        <Field.Root>
+          <Field.Label>Kategoria (valinnainen)</Field.Label>
+          <Input maxLength={60} list="product-categories" placeholder="esim. Tölkki tai Vahva" disabled={disabled}
+            value={draft.category} onChange={(e) => setDraft({ ...draft, category: e.target.value })} />
+          <datalist id="product-categories">
+            {categories.map((category) => <option key={category} value={category} />)}
+          </datalist>
+          <Field.HelperText>Saman kategorian nimikkeet näytetään kassalla yhden painikkeen takana.</Field.HelperText>
         </Field.Root>
         <Field.Root>
           <Field.Label>Kuvaus</Field.Label>

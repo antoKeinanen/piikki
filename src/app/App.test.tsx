@@ -10,7 +10,7 @@ import {
 } from "@testing-library/react";
 import { ChakraProvider, defaultSystem } from "@chakra-ui/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import App from "./App";
+import App, { IDLE_TIMEOUT_MS } from "./App";
 import { Ledger } from "../ledger";
 import { createExample } from "../test-support/example-ledger";
 import * as fileAccess from "../persistence/database-file";
@@ -54,9 +54,24 @@ function mount() {
     </ChakraProvider>,
   );
 }
-async function continueEvent() {
+const openDialog = () => document.querySelector('[role="dialog"][data-state="open"]');
+/** Answers the operator prompt that follows opening a database in a new session. */
+async function startShift(name = "Eetu") {
+  const dialog = await screen.findByRole("dialog", { name: "Kuka on vuorossa?" });
+  fireEvent.change(within(dialog).getByLabelText("Isännän tai apuisännän nimi"), { target: { value: name } });
+  fireEvent.click(within(dialog).getByRole("button", { name: "Aloita vuoro" }));
+  await waitFor(() => expect(openDialog()).toBeNull());
+}
+/** Selects a person from the table; nobody is selected after opening. */
+async function pick(name: string) {
+  fireEvent.click(await screen.findByRole("button", { name }));
+  await screen.findByLabelText("Saldo");
+}
+async function continueEvent(person?: string, { shift = true } = {}) {
   fireEvent.click(await screen.findByRole("button", { name: /^Jatka tapahtumaa / }));
-  await waitFor(() => expect(document.querySelector('[role="dialog"][data-state="open"]')).toBeNull());
+  if (shift) await startShift();
+  await waitFor(() => expect(openDialog()).toBeNull());
+  if (person) await pick(person);
 }
 it("charges immediately, hides IDs and filenames, and opens branding settings", async () => {
   const ledger = await createExample();
@@ -68,7 +83,7 @@ it("charges immediately, hides IDs and filenames, and opens branding settings", 
   });
   mount();
   fireEvent.click(screen.getByRole("button", { name: "Avaa tietokanta" }));
-  await continueEvent();
+  await continueEvent("Aino Korhonen");
   const balance = await screen.findByLabelText("Saldo");
   expect(balance.textContent).toBe("42,50");
   expect(screen.queryByText("1001")).toBeNull();
@@ -243,6 +258,7 @@ it("collects organization branding before creating and saving the database", asy
   expect(createEvent.hasAttribute("disabled")).toBe(true);
   fireEvent.change(screen.getByLabelText("Tapahtuman nimi"), { target: { value: "Avajaiset" } });
   fireEvent.click(createEvent);
+  await startShift();
   await screen.findByRole("banner", { name: "Uusi organisaatio" });
   expect(save).toHaveBeenCalledTimes(1);
   const saved = await Ledger.open(save.mock.calls[0][0].export());
@@ -283,8 +299,7 @@ it("replaces the session snapshot and clears the cashier draft when opening anot
   fireEvent.click(
     await screen.findByRole("button", { name: "Avaa tietokanta" }),
   );
-  await continueEvent();
-  await screen.findByLabelText("Saldo");
+  await continueEvent("Aino Korhonen");
   fireEvent.click(screen.getByRole("button", { name: "Lisää saldoa" }));
   fireEvent.change(screen.getByLabelText("Summa"), { target: { value: "12" } });
   fireEvent.click(screen.getByRole("button", { name: "Asetukset" }));
@@ -292,8 +307,7 @@ it("replaces the session snapshot and clears the cashier draft when opening anot
   fireEvent.click(
     await screen.findByRole("button", { name: "Avaa tietokanta" }),
   );
-  await continueEvent();
-  await screen.findByRole("button", { name: "Second customer" });
+  await continueEvent("Second customer", { shift: false });
   await waitFor(() =>
     expect(screen.getByLabelText("Saldo").textContent).toBe("0,00"),
   );
@@ -322,8 +336,7 @@ it("keeps the amount and balance after a failed save, then allows retry", async 
   fireEvent.click(
     await screen.findByRole("button", { name: "Avaa tietokanta" }),
   );
-  await continueEvent();
-  await screen.findByLabelText("Saldo");
+  await continueEvent("Aino Korhonen");
   fireEvent.change(screen.getByLabelText("Summa"), {
     target: { value: "50.00" },
   });
@@ -355,8 +368,7 @@ it("charges below zero with custom amounts and products and reopens the saved ac
   });
   const app = mount();
   fireEvent.click(screen.getByRole("button", { name: "Avaa tietokanta" }));
-  await continueEvent();
-  await screen.findByLabelText("Saldo");
+  await continueEvent("Aino Korhonen");
   fireEvent.change(screen.getByLabelText("Summa"), { target: { value: "50" } });
   fireEvent.click(screen.getByRole("button", { name: "Veloita 50,00" }));
   await waitFor(() => expect(screen.getByLabelText("Saldo").textContent).toBe("−7,50"));
@@ -371,7 +383,7 @@ it("charges below zero with custom amounts and products and reopens the saved ac
   pick.mockResolvedValue({ ledger: await Ledger.open(saved), name: "test.sqlite" });
   mount();
   fireEvent.click(screen.getByRole("button", { name: "Avaa tietokanta" }));
-  await continueEvent();
+  await continueEvent("Aino Korhonen");
   expect((await screen.findByLabelText("Saldo")).textContent).toBe("−7,50");
 });
 
@@ -386,8 +398,7 @@ it("preserves the active database when opening a replacement is cancelled", asyn
   fireEvent.click(
     await screen.findByRole("button", { name: "Avaa tietokanta" }),
   );
-  await continueEvent();
-  await screen.findByLabelText("Saldo");
+  await continueEvent("Aino Korhonen");
   fireEvent.click(screen.getByRole("button", { name: "Asetukset" }));
   fireEvent.click(await screen.findByRole("tab", { name: "Tietokanta" }));
   fireEvent.click(
@@ -421,6 +432,8 @@ it("shows the previous event name and creates a named event that keeps the previ
   expect(create.hasAttribute("disabled")).toBe(true);
   fireEvent.change(screen.getByLabelText("Tapahtuman nimi"), { target: { value: "  Talvijuhla  " } });
   fireEvent.click(create);
+  await startShift();
+  await pick("Aino Korhonen");
   await waitFor(() => expect(screen.getByLabelText("Saldo").textContent).toBe("42,50"));
   expect(screen.getByText("Talvijuhla")).toBeTruthy();
   expect(ledger.snapshot(previous.event.id)).toEqual(previous);
@@ -446,6 +459,8 @@ it("keeps the choice and previous event after a failed event save and allows ret
   expect(screen.getByLabelText("Tapahtuman nimi").getAttribute("value")).toBe("Talvijuhla");
   fail = false;
   fireEvent.click(screen.getByRole("button", { name: "Luo uusi tapahtuma" }));
+  await startShift();
+  await pick("Aino Korhonen");
   await waitFor(() => expect(screen.getByLabelText("Saldo").textContent).toBe("42,50"));
 });
 
@@ -474,8 +489,7 @@ it("keeps the current cashier session when the replacement event choice is cance
     .mockResolvedValueOnce({ ledger: second, name: "second.sqlite" });
   mount();
   fireEvent.click(screen.getByRole("button", { name: "Avaa tietokanta" }));
-  await continueEvent();
-  await screen.findByLabelText("Saldo");
+  await continueEvent("Aino Korhonen");
   fireEvent.click(screen.getByRole("button", { name: "Asetukset" }));
   fireEvent.click(await screen.findByRole("tab", { name: "Tietokanta" }));
   fireEvent.click(await screen.findByRole("button", { name: "Avaa tietokanta" }));
@@ -502,7 +516,7 @@ it("asks for the event after a dropped database has been connected to a saved co
   expect(save).toHaveBeenCalledTimes(1);
   expect(save.mock.calls[0][1]).toBe("dropped.sqlite");
   expect(screen.queryByLabelText("Saldo")).toBeNull();
-  await continueEvent();
+  await continueEvent("Aino Korhonen");
   await waitFor(() => expect(screen.getByLabelText("Saldo").textContent).toBe("42,50"));
 });
 
@@ -523,15 +537,16 @@ it("creates customer metadata and saves, updates, and clears a note across datab
   fireEvent.click(await screen.findByRole("button", { name: "Lisää henkilö" }));
   const dialog = await screen.findByRole("dialog", { name: "Lisää henkilö" });
   fireEvent.change(within(dialog).getByLabelText("Nimi"), { target: { value: "Aino" } });
-  const osakunta = within(dialog).getByLabelText("Osakunta (valinnainen)");
-  expect(osakunta.getAttribute("maxlength")).toBe("5");
-  fireEvent.change(osakunta, { target: { value: "ABCDEF" } });
-  expect(within(dialog).getByRole("button", { name: "Lisää henkilö" }).hasAttribute("disabled")).toBe(true);
-  fireEvent.change(osakunta, { target: { value: "ABCDE" } });
+  fireEvent.change(within(dialog).getByLabelText("Osakunta (valinnainen)"), { target: { value: "\u0000other" } });
+  const custom = within(dialog).getByLabelText("Uusi osakunta");
+  fireEvent.change(custom, { target: { value: "x".repeat(70) } });
+  expect(custom.getAttribute("maxlength")).toBe("60");
+  fireEvent.change(custom, { target: { value: "Sen-KyO" } });
   fireEvent.click(within(dialog).getByRole("button", { name: "Lisää henkilö" }));
+  // The new person is selected right away.
   const note = await screen.findByLabelText("Muistiinpano");
-  expect(screen.getByRole("cell", { name: "ABCDE" })).toBeTruthy();
-  expect(within(screen.getByRole("region", { name: "Valittu henkilö" })).getByText("Aino • ABCDE")).toBeTruthy();
+  expect(screen.getByRole("cell", { name: "Sen-KyO" })).toBeTruthy();
+  expect(within(screen.getByRole("region", { name: "Valittu henkilö" })).getByText("Aino • Sen-KyO")).toBeTruthy();
   expect(note.textContent).toBe("");
   for (const value of ["First\nSecond", "Updated", ""]) {
     fireEvent.change(note, { target: { value } });
@@ -585,8 +600,7 @@ it("shows statistics per event and switches back to the cashier", async () => {
   });
   mount();
   fireEvent.click(screen.getByRole("button", { name: "Avaa tietokanta" }));
-  await continueEvent();
-  await screen.findByLabelText("Saldo");
+  await continueEvent("Aino Korhonen");
   fireEvent.click(screen.getByRole("button", { name: "Tilastot" }));
   const tiles = () =>
     Object.fromEntries(
@@ -644,7 +658,7 @@ it("edits a person with undo, deletes with undo, and restores from settings", as
   vi.spyOn(fileAccess, "pickDatabase").mockResolvedValue({ ledger, name: "example.sqlite" });
   mount();
   fireEvent.click(screen.getByRole("button", { name: "Avaa tietokanta" }));
-  await continueEvent();
+  await continueEvent("Aino Korhonen");
   const account = await screen.findByRole("region", { name: "Valittu henkilö" });
   const aino = () => ledger.snapshot().customers.find((c) => c.reference === "1001");
 
@@ -653,7 +667,8 @@ it("edits a person with undo, deletes with undo, and restores from settings", as
   const save = within(dialog).getByRole("button", { name: "Tallenna muutokset" });
   expect(save.hasAttribute("disabled")).toBe(true);
   fireEvent.change(within(dialog).getByLabelText("Nimi"), { target: { value: "Aino K" } });
-  fireEvent.change(within(dialog).getByLabelText("Osakunta (valinnainen)"), { target: { value: "PO" } });
+  fireEvent.change(within(dialog).getByLabelText("Osakunta (valinnainen)"), { target: { value: "\u0000other" } });
+  fireEvent.change(within(dialog).getByLabelText("Uusi osakunta"), { target: { value: "PO" } });
   fireEvent.click(save);
   await within(account).findByText("Aino K • PO");
   expect(aino()).toMatchObject({ name: "Aino K", osakunta: "PO" });
@@ -683,4 +698,127 @@ it("edits a person with undo, deletes with undo, and restores from settings", as
   await waitFor(() => expect(aino()?.balance).toBe(4250));
   await within(dialog).findByText("Ei poistettuja henkilöitä.");
   expect(within(account).queryByRole("button", { name: "Palauta Aino Korhonen" })).toBeNull();
+});
+
+async function openExample() {
+  const ledger = await createExample();
+  vi.spyOn(fileAccess, "fileAccessProblem").mockReturnValue(undefined);
+  vi.spyOn(fileAccess, "supportsDirectFiles").mockReturnValue(true);
+  vi.spyOn(fileAccess, "pickDatabase").mockResolvedValue({ ledger, name: "example.sqlite" });
+  mount();
+  fireEvent.click(screen.getByRole("button", { name: "Avaa tietokanta" }));
+  return ledger;
+}
+
+it("asks who is at the till, records them and the description, and can switch operator", async () => {
+  const ledger = await openExample();
+  await continueEvent("Aino Korhonen");
+  expect(screen.getByRole("button", { name: "Vuorossa Eetu, vaihda" })).toBeTruthy();
+  fireEvent.change(screen.getByLabelText("Summa"), { target: { value: "4" } });
+  fireEvent.change(screen.getByLabelText("Tapahtuman kuvaus"), { target: { value: "Rikottu lasi" } });
+  fireEvent.click(screen.getByRole("button", { name: "Veloita 4,00" }));
+  await screen.findByText("Rikottu lasi");
+  expect(ledger.snapshot().entries[0]).toMatchObject({ cents: -400, operator: "Eetu", note: "Rikottu lasi" });
+  expect(screen.getByLabelText("Tapahtuman kuvaus").getAttribute("value")).toBe("");
+  expect(screen.getByText(/· Eetu$/)).toBeTruthy();
+
+  fireEvent.click(screen.getByRole("button", { name: "Vuorossa Eetu, vaihda" }));
+  await startShift("Anto");
+  fireEvent.click(screen.getByRole("button", { name: "Veloita Kahvi 2,50" }));
+  await waitFor(() => expect(ledger.snapshot().entries[0]).toMatchObject({ label: "Kahvi", operator: "Anto" }));
+  expect(ledger.operators()).toEqual(["Anto", "Eetu"]);
+});
+
+it("resets to charge on another person and colours the mode", async () => {
+  await openExample();
+  await continueEvent("Aino Korhonen");
+  const account = screen.getByRole("region", { name: "Valittu henkilö" });
+  expect(account.className).toContain("mode-charge");
+  fireEvent.click(screen.getByRole("button", { name: "Lisää saldoa" }));
+  expect(account.className).toContain("mode-deposit");
+  await pick("Emma Virtanen");
+  expect(screen.getByRole("button", { name: "Veloita", pressed: true })).toBeTruthy();
+  expect(account.className).toContain("mode-charge");
+});
+
+it("clears the selected person after two idle minutes", async () => {
+  await openExample();
+  await continueEvent("Aino Korhonen");
+  vi.useFakeTimers({ shouldAdvanceTime: true });
+  try {
+    vi.advanceTimersByTime(IDLE_TIMEOUT_MS - 1000);
+    fireEvent.keyDown(window, { key: "a" });
+    vi.advanceTimersByTime(IDLE_TIMEOUT_MS - 1000);
+    expect(screen.getByLabelText("Saldo")).toBeTruthy();
+    vi.advanceTimersByTime(2000);
+    await waitFor(() => expect(screen.queryByLabelText("Saldo")).toBeNull());
+    expect(screen.getByText("Valitse tai lisää henkilö.")).toBeTruthy();
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+it("adds a person with an opening balance, warns about duplicates, and selects them", async () => {
+  const ledger = await openExample();
+  await continueEvent();
+  fireEvent.click(screen.getByRole("button", { name: "Lisää henkilö" }));
+  const dialog = await screen.findByRole("dialog", { name: "Lisää henkilö" });
+  fireEvent.change(within(dialog).getByLabelText("Nimi"), { target: { value: "a" } });
+  expect(within(dialog).queryByRole("status", { name: "Samankaltaiset nimet" })).toBeNull();
+  fireEvent.change(within(dialog).getByLabelText("Nimi"), { target: { value: "aino korhonen" } });
+  const hints = within(dialog).getByRole("status", { name: "Samankaltaiset nimet" });
+  expect(within(hints).getByText("Tämä nimi on jo kannassa.")).toBeTruthy();
+  fireEvent.change(within(dialog).getByLabelText("Nimi"), { target: { value: "Aino" } });
+  expect(within(dialog).getByText("Kannassa on jo samankaltaisia nimiä:")).toBeTruthy();
+  fireEvent.change(within(dialog).getByLabelText("Nimi"), { target: { value: "Aino Uusi" } });
+  const osakunta = within(dialog).getByLabelText("Osakunta (valinnainen)");
+  expect([...osakunta.querySelectorAll("option")].map((o) => o.textContent)).toEqual(["Ei osakuntaa", "KyO", "Muu…"]);
+  fireEvent.change(osakunta, { target: { value: "KyO" } });
+  fireEvent.change(within(dialog).getByLabelText("Alkusaldo (valinnainen)"), { target: { value: "-12,50" } });
+  fireEvent.click(within(dialog).getByRole("button", { name: "Lisää henkilö" }));
+  await waitFor(() => expect(screen.getByLabelText("Saldo").textContent).toBe("−12,50"));
+  expect(within(screen.getByRole("region", { name: "Valittu henkilö" })).getByText("Aino Uusi • KyO")).toBeTruthy();
+  expect(screen.getByText("Alkusaldo")).toBeTruthy();
+  const added = ledger.snapshot().customers.find((c) => c.name === "Aino Uusi");
+  expect(added).toMatchObject({ osakunta: "KyO", balance: -1250 });
+  // Recent activity sorts first by default.
+  expect(screen.getAllByRole("button", { pressed: true })[0].textContent).toBe("Viimeisin tapahtuma");
+  expect(document.querySelector(".customer-row .customer-name")?.textContent).toBe("Aino Uusi");
+
+  fireEvent.click(screen.getByRole("button", { name: "Lisää henkilö" }));
+  const again = await screen.findByRole("dialog", { name: "Lisää henkilö" });
+  fireEvent.change(within(again).getByLabelText("Nimi"), { target: { value: "Emma" } });
+  fireEvent.click(within(again).getByRole("button", { name: /^Emma Virtanen/ }));
+  await waitFor(() => expect(openDialog()).toBeNull());
+  expect(screen.getByLabelText("Saldo").textContent).toBe("32,00");
+});
+
+it("opens product categories before their products", async () => {
+  const ledger = await createExample();
+  await ledger.saveProduct({ id: "olut", name: "Olut", cents: 300, description: "", image: "", category: "Tölkki" });
+  await ledger.saveProduct({ id: "lonkero", name: "Lonkero", cents: 350, description: "", image: "", category: "Tölkki" });
+  vi.spyOn(fileAccess, "fileAccessProblem").mockReturnValue(undefined);
+  vi.spyOn(fileAccess, "supportsDirectFiles").mockReturnValue(true);
+  vi.spyOn(fileAccess, "pickDatabase").mockResolvedValue({ ledger, name: "example.sqlite" });
+  mount();
+  fireEvent.click(screen.getByRole("button", { name: "Avaa tietokanta" }));
+  await continueEvent("Aino Korhonen");
+  expect(screen.queryByRole("button", { name: "Veloita Olut 3,00" })).toBeNull();
+  expect(screen.getByRole("button", { name: "Veloita Kahvi 2,50" })).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "Kategoria Tölkki" }));
+  expect(screen.getByRole("button", { name: "Veloita Olut 3,00" })).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "Veloita Kahvi 2,50" })).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: /Takaisin/ }));
+  fireEvent.change(screen.getByLabelText("Hae nimikettä"), { target: { value: "lonk" } });
+  expect(screen.getByRole("button", { name: "Veloita Lonkero 3,50" })).toBeTruthy();
+});
+
+it("logs out, closing the database and forgetting the operator", async () => {
+  const ledger = await openExample();
+  await continueEvent("Aino Korhonen");
+  fireEvent.click(screen.getByRole("button", { name: "Kirjaudu ulos" }));
+  await screen.findByRole("button", { name: "Avaa tietokanta" });
+  expect(screen.queryByLabelText("Saldo")).toBeNull();
+  expect(screen.queryByRole("button", { name: /Vuorossa/ })).toBeNull();
+  expect(() => ledger.snapshot()).toThrow();
 });

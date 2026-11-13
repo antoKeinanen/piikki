@@ -226,3 +226,29 @@ it("rolls back event creation when the database file cannot be saved", async () 
   expect(ledger.latestEvent()).toEqual(original.latestEvent());
   expect((await Ledger.open(ledger.export())).latestEvent()).toEqual(original.latestEvent());
 });
+
+it("records the operator, description and opening balance, and lists recent operators", async () => {
+  const ledger = await Ledger.open();
+  const id = await ledger.addCustomer("Aino", "", "KyO", { openingCents: -400, operator: "Eetu" });
+  expect(ledger.snapshot().customers[0]).toMatchObject({ id, balance: -400 });
+  await ledger.post({ customerId: id, cents: 1000, kind: "deposit", label: "", note: " MobilePay ", operator: "Anto" });
+  const [deposit, opening] = ledger.snapshot().entries;
+  expect(opening).toMatchObject({ label: "Alkusaldo", cents: -400, opening: 1, operator: "Eetu" });
+  expect(deposit).toMatchObject({ cents: 1000, note: "MobilePay", operator: "Anto", opening: 0 });
+  await ledger.reverse(deposit.id, "Eetu");
+  expect(ledger.snapshot().entries[0]).toMatchObject({ reversal_of: deposit.id, operator: "Eetu" });
+  expect(ledger.operators()).toEqual(["Eetu", "Anto"]);
+  const reopened = await Ledger.open(ledger.export());
+  expect(reopened.snapshot().entries).toEqual(ledger.snapshot().entries);
+  expect(reopened.snapshot().customers[0].last_activity).toBe(ledger.snapshot().entries[0].created_at);
+  await expect(ledger.post({ customerId: id, cents: 1, kind: "charge", label: "", note: "x".repeat(201) })).rejects.toThrow("200");
+});
+
+it("reads databases without entry details as anonymous entries", async () => {
+  const ledger = await Ledger.open();
+  const id = await ledger.addCustomer("Aino", "");
+  await ledger.post({ customerId: id, cents: 100, kind: "deposit", label: "" });
+  expect(ledger.snapshot().entries[0]).toMatchObject({ operator: "", note: "", opening: 0 });
+  expect(ledger.operators()).toEqual([]);
+  ledger.close();
+});

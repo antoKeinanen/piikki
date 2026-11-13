@@ -80,3 +80,11 @@ Before this refactor, browser verification used an actual FileSystemFileHandle i
 `Ledger.updateCustomer` changes a person's name and osakunta; notes keep their own form. `Ledger.removeCustomer` never deletes rows: it adds the person to the optional `customer_removals` table, created on first use, so entries, balances and foreign keys stay intact. Snapshots list those people in `removedCustomers` instead of `customers`, so the cashier cannot charge them, while validation and statistics still see their entries. `Ledger.restoreCustomer` removes the marker and the person returns with the same balance.
 
 Every person change is undoable. After an edit or deletion the account area shows an undo notice for the latest change; undoing an edit saves the previous values back. Deleted people can also be restored at any time from the Settings "Poistetut" tab, including after a reload. Edit undo is session-local: old names are not kept in the database.
+
+## Schema version 3 and cashier feedback
+
+`Ledger.open` runs a list of migrations keyed by `user_version`, each in its own transaction followed by a foreign-key check. New databases are created at version 2 and go through the same steps, so there is one code path. `Ledger.migrated` tells the file adapter to write the upgraded bytes during its open-time write check. Version 3 rebuilds `customer_metadata` without the five-character osakunta CHECK, adds `product_details.category`, and creates `entry_details(entry_id, operator, note, opening)`. Entry details are a side table rather than new `entries` columns, so the entries table and the reversal rules stay unchanged. Statistics leave opening balances out of sales and deposits.
+
+`src/persistence/encryption.ts` owns the encrypted file format: a magic header, salt, IV and AES-GCM ciphertext. `database-file.ts` reads the password from `VITE_DATABASE_PASSWORD` and holds the derived key only in its writer closure. The ledger never sees ciphertext.
+
+The cashier keeps button positions stable. The table uses fixed column widths. The amount and description row sits directly under the mode tabs in both modes. The person's name and balance stay pinned while the history scrolls. The undo notice floats instead of pushing content down. Charge mode is red and deposit mode is green.

@@ -23,7 +23,7 @@ it("renames and changes osakunta, and the previous values can be saved back", as
   await ledger.updateCustomer(id, { name: "Aino", osakunta: "KyO" });
   expect(ledger.snapshot().customers[0]).toMatchObject({ name: "Aino", osakunta: "KyO" });
   await expect(ledger.updateCustomer(id, { name: " ", osakunta: "" })).rejects.toThrow("name");
-  await expect(ledger.updateCustomer(id, { name: "A", osakunta: "ABCDEF" })).rejects.toThrow("5");
+  await expect(ledger.updateCustomer(id, { name: "A", osakunta: "x".repeat(61) })).rejects.toThrow("60");
   await expect(ledger.updateCustomer("missing", { name: "A", osakunta: "" })).rejects.toThrow("no longer exists");
 });
 

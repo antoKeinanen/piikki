@@ -42,12 +42,12 @@ it("defaults legacy metadata to empty without writing on open, then persists not
   expect((await Ledger.open(reopened.export())).snapshot().customers[0].note).toBe("");
 });
 
-it("accepts empty and five-character osakunta, rejects overlimit without a write", async () => {
+it("accepts empty and long osakunta, rejects overlimit without a write", async () => {
   let writes = 0;
   const ledger = await Ledger.open(undefined, async () => { writes++; });
   await ledger.addCustomer("Empty", "");
   await ledger.addCustomer("Five", "", "ABCDE");
-  await expect(ledger.addCustomer("Invalid", "", "ABCDEF")).rejects.toThrow("5");
+  await expect(ledger.addCustomer("Invalid", "", "x".repeat(61))).rejects.toThrow("60");
   expect(writes).toBe(2);
   const reopened = await Ledger.open(ledger.export());
   expect(reopened.snapshot().customers.map(({ osakunta, note }) => ({ osakunta, note }))).toEqual([
@@ -75,4 +75,19 @@ it("rolls metadata back after a failed durable save and supports retry", async (
   await ledger.saveCustomerNote("legacy", "Saved");
   expect((await Ledger.open(saved)).snapshot().customers[0].note).toBe("Saved");
   await expect(ledger.saveCustomerNote("missing", "No orphan")).rejects.toThrow("no longer exists");
+});
+
+it("lifts the old five-character osakunta limit from existing databases", async () => {
+  const SQL = await initSqlJs();
+  const db = new SQL.Database(await legacyBytes());
+  db.run("CREATE TABLE customer_metadata(customer_id TEXT PRIMARY KEY REFERENCES customers(id), osakunta TEXT NOT NULL DEFAULT '' CHECK(length(osakunta)<=5), note TEXT NOT NULL DEFAULT '')");
+  db.run("INSERT INTO customer_metadata VALUES('legacy','KyO','Keep')");
+  const ledger = await Ledger.open(db.export());
+  await ledger.updateCustomer("legacy", { name: "Legacy", osakunta: "Sen-KyO" });
+  await ledger.addCustomer("Uusi", "", "Pohjois-Pohjalainen Osakunta");
+  const reopened = (await Ledger.open(ledger.export())).snapshot();
+  expect(reopened.customers.map(({ osakunta, note }) => ({ osakunta, note }))).toEqual([
+    { osakunta: "Sen-KyO", note: "Keep" },
+    { osakunta: "Pohjois-Pohjalainen Osakunta", note: "" },
+  ]);
 });
