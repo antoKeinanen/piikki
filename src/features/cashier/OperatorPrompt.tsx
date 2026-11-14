@@ -54,6 +54,7 @@ export function OperatorPrompt({
               value={name}
               onChange={(event) => setName(event.target.value)}
             />
+            <Field.HelperText>Kirjoita nimesi, niin voit aloittaa vuoron.</Field.HelperText>
           </Field.Root>
           <Button className="primary operator-submit" type="submit" disabled={!name.trim()}>
             Aloita vuoro

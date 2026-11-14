@@ -68,6 +68,7 @@ export function ProductEditor({
   const draft = editing ? editDraft : newDraft;
   const setDraft = editing ? setEditDraft : setNewDraft;
   const editPanel = useRef<HTMLDivElement>(null);
+  const newSection = useRef<HTMLElement>(null);
   useEffect(() => {
     if (!editing) return;
     editPanel.current?.scrollIntoView?.({ block: "nearest", behavior: "smooth" });
@@ -177,9 +178,9 @@ export function ProductEditor({
         />
       </Field.Root>
       <Button type="submit" className="primary" disabled={disabled || !draft.name.trim() || !draft.amount}>
-        {editing ? "Tallenna nimike" : "Lisää nimike"}
+        Tallenna nimike
       </Button>
-      {editing && <Button variant="ghost" disabled={disabled} onClick={reset}>Peruuta muokkaus</Button>}
+      {editing && <Button variant="outline" className="secondary" disabled={disabled} onClick={reset}>Peruuta muokkaus</Button>}
     </form>
   );
   const rows = products.map((p) => (
@@ -194,7 +195,7 @@ export function ProductEditor({
                 setEditing(p.id);
                 setEditDraft({ name: p.name, description: p.description, image: p.image, amount: (p.cents / 100).toFixed(2), category: p.category });
               }}>Muokkaa</Button>}
-          <Button variant="ghost" className="danger-text" disabled={disabled} onClick={() => void apply(
+          <Button variant="outline" className="danger-outline" disabled={disabled} onClick={() => void apply(
             () => remove(p.id),
             () => { setRemoved({ product: p, index: products.indexOf(p) }); if (editing === p.id) reset(); },
           )}>Poista</Button>
@@ -215,9 +216,16 @@ export function ProductEditor({
   ));
   return (
     <div className="settings-form">
+      <div className="settings-toolbar">
+        <h3 className="settings-section-title">Nimikkeet</h3>
+        {!editing && <Button variant="outline" className="secondary" disabled={disabled} onClick={() => {
+          newSection.current?.scrollIntoView?.({ block: "start", behavior: "smooth" });
+          newSection.current?.querySelector("input")?.focus({ preventScroll: true });
+        }}>Lisää nimike</Button>}
+      </div>
       <div className="product-list">{rows}</div>
-      {!editing && <section className="product-new">
-        <h2 className="product-section-title">Lisää uusi nimike</h2>
+      {!editing && <section className="product-new" ref={newSection} aria-labelledby="product-new-title">
+        <h3 id="product-new-title" className="product-section-title">Lisää uusi nimike</h3>
         {form}
       </section>}
     </div>

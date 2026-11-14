@@ -31,6 +31,7 @@ export function EventChoice({ previousName, busy, onContinue, onCreate }: {
           <Field.Label htmlFor="event-name">Tapahtuman nimi</Field.Label>
           <Input id="event-name" required maxLength={100} value={name}
             disabled={busy} onChange={(event) => setName(event.target.value)} />
+          <Field.HelperText>Kirjoita nimi, niin voit aloittaa uuden tapahtuman.</Field.HelperText>
         </Field.Root>
         <Button variant="outline" className={`event-action ${previousName ? "secondary" : "primary"}`} type="submit" disabled={busy || !name.trim()}>
           Luo uusi tapahtuma

@@ -29,7 +29,7 @@ export function RemovedCustomers({
             <small>{formatAmount(customer.balance)}</small>
           </span>
           <Button
-            variant="ghost"
+            variant="outline"
             disabled={busy}
             onClick={() => void restore(customer.id).catch(() => {})}
           >
