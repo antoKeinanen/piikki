@@ -1,4 +1,4 @@
-import { Button, Text } from "@chakra-ui/react";
+import { Button, Dialog, Text } from "@chakra-ui/react";
 import { formatAmount, type Entry } from "../../ledger";
 
 const signed = (cents: number) => (cents > 0 ? "+" : "−") + formatAmount(Math.abs(cents));
@@ -25,8 +25,10 @@ export function ReversalConfirmation({
     hour: "2-digit",
     minute: "2-digit",
   });
+  const action = entry.cents > 0 ? "Kumoa saldon lisäys" : "Kumoa veloitus";
   return (
     <div className="settings-form">
+      <Dialog.Title>{action}?</Dialog.Title>
       <Text className="reversal-name">{customerName}</Text>
       <div className="reversal-entry">
         <div>
@@ -45,7 +47,7 @@ export function ReversalConfirmation({
         disabled={busy}
         onClick={() => void confirm().catch(() => {})}
       >
-        Peru tapahtuma
+        {action}
       </Button>
     </div>
   );
