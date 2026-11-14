@@ -130,6 +130,8 @@ it("charges immediately, hides IDs and filenames, and opens branding settings", 
   );
   fireEvent.click(screen.getByRole("tab", { name: "Nimikkeet" }));
   expect(await screen.findByLabelText("Nimikkeen summa")).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "Lisää nimike" }));
+  expect(screen.getByLabelText("Nimikkeen nimi")).toBe(document.activeElement);
   fireEvent.change(screen.getByLabelText("Nimikkeen nimi"), { target: { value: "Kaakao" } });
   fireEvent.change(screen.getByLabelText("Nimikkeen summa"), {
     target: { value: "4.25" },
@@ -139,7 +141,7 @@ it("charges immediately, hides IDs and filenames, and opens branding settings", 
     target: { files: [new File(["image"], "product.png", { type: "image/png" })] },
   });
   await screen.findByAltText("Nimikkeen kuvan esikatselu");
-  fireEvent.click(screen.getByRole("button", { name: "Lisää nimike" }));
+  fireEvent.click(screen.getByRole("button", { name: "Tallenna nimike" }));
   await screen.findByText("4,25");
   const preset = ledger.snapshot().products.find((value) => value.cents === 425);
   if (!preset) throw new Error("Preset was not saved");
@@ -603,12 +605,12 @@ it("keeps a product draft after a failed save and retries without duplicates", a
   fireEvent.click(await screen.findByRole("tab", { name: "Nimikkeet" }));
   fireEvent.change(await screen.findByLabelText("Nimikkeen nimi"), { target: { value: "Coffee" } });
   fireEvent.change(screen.getByLabelText("Nimikkeen summa"), { target: { value: "2.50" } });
-  fireEvent.click(screen.getByRole("button", { name: "Lisää nimike" }));
+  fireEvent.click(screen.getByRole("button", { name: "Tallenna nimike" }));
   await screen.findAllByText("Product write failed");
   expect(ledger.snapshot().products).toEqual([]);
   expect(screen.getByLabelText("Nimikkeen nimi").getAttribute("value")).toBe("Coffee");
   fail = false;
-  fireEvent.click(screen.getByRole("button", { name: "Lisää nimike" }));
+  fireEvent.click(screen.getByRole("button", { name: "Tallenna nimike" }));
   await waitFor(() => expect(ledger.snapshot().products).toHaveLength(1));
   await waitFor(() => expect(screen.getByLabelText("Nimikkeen nimi").getAttribute("value")).toBe(""));
 });
@@ -899,7 +901,7 @@ it("reuses an existing product category with one tap", async () => {
   fireEvent.click(within(chips).getByRole("button", { name: "Tölkki" }));
   expect(screen.getByLabelText("Kategoria (valinnainen)").getAttribute("value")).toBe("Tölkki");
   expect(within(chips).getByRole("button", { name: "Tölkki" }).getAttribute("aria-pressed")).toBe("true");
-  fireEvent.click(screen.getByRole("button", { name: "Lisää nimike" }));
+  fireEvent.click(screen.getByRole("button", { name: "Tallenna nimike" }));
   await waitFor(() =>
     expect(ledger.snapshot().products.find((p) => p.name === "Siideri")?.category).toBe("Tölkki"),
   );

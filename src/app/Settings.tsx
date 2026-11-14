@@ -1,5 +1,5 @@
 import { useRef, useState, type ReactNode } from "react";
-import { Tabs } from "@chakra-ui/react";
+import { Dialog, Tabs } from "@chakra-ui/react";
 import type { Branding, Product, Snapshot } from "../ledger";
 import { BrandingForm } from "../features/branding/BrandingForm";
 import { ProductEditor } from "../features/products/ProductEditor";
@@ -25,6 +25,8 @@ export function Settings({
   const [error, setError] = useState("");
   const scroll = useRef<HTMLDivElement>(null);
   return (
+    <>
+    <Dialog.Title className="settings-title">Asetukset</Dialog.Title>
     <Tabs.Root
       defaultValue="branding"
       variant="line"
@@ -71,5 +73,6 @@ export function Settings({
         )}
       </div>
     </Tabs.Root>
+    </>
   );
 }
