@@ -16,9 +16,23 @@ export function CustomerNoteForm({
   if (!editing) {
     return (
       <div className={`note-line ${customer.note ? "" : "empty"}`}>
-        {customer.note && <Text className="note-text">{customer.note}</Text>}
+        {customer.note && (
+          <>
+            <svg className="note-icon" viewBox="0 0 16 16" aria-hidden="true">
+              <path
+                d="M3 2.5h7l3 3v8H3z M5.5 7h5 M5.5 10h3.5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinejoin="round"
+                strokeLinecap="round"
+              />
+            </svg>
+            <Text className="note-text">{customer.note}</Text>
+          </>
+        )}
         <Button
-          variant="ghost"
+          variant="outline"
           size="sm"
           className="compact-action"
           disabled={busy}

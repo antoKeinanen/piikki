@@ -146,7 +146,7 @@ export function AccountPanel({
             <span className="recorded-check" aria-hidden="true">✓</span>
             <span className="recorded-body">
               <span className="recorded-line">
-                <strong>{entryTitle(recorded)} kirjattu</strong> · {customer.name}
+                {entryTitle(recorded)} kirjattu · {customer.name}
               </span>
               <span className="recorded-line recorded-change">
                 <span className="recorded-amount">
@@ -181,9 +181,11 @@ export function AccountPanel({
           </svg>
           {action === "deposit"
             ? "Kirjoita lisättävä summa."
-            : products.length
-              ? "Nimike veloitetaan heti, kun napautat sitä."
-              : "Kirjoita veloitettava summa."}
+            : !products.length
+              ? "Kirjoita veloitettava summa."
+              : shownCategories.length && !visibleProducts.length
+                ? "Valitse kategoria tai hae nimikettä."
+                : "Nimike veloitetaan heti, kun napautat sitä."}
         </Text>
       )}
     </div>
@@ -213,6 +215,15 @@ export function AccountPanel({
                     onEdit();
                   }}
                 >
+                  <svg className="edit-customer-icon" viewBox="0 0 16 16" aria-hidden="true">
+                    <path
+                      d="M10.5 2.5l3 3L6 13H3v-3z"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
                   Muokkaa henkilöä
                 </Button>
               </div>
@@ -225,12 +236,6 @@ export function AccountPanel({
               </Text>
             </div>
           </div>
-          <CustomerNoteForm
-            key={customer.id}
-            customer={customer}
-            busy={busy}
-            save={onSaveNote}
-          />
           <Flex className="mode" role="group" aria-label="Tapahtuman tyyppi">
             <Button
               variant="plain"
@@ -303,7 +308,7 @@ export function AccountPanel({
                   >
                     {p.image && <img className="product-thumbnail" src={p.image} alt="" />}
                     <span>{p.name}</span>
-                    <span className="product-price">−{formatAmount(p.cents)}</span>
+                    <span className="product-price">Veloita {formatAmount(p.cents)}</span>
                   </Button>
                 ))}
               </div>
@@ -363,6 +368,12 @@ export function AccountPanel({
               {error}
             </Text>
           )}
+          <CustomerNoteForm
+            key={customer.id}
+            customer={customer}
+            busy={busy}
+            save={onSaveNote}
+          />
           <div className="history" aria-label="Tapahtumat">
             <h3 className="history-title">Tapahtumat</h3>
             {!entries.length && (
@@ -412,7 +423,12 @@ export function AccountPanel({
         </>
       ) : (
         <>
-          <Text className="empty-account">Valitse tai lisää henkilö.</Text>
+          <div className="empty-account">
+            <h2 className="empty-account-title">Valitse henkilö listasta</h2>
+            <Text className="empty-account-text">
+              Saldo ja veloitukset näkyvät tässä. Voit myös hakea nimellä tai lisätä uuden henkilön.
+            </Text>
+          </div>
           <figure className="busted" aria-hidden="true">
             <img src={bustedImage} alt="" />
             <figcaption>you have been busted</figcaption>

@@ -801,7 +801,7 @@ it("clears the selected person after two idle minutes", async () => {
     expect(screen.getByLabelText("Saldo")).toBeTruthy();
     vi.advanceTimersByTime(2000);
     await waitFor(() => expect(screen.queryByLabelText("Saldo")).toBeNull());
-    expect(screen.getByText("Valitse tai lisää henkilö.")).toBeTruthy();
+    expect(screen.getByText("Valitse henkilö listasta")).toBeTruthy();
   } finally {
     vi.useRealTimers();
   }
