@@ -437,7 +437,8 @@ function CashierApp() {
             setError("");
           }
         }}
-        placement="center"
+        // Top-anchored so the tab strip stays put while the height follows each tab.
+        placement={modal?.kind === "settings" ? "top" : "center"}
       >
         <Portal>
           <Dialog.Backdrop />
