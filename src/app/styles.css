@@ -1717,7 +1717,10 @@ input:focus-visible + .image-picker-button {
   }
   .customers.collapsed > :not(.selected-bar) { display: none; }
   .customers.collapsed .selected-bar { margin-bottom: 0; }
-  .customers.collapsed ~ .account .balance-block { display: none; }
+  .customers.collapsed ~ .account .balance-block,
+  .customers.collapsed ~ .account .account-name,
+  .customers.collapsed ~ .account .account-osakunta { display: none; }
+  .customers.collapsed ~ .account .account-summary { padding-bottom: 4px; }
   .selected-bar-identity {
     display: flex;
     flex-direction: column;
