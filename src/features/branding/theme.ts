@@ -22,6 +22,7 @@ function contrastingTone(background: string, foreground: string, minimum: number
 export function brandingStyle(branding: Branding): CSSProperties & Record<`--${string}`, string> {
   const ink = readableText(branding.secondary);
   const hover = mix(branding.secondary, ink, 0.1);
+  const light = ink !== "#ffffff";
   return {
     "--brand": branding.primary,
     "--accent": branding.secondary,
@@ -33,6 +34,9 @@ export function brandingStyle(branding: Branding): CSSProperties & Record<`--${s
     "--focus": ink,
     "--indicator": contrastRatio(branding.primary, branding.secondary) >= 3
       ? branding.primary : ink,
+    "--line-soft": mix(branding.secondary, ink, 0.1),
+    "--surface": light ? mix(branding.secondary, "#ffffff", 0.7) : mix(branding.secondary, ink, 0.06),
+    "--tint": mix(branding.secondary, branding.primary, light ? 0.1 : 0.25),
     "--hover": hover,
     "--on-hover": readableText(hover),
     "--error": contrastRatio("#a33328", branding.secondary) >= 4.5 ? "#a33328" : ink,

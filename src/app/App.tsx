@@ -306,48 +306,50 @@ function CashierApp() {
         className="masthead"
         aria-label={ledger ? branding.organization : "Piikki"}
       >
-        {ledger && branding.logo && (
-          <img
-            className="organization-logo"
-            src={branding.logo}
-            alt={`${branding.organization} logo`}
-          />
-        )}
+        <div className="masthead-brand">
+          {ledger && branding.logo && (
+            <img
+              className="organization-logo"
+              src={branding.logo}
+              alt={`${branding.organization} logo`}
+            />
+          )}
+          {ledger && (
+            <>
+              <span className="organization-name">{branding.organization}</span>
+              <span className="masthead-divider" aria-hidden="true">
+                /
+              </span>
+            </>
+          )}
+          <span className="wordmark">Piikki</span>
+          {data && <span className="event-name">{data.event.name}</span>}
+        </div>
         {ledger && (
-          <>
-            <span className="organization-name">{branding.organization}</span>
-            <span className="masthead-divider" aria-hidden="true">
-              /
-            </span>
-          </>
-        )}
-        <span className="wordmark">Piikki</span>
-        {data && <span className="event-name">{data.event.name}</span>}
-        {ledger && operator && (
-          <Button
-            variant="ghost"
-            className="operator-switch"
-            aria-label={`Vuorossa ${operator}, vaihda`}
-            disabled={busy}
-            onClick={() => setModal({ kind: "operator" })}
-          >
-            <span className="operator-label">Vuorossa</span> {operator}
-          </Button>
-        )}
-        {ledger && (
-          <Button
-            variant="ghost"
-            className="view-switch"
-            disabled={busy}
-            onClick={() => setView(view === "stats" ? "cashier" : "stats")}
-          >
-            {view === "stats" ? "Tilit" : "Tilastot"}
-          </Button>
-        )}
-        {ledger && (
-          <Button variant="ghost" className="logout" disabled={busy} onClick={logout}>
-            Kirjaudu ulos
-          </Button>
+          <nav className="masthead-actions" aria-label="Valikko">
+            {operator && (
+              <Button
+                variant="ghost"
+                className="operator-switch"
+                aria-label={`Vuorossa ${operator}, vaihda`}
+                disabled={busy}
+                onClick={() => setModal({ kind: "operator" })}
+              >
+                <span className="operator-label">Vuorossa</span> {operator}
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              className="view-switch"
+              disabled={busy}
+              onClick={() => setView(view === "stats" ? "cashier" : "stats")}
+            >
+              {view === "stats" ? "Tilit" : "Tilastot"}
+            </Button>
+            <Button variant="ghost" className="logout" disabled={busy} onClick={logout}>
+              Kirjaudu ulos
+            </Button>
+          </nav>
         )}
       </header>
       {!ledger ? (
@@ -489,6 +491,8 @@ function CashierApp() {
                   </>
                 )}
                 {modal?.kind === "customer" && (
+                  <>
+                  <Dialog.Title>Lisää henkilö</Dialog.Title>
                   <CustomerForm
                     busy={busy}
                     withOpening
@@ -508,6 +512,7 @@ function CashierApp() {
                       choose(id);
                     }}
                   />
+                  </>
                 )}
                 {modal?.kind === "edit-customer" && (
                   <>

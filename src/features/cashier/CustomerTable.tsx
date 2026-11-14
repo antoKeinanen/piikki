@@ -62,7 +62,7 @@ export function CustomerTable({
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
         />
-        <Button variant="ghost" disabled={disabled} onClick={add}>
+        <Button variant="ghost" className="add-person" disabled={disabled} onClick={add}>
           Lisää henkilö
         </Button>
         <Button variant="ghost" disabled={disabled} onClick={settings}>
@@ -70,7 +70,8 @@ export function CustomerTable({
         </Button>
       </Flex>
       <div className="sort-row">
-        <span>Järjestys:</span>
+        <span>Järjestys</span>
+        <span className="sort-options">
         <button
           type="button"
           aria-pressed={recent}
@@ -85,6 +86,7 @@ export function CustomerTable({
         >
           Aakkosjärjestys
         </button>
+        </span>
       </div>
       <div className="customer-scroll">
         <Table.Root size="lg" className="customer-table">
@@ -138,7 +140,7 @@ export function CustomerTable({
                 </Table.Cell>
                 <Table.Cell
                   textAlign="right"
-                  fontWeight="600"
+                  className={row.original.balance < 0 ? "negative-balance" : undefined}
                   onClick={() => {
                     if (!disabled) select(row.original.id);
                   }}

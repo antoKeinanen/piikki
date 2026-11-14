@@ -14,7 +14,7 @@ export function CustomerNoteForm({
   const [note, setNote] = useState(customer.note);
   return (
     <form
-      className="settings-form"
+      className="note-form"
       onSubmit={(event) => {
         event.preventDefault();
         void save(customer.id, note).catch(() => {});

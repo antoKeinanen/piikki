@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { ChakraProvider, defaultSystem } from "@chakra-ui/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import App from "./app/App";
+import "@fontsource-variable/inter";
 import "./app/styles.css";
 const queryClient = new QueryClient();
 const root = document.getElementById("root");

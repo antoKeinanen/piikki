@@ -104,7 +104,7 @@ export function ProductEditor({
             })}
           </div>
         )}
-        <Field.HelperText>Saman kategorian nimikkeet näytetään kassalla yhden painikkeen takana.</Field.HelperText>
+        <Field.HelperText>Saman kategorian nimikkeet näytetään veloitusnäkymässä yhden painikkeen takana.</Field.HelperText>
       </Field.Root>
       <Field.Root>
         <Field.Label>Kuvaus</Field.Label>

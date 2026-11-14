@@ -14,7 +14,7 @@ export function ReversalConfirmation({
   return (
     <div className="settings-form">
       <Text className="reversal-name">{customerName}</Text>
-      <Text>Perutaanko {formatAmount(Math.abs(entry.cents))} € tapahtuma?</Text>
+      <Text>Perutaanko {formatAmount(Math.abs(entry.cents))} tapahtuma?</Text>
       <Button
         className="primary"
         disabled={busy}

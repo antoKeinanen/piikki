@@ -552,7 +552,7 @@ it("creates customer metadata and saves, updates, and clears a note across datab
   // The new person is selected right away.
   const note = await screen.findByLabelText("Muistiinpano");
   expect(screen.getByRole("cell", { name: "Sen-KyO" })).toBeTruthy();
-  expect(within(screen.getByRole("region", { name: "Valittu henkilö" })).getByText("Aino • Sen-KyO")).toBeTruthy();
+  expect(within(screen.getByRole("region", { name: "Valittu henkilö" })).getByTitle("Aino").textContent).toBe("Aino • Sen-KyO");
   expect(note.textContent).toBe("");
   for (const value of ["First\nSecond", "Updated", ""]) {
     fireEvent.change(note, { target: { value } });
@@ -676,7 +676,7 @@ it("edits a person with undo, deletes with undo, and restores from settings", as
   fireEvent.change(within(dialog).getByLabelText("Osakunta (valinnainen)"), { target: { value: "\u0000other" } });
   fireEvent.change(within(dialog).getByLabelText("Uusi osakunta"), { target: { value: "PO" } });
   fireEvent.click(save);
-  await within(account).findByText("Aino K • PO");
+  expect((await within(account).findByTitle("Aino K")).textContent).toBe("Aino K • PO");
   expect(aino()).toMatchObject({ name: "Aino K", osakunta: "PO" });
   fireEvent.click(within(account).getByRole("button", { name: "Kumoa muutos" }));
   await within(account).findByText("Aino Korhonen");
@@ -783,7 +783,7 @@ it("adds a person with an opening balance, warns about duplicates, and selects t
   fireEvent.change(within(dialog).getByLabelText("Alkusaldo (valinnainen)"), { target: { value: "-12,50" } });
   fireEvent.click(within(dialog).getByRole("button", { name: "Lisää henkilö" }));
   await waitFor(() => expect(screen.getByLabelText("Saldo").textContent).toBe("−12,50"));
-  expect(within(screen.getByRole("region", { name: "Valittu henkilö" })).getByText("Aino Uusi • KyO")).toBeTruthy();
+  expect(within(screen.getByRole("region", { name: "Valittu henkilö" })).getByTitle("Aino Uusi").textContent).toBe("Aino Uusi • KyO");
   expect(screen.getByText("Alkusaldo")).toBeTruthy();
   const added = ledger.snapshot().customers.find((c) => c.name === "Aino Uusi");
   expect(added).toMatchObject({ osakunta: "KyO", balance: -1250 });

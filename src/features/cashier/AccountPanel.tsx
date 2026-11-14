@@ -131,7 +131,8 @@ export function AccountPanel({
           <div className="account-summary">
             <div className="account-identity">
               <Text className="account-name" title={customer.name}>
-                {customer.name}{customer.osakunta && ` • ${customer.osakunta}`}
+                {customer.name}
+                {customer.osakunta && <span className="account-osakunta"> • {customer.osakunta}</span>}
               </Text>
               <Button
                 variant="ghost"
@@ -147,9 +148,12 @@ export function AccountPanel({
                 Muokkaa
               </Button>
             </div>
-            <Text className="balance" aria-label="Saldo">
-              {formatAmount(customer.balance)}
-            </Text>
+            <div className="balance-block">
+              <span className="balance-label" aria-hidden="true">Saldo</span>
+              <Text className={`balance ${customer.balance < 0 ? "negative" : ""}`} aria-label="Saldo">
+                {formatAmount(customer.balance)}
+              </Text>
+            </div>
           </div>
           <CustomerNoteForm
             key={customer.id}
@@ -270,6 +274,7 @@ export function AccountPanel({
             </div>
           )}
           <div className="history" aria-label="Tapahtumat">
+            <h3 className="history-title">Tapahtumat</h3>
             {!entries.length && (
               <Text className="empty-history">Ei tapahtumia.</Text>
             )}
