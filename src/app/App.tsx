@@ -443,7 +443,7 @@ function CashierApp() {
           <Dialog.Backdrop />
           <Dialog.Positioner>
             <Dialog.Content
-              className={`modal ${modal?.kind === "settings" || modal?.kind === "onboarding" ? "settings-modal" : ""}`}
+              className={`modal ${modal?.kind === "settings" || modal?.kind === "onboarding" ? "settings-modal" : ""} ${modal?.kind === "settings" ? "settings-shell" : ""}`}
               style={modalStyle}
               aria-label={
                 modal?.kind === "event" || modal?.kind === "create-event"
@@ -582,20 +582,22 @@ function CashierApp() {
                     {error}
                   </Text>
                 )}
-                {!(modal?.kind === "operator" && !operator) && (
-                    <Button
-                      variant="ghost"
-                      className="close-modal"
-                      disabled={busy}
-                      onClick={() => {
-                        setModal(undefined);
-                        setError("");
-                      }}
-                    >
-                      {modal?.kind === "settings" ? "Valmis" : modal?.kind === "reverse" ? "Takaisin" : "Peruuta"}
-                    </Button>
-                )}
               </Dialog.Body>
+              {!(modal?.kind === "operator" && !operator) && (
+                <Dialog.Footer className="modal-footer">
+                  <Button
+                    variant="ghost"
+                    className="close-modal"
+                    disabled={busy}
+                    onClick={() => {
+                      setModal(undefined);
+                      setError("");
+                    }}
+                  >
+                    {modal?.kind === "settings" ? "Valmis" : modal?.kind === "reverse" ? "Takaisin" : "Peruuta"}
+                  </Button>
+                </Dialog.Footer>
+              )}
             </Dialog.Content>
           </Dialog.Positioner>
         </Portal>

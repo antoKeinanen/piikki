@@ -96,6 +96,7 @@ export function CustomerForm({
       </FormField>
       {!!matches.length && (
         <div className="name-hints" role="status" aria-label="Samankaltaiset nimet">
+          <Text className="name-hints-heading">Tarkista ennen lisäämistä</Text>
           <Text className={exact ? "name-hint-warning" : "name-hint-title"}>
             {exact ? "Tämä nimi on jo kannassa." : "Kannassa on jo samankaltaisia nimiä:"}
           </Text>
@@ -116,10 +117,12 @@ export function CustomerForm({
               >
                 <span className="name-hint-who">
                   {person.name}
-                  {person.osakunta && <small>{person.osakunta}</small>}
+                  <small>
+                    {person.osakunta && `${person.osakunta} · `}
+                    <span className="name-hint-balance">Saldo {formatAmount(person.balance)}</span>
+                  </small>
                 </span>
-                <span className="name-hint-balance">{formatAmount(person.balance)}</span>
-                <span className="name-hint-action">Valitse</span>
+                <span className="name-hint-action">Valitse henkilö</span>
               </button>
             ),
           )}
@@ -179,7 +182,7 @@ export function CustomerForm({
           busy
         }
       >
-        {submitLabel}
+        {matches.length > 0 && !selfId ? "Lisää uutena henkilönä" : submitLabel}
       </Button>
     </form>
   );

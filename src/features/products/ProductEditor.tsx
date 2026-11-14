@@ -2,6 +2,56 @@ import { useEffect, useRef, useState } from "react";
 import { Button, Field, Input, Textarea } from "@chakra-ui/react";
 import { formatAmount, parseAmount, LogoSchema, type Product } from "../../ledger";
 
+const IMAGE_TYPES = "image/png,image/jpeg,image/webp,image/svg+xml";
+
+/** Same picker as the branding form; features cannot share modules. */
+function ImagePicker({
+  id, pickLabel, fileName, image, previewAlt, clearLabel, disabled, onFile, onClear,
+}: {
+  id: string;
+  pickLabel: string;
+  fileName: string;
+  image?: string;
+  previewAlt: string;
+  clearLabel: string;
+  disabled: boolean;
+  onFile(file: File): void;
+  onClear(): void;
+}) {
+  return (
+    <div className="image-picker">
+      {image
+        ? <img className="image-picker-preview" src={image} alt={previewAlt} />
+        : <span className="image-picker-preview empty" aria-hidden="true" />}
+      <div className="image-picker-main">
+        <div className="image-picker-actions">
+          <input
+            id={id}
+            className="visually-hidden"
+            type="file"
+            accept={IMAGE_TYPES}
+            disabled={disabled}
+            onChange={(e) => {
+              const file = e.currentTarget.files?.[0];
+              if (file) onFile(file);
+              e.currentTarget.value = "";
+            }}
+          />
+          <label htmlFor={id} className="image-picker-button" data-disabled={disabled || undefined}>
+            {pickLabel}
+          </label>
+          {image && (
+            <Button variant="ghost" className="image-picker-clear" disabled={disabled} onClick={onClear}>
+              {clearLabel}
+            </Button>
+          )}
+        </div>
+        <span className="image-picker-name">{fileName}</span>
+      </div>
+    </div>
+  );
+}
+
 export function ProductEditor({
   products, busy, save, remove, setError,
 }: {
@@ -113,16 +163,17 @@ export function ProductEditor({
       </Field.Root>
       <Field.Root>
         <Field.Label htmlFor="product-image">Nimikkeen kuva</Field.Label>
-        <input id="product-image" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml"
-          disabled={disabled} onChange={(e) => {
-            const file = e.currentTarget.files?.[0];
-            if (file) upload(file);
-            e.currentTarget.value = "";
-          }} />
-        {draft.image && <>
-          <img className="logo-preview" src={draft.image} alt="Nimikkeen kuvan esikatselu" />
-          <Button variant="ghost" disabled={disabled} onClick={() => setDraft({ ...draft, image: "" })}>Poista kuva</Button>
-        </>}
+        <ImagePicker
+          id="product-image"
+          pickLabel={draft.image ? "Vaihda kuva" : "Valitse kuva"}
+          fileName={draft.image ? "Kuva valittu" : "Ei kuvaa. PNG, JPG, WebP tai SVG, enintään 1 Mt."}
+          image={draft.image || undefined}
+          previewAlt="Nimikkeen kuvan esikatselu"
+          clearLabel="Poista kuva"
+          disabled={disabled}
+          onFile={upload}
+          onClear={() => setDraft({ ...draft, image: "" })}
+        />
       </Field.Root>
       <Button type="submit" className="primary" disabled={disabled || !draft.name.trim() || !draft.amount}>
         {editing ? "Tallenna nimike" : "Lisää nimike"}
@@ -138,16 +189,18 @@ export function ProductEditor({
             <div className="product-row">
               {p.image && <img className="product-thumbnail" src={p.image} alt="" />}
               <span>{p.name}<small>{p.category ? `${p.category} · ` : ""}{formatAmount(p.cents)}</small></span>
-              {editing === p.id
-                ? <span className="product-editing-badge" aria-live="polite">Muokataan</span>
-                : <Button variant="ghost" size="sm" disabled={disabled} onClick={() => {
-                    setEditing(p.id);
-                    setEditDraft({ name: p.name, description: p.description, image: p.image, amount: (p.cents / 100).toFixed(2), category: p.category });
-                  }}>Muokkaa</Button>}
-              <Button variant="ghost" size="sm" disabled={disabled} onClick={() => void apply(
-                () => remove(p.id),
-                () => { setRemoved(p); if (editing === p.id) reset(); },
-              )}>Poista</Button>
+              <div className="product-row-actions">
+                {editing === p.id
+                  ? <span className="product-editing-badge" aria-live="polite">Muokataan</span>
+                  : <Button variant="ghost" disabled={disabled} onClick={() => {
+                      setEditing(p.id);
+                      setEditDraft({ name: p.name, description: p.description, image: p.image, amount: (p.cents / 100).toFixed(2), category: p.category });
+                    }}>Muokkaa</Button>}
+                <Button variant="ghost" disabled={disabled} onClick={() => void apply(
+                  () => remove(p.id),
+                  () => { setRemoved(p); if (editing === p.id) reset(); },
+                )}>Poista</Button>
+              </div>
             </div>
             {editing === p.id && <div className="product-edit-panel" ref={editPanel}>{form}</div>}
           </div>
