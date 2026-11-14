@@ -23,7 +23,6 @@ export function RemovedCustomers({
           </span>
           <Button
             variant="ghost"
-            size="sm"
             disabled={busy}
             onClick={() => void restore(customer.id).catch(() => {})}
           >

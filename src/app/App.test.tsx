@@ -82,7 +82,7 @@ it("charges immediately, hides IDs and filenames, and opens branding settings", 
     name: "example.sqlite",
   });
   mount();
-  fireEvent.click(screen.getByRole("button", { name: "Avaa tietokanta" }));
+  fireEvent.click(screen.getByRole("button", { name: "Avaa osakunnan tietokanta" }));
   await continueEvent("Aino Korhonen");
   const balance = await screen.findByLabelText("Saldo");
   expect(balance.textContent).toBe("42,50");
@@ -199,7 +199,7 @@ it("blocks the app when required file access is missing, regardless of browser n
   expect(
     screen.getByRole("region", { name: "Selaimen yhteensopivuus" }),
   ).toBeTruthy();
-  expect(screen.queryByRole("button", { name: "Avaa tietokanta" })).toBeNull();
+  expect(screen.queryByRole("button", { name: "Avaa osakunnan tietokanta" })).toBeNull();
   expect(screen.queryByLabelText("Hae henkilöä")).toBeNull();
   expect(localStorage.length).toBe(0);
 });
@@ -217,7 +217,7 @@ it("offers a copyable link when the browser cannot open files", async () => {
     await screen.findByRole("button", { name: "Linkki kopioitu" });
     expect(writeText).toHaveBeenCalledWith(window.location.href);
     expect(
-      screen.queryByRole("button", { name: "Avaa tietokanta" }),
+      screen.queryByRole("button", { name: "Avaa osakunnan tietokanta" }),
     ).toBeNull();
   } finally {
     vi.unstubAllGlobals();
@@ -303,7 +303,7 @@ it("replaces the session snapshot and clears the cashier draft when opening anot
     .mockResolvedValueOnce({ ledger: second, name: "second.sqlite" });
   mount();
   fireEvent.click(
-    await screen.findByRole("button", { name: "Avaa tietokanta" }),
+    await screen.findByRole("button", { name: "Avaa osakunnan tietokanta" }),
   );
   await continueEvent("Aino Korhonen");
   fireEvent.click(screen.getByRole("button", { name: "Lisää saldoa" }));
@@ -340,7 +340,7 @@ it("keeps the amount and balance after a failed save, then allows retry", async 
   });
   mount();
   fireEvent.click(
-    await screen.findByRole("button", { name: "Avaa tietokanta" }),
+    await screen.findByRole("button", { name: "Avaa osakunnan tietokanta" }),
   );
   await continueEvent("Aino Korhonen");
   fireEvent.change(screen.getByLabelText("Summa"), {
@@ -373,7 +373,7 @@ it("charges below zero with custom amounts and products and reopens the saved ac
     name: "test.sqlite",
   });
   const app = mount();
-  fireEvent.click(screen.getByRole("button", { name: "Avaa tietokanta" }));
+  fireEvent.click(screen.getByRole("button", { name: "Avaa osakunnan tietokanta" }));
   await continueEvent("Aino Korhonen");
   fireEvent.change(screen.getByLabelText("Summa"), { target: { value: "50" } });
   fireEvent.click(screen.getByRole("button", { name: "Veloita 50,00" }));
@@ -389,7 +389,7 @@ it("charges below zero with custom amounts and products and reopens the saved ac
   app.unmount();
   pick.mockResolvedValue({ ledger: await Ledger.open(saved), name: "test.sqlite" });
   mount();
-  fireEvent.click(screen.getByRole("button", { name: "Avaa tietokanta" }));
+  fireEvent.click(screen.getByRole("button", { name: "Avaa osakunnan tietokanta" }));
   await continueEvent("Aino Korhonen");
   expect((await screen.findByLabelText("Saldo")).textContent).toBe("−7,50");
 });
@@ -403,7 +403,7 @@ it("preserves the active database when opening a replacement is cancelled", asyn
     .mockRejectedValueOnce(new DOMException("Cancelled", "AbortError"));
   mount();
   fireEvent.click(
-    await screen.findByRole("button", { name: "Avaa tietokanta" }),
+    await screen.findByRole("button", { name: "Avaa osakunnan tietokanta" }),
   );
   await continueEvent("Aino Korhonen");
   fireEvent.click(screen.getByRole("button", { name: "Asetukset" }));
@@ -430,7 +430,7 @@ it("shows the previous event name and creates a named event that keeps the previ
   vi.spyOn(fileAccess, "supportsDirectFiles").mockReturnValue(true);
   vi.spyOn(fileAccess, "pickDatabase").mockResolvedValue({ ledger, name: "test.sqlite" });
   mount();
-  fireEvent.click(screen.getByRole("button", { name: "Avaa tietokanta" }));
+  fireEvent.click(screen.getByRole("button", { name: "Avaa osakunnan tietokanta" }));
   const dialog = await screen.findByRole("dialog", { name: "Valitse tapahtuma" });
   expect(within(dialog).getByText(`Edellinen tapahtuma: ${previous.event.name}`)).toBeTruthy();
   expect(screen.queryByLabelText("Saldo")).toBeNull();
@@ -457,7 +457,7 @@ it("keeps the choice and previous event after a failed event save and allows ret
   vi.spyOn(fileAccess, "supportsDirectFiles").mockReturnValue(true);
   vi.spyOn(fileAccess, "pickDatabase").mockResolvedValue({ ledger, name: "test.sqlite" });
   mount();
-  fireEvent.click(screen.getByRole("button", { name: "Avaa tietokanta" }));
+  fireEvent.click(screen.getByRole("button", { name: "Avaa osakunnan tietokanta" }));
   await screen.findByRole("dialog", { name: "Valitse tapahtuma" });
   fireEvent.change(screen.getByLabelText("Tapahtuman nimi"), { target: { value: "Talvijuhla" } });
   fireEvent.click(screen.getByRole("button", { name: "Luo uusi tapahtuma" }));
@@ -478,7 +478,7 @@ it("cancels the event choice without activating or changing the selected file", 
   vi.spyOn(fileAccess, "supportsDirectFiles").mockReturnValue(true);
   vi.spyOn(fileAccess, "pickDatabase").mockResolvedValue({ ledger, name: "test.sqlite" });
   mount();
-  fireEvent.click(screen.getByRole("button", { name: "Avaa tietokanta" }));
+  fireEvent.click(screen.getByRole("button", { name: "Avaa osakunnan tietokanta" }));
   await screen.findByRole("dialog", { name: "Valitse tapahtuma" });
   fireEvent.click(screen.getByRole("button", { name: "Peruuta" }));
   await waitFor(() => expect(document.querySelector('[role="dialog"][data-state="open"]')).toBeNull());
@@ -495,7 +495,7 @@ it("keeps the current cashier session when the replacement event choice is cance
     .mockResolvedValueOnce({ ledger: first, name: "first.sqlite" })
     .mockResolvedValueOnce({ ledger: second, name: "second.sqlite" });
   mount();
-  fireEvent.click(screen.getByRole("button", { name: "Avaa tietokanta" }));
+  fireEvent.click(screen.getByRole("button", { name: "Avaa osakunnan tietokanta" }));
   await continueEvent("Aino Korhonen");
   fireEvent.click(screen.getByRole("button", { name: "Asetukset" }));
   fireEvent.click(await screen.findByRole("tab", { name: "Tietokanta" }));
@@ -539,7 +539,7 @@ it("creates customer metadata and saves, updates, and clears a note across datab
     name: "metadata.sqlite",
   }));
   mount();
-  fireEvent.click(screen.getByRole("button", { name: "Avaa tietokanta" }));
+  fireEvent.click(screen.getByRole("button", { name: "Avaa osakunnan tietokanta" }));
   await continueEvent();
   fireEvent.click(await screen.findByRole("button", { name: "Lisää henkilö" }));
   const dialog = await screen.findByRole("dialog", { name: "Lisää henkilö" });
@@ -577,7 +577,7 @@ it("keeps a product draft after a failed save and retries without duplicates", a
   vi.spyOn(fileAccess, "supportsDirectFiles").mockReturnValue(true);
   vi.spyOn(fileAccess, "pickDatabase").mockResolvedValue({ ledger, name: "products.sqlite" });
   mount();
-  fireEvent.click(screen.getByRole("button", { name: "Avaa tietokanta" }));
+  fireEvent.click(screen.getByRole("button", { name: "Avaa osakunnan tietokanta" }));
   await continueEvent();
   fireEvent.click(await screen.findByRole("button", { name: "Asetukset" }));
   fireEvent.click(await screen.findByRole("tab", { name: "Nimikkeet" }));
@@ -612,7 +612,7 @@ it("shows statistics per event and switches back to the cashier", async () => {
     name: "example.sqlite",
   });
   mount();
-  fireEvent.click(screen.getByRole("button", { name: "Avaa tietokanta" }));
+  fireEvent.click(screen.getByRole("button", { name: "Avaa osakunnan tietokanta" }));
   await continueEvent("Aino Korhonen");
   fireEvent.click(screen.getByRole("button", { name: "Tilastot" }));
   const tiles = () =>
@@ -670,7 +670,7 @@ it("edits a person with undo, deletes with undo, and restores from settings", as
   vi.spyOn(fileAccess, "supportsDirectFiles").mockReturnValue(true);
   vi.spyOn(fileAccess, "pickDatabase").mockResolvedValue({ ledger, name: "example.sqlite" });
   mount();
-  fireEvent.click(screen.getByRole("button", { name: "Avaa tietokanta" }));
+  fireEvent.click(screen.getByRole("button", { name: "Avaa osakunnan tietokanta" }));
   await continueEvent("Aino Korhonen");
   const account = await screen.findByRole("region", { name: "Valittu henkilö" });
   const aino = () => ledger.snapshot().customers.find((c) => c.reference === "1001");
@@ -720,7 +720,7 @@ async function openExample() {
   vi.spyOn(fileAccess, "supportsDirectFiles").mockReturnValue(true);
   vi.spyOn(fileAccess, "pickDatabase").mockResolvedValue({ ledger, name: "example.sqlite" });
   mount();
-  fireEvent.click(screen.getByRole("button", { name: "Avaa tietokanta" }));
+  fireEvent.click(screen.getByRole("button", { name: "Avaa osakunnan tietokanta" }));
   return ledger;
 }
 
@@ -831,7 +831,7 @@ it("opens product categories before their products", async () => {
   vi.spyOn(fileAccess, "supportsDirectFiles").mockReturnValue(true);
   vi.spyOn(fileAccess, "pickDatabase").mockResolvedValue({ ledger, name: "example.sqlite" });
   mount();
-  fireEvent.click(screen.getByRole("button", { name: "Avaa tietokanta" }));
+  fireEvent.click(screen.getByRole("button", { name: "Avaa osakunnan tietokanta" }));
   await continueEvent("Aino Korhonen");
   expect(screen.queryByRole("button", { name: "Veloita Olut 3,00" })).toBeNull();
   expect(screen.getByRole("button", { name: "Veloita Kahvi 2,50" })).toBeTruthy();
@@ -855,7 +855,7 @@ it("shows the first product photo on each category", async () => {
   vi.spyOn(fileAccess, "supportsDirectFiles").mockReturnValue(true);
   vi.spyOn(fileAccess, "pickDatabase").mockResolvedValue({ ledger, name: "example.sqlite" });
   mount();
-  fireEvent.click(screen.getByRole("button", { name: "Avaa tietokanta" }));
+  fireEvent.click(screen.getByRole("button", { name: "Avaa osakunnan tietokanta" }));
   await continueEvent("Aino Korhonen");
   const photo = () => screen.getByRole("button", { name: "Kategoria Tölkki" }).querySelector("img")?.getAttribute("src");
   expect(photo()).toBe(olut);
@@ -869,7 +869,7 @@ it("reuses an existing product category with one tap", async () => {
   vi.spyOn(fileAccess, "supportsDirectFiles").mockReturnValue(true);
   vi.spyOn(fileAccess, "pickDatabase").mockResolvedValue({ ledger, name: "example.sqlite" });
   mount();
-  fireEvent.click(screen.getByRole("button", { name: "Avaa tietokanta" }));
+  fireEvent.click(screen.getByRole("button", { name: "Avaa osakunnan tietokanta" }));
   await continueEvent();
   fireEvent.click(await screen.findByRole("button", { name: "Asetukset" }));
   fireEvent.click(await screen.findByRole("tab", { name: "Nimikkeet" }));
@@ -889,7 +889,7 @@ it("logs out, closing the database and forgetting the operator", async () => {
   const ledger = await openExample();
   await continueEvent("Aino Korhonen");
   fireEvent.click(screen.getByRole("button", { name: "Kirjaudu ulos" }));
-  await screen.findByRole("button", { name: "Avaa tietokanta" });
+  await screen.findByRole("button", { name: "Avaa osakunnan tietokanta" });
   expect(screen.queryByLabelText("Saldo")).toBeNull();
   expect(screen.queryByRole("button", { name: /Vuorossa/ })).toBeNull();
   expect(() => ledger.snapshot()).toThrow();

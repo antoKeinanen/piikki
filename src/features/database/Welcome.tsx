@@ -15,15 +15,18 @@ export function Welcome({
       <div className="welcome-card">
         <h1 className="welcome-title">Aloita vuoro</h1>
         <p className="welcome-text">
-          Avaa osakunnan tietokanta. Jos tietokantaa ei vielä ole, luo uusi.
+          Valitse osakunnan tietokantatiedosto. Sen nimi päättyy yleensä .sqlite.
         </p>
         <Button size="xl" className="primary" disabled={busy} onClick={onOpen}>
-          Avaa tietokanta
+          Avaa osakunnan tietokanta
         </Button>
-        <Button variant="outline" className="secondary" disabled={busy} onClick={onCreate}>
-          Luo tietokanta
-        </Button>
-        <span className="drop-label">Voit myös pudottaa tietokantatiedoston tähän.</span>
+        <span className="drop-label">Voit myös pudottaa tiedoston tähän.</span>
+        <div className="welcome-new">
+          <span className="welcome-new-label">Ei vielä tietokantaa?</span>
+          <Button variant="outline" className="secondary" disabled={busy} onClick={onCreate}>
+            Luo tietokanta
+          </Button>
+        </div>
       </div>
       {error && (
         <Text role="alert" className="error">
