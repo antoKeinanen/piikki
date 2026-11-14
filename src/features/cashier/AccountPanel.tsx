@@ -143,8 +143,8 @@ export function AccountPanel({
             <div className="account-identity">
               <Text className="account-name" title={customer.name}>
                 {customer.name}
-                {customer.osakunta && <span className="account-osakunta"> • {customer.osakunta}</span>}
               </Text>
+              {customer.osakunta && <Text className="account-osakunta">{customer.osakunta}</Text>}
               <Button
                 variant="ghost"
                 size="sm"
@@ -166,6 +166,12 @@ export function AccountPanel({
               </Text>
             </div>
           </div>
+          <CustomerNoteForm
+            key={customer.id}
+            customer={customer}
+            busy={busy}
+            save={onSaveNote}
+          />
           <Flex className="mode" role="group" aria-label="Tapahtuman tyyppi">
             <Button
               variant="plain"
@@ -186,7 +192,8 @@ export function AccountPanel({
               <span aria-hidden="true" className="mode-sign">+</span>Lisää saldoa
             </Button>
           </Flex>
-          <div className="recorded-slot" role="status">
+          <div className="recorded-slot">
+            <div role="status">
             {recorded && (
               <div className={`recorded ${recorded.cents > 0 ? "positive" : "negative"}`}>
                 <span className="recorded-check" aria-hidden="true">✓</span>
@@ -206,14 +213,23 @@ export function AccountPanel({
                     onReverse(recorded);
                   }}
                 >
-                  Peru
+                  Kumoa
                 </Button>
               </div>
+            )}
+            </div>
+            {!recorded && (
+              <Text className="product-hint">
+                {action === "deposit"
+                  ? "Kirjoita lisättävä summa."
+                  : products.length
+                    ? "Nimike veloitetaan heti, kun napautat sitä."
+                    : "Kirjoita veloitettava summa."}
+              </Text>
             )}
           </div>
           {action === "charge" && !!products.length && (
             <div className="product-picker">
-              <Text className="product-hint">Nimike veloitetaan heti, kun napautat sitä.</Text>
               <Input aria-label="Hae nimikettä" placeholder="Hae nimikettä" value={search}
                 onChange={(e) => setSearch(e.target.value)} />
               <div className="product-grid">
@@ -224,7 +240,8 @@ export function AccountPanel({
                     disabled={busy}
                     onClick={() => setCategory(undefined)}
                   >
-                    <span>‹ Takaisin<small>{openCategory}</small></span>
+                    <span className="category-chevron" aria-hidden="true">‹</span>
+                    <span>Takaisin<small>{openCategory}</small></span>
                   </Button>
                 )}
                 {shownCategories.map((name) => (
@@ -238,9 +255,10 @@ export function AccountPanel({
                   >
                     {categoryImages.has(name) && <img className="product-thumbnail" src={categoryImages.get(name)} alt="" />}
                     <span>
-                      {name} ›
+                      {name}
                       <small>{products.filter((p) => p.category === name).length} nimikettä</small>
                     </span>
+                    <span className="category-chevron" aria-hidden="true">›</span>
                   </Button>
                 ))}
                 {visibleProducts.map((p) => (
@@ -253,7 +271,8 @@ export function AccountPanel({
                     onClick={() => post("charge", p)}
                   >
                     {p.image && <img className="product-thumbnail" src={p.image} alt="" />}
-                    <span>{p.name}<small>{formatAmount(p.cents)}</small></span>
+                    <span>{p.name}</span>
+                    <span className="product-price">−{formatAmount(p.cents)}</span>
                   </Button>
                 ))}
               </div>
@@ -304,12 +323,6 @@ export function AccountPanel({
               {error}
             </Text>
           )}
-          <CustomerNoteForm
-            key={customer.id}
-            customer={customer}
-            busy={busy}
-            save={onSaveNote}
-          />
           <div className="history" aria-label="Tapahtumat">
             <h3 className="history-title">Tapahtumat</h3>
             {!entries.length && (
@@ -330,7 +343,7 @@ export function AccountPanel({
                       hour: "2-digit",
                       minute: "2-digit",
                     })}
-                    {entry.reversed ? " · Peruttu" : ""}
+                    {entry.reversed ? " · Kumottu" : ""}
                     {entry.operator ? ` · ${entry.operator}` : ""}
                   </Text>
                 </div>
@@ -348,7 +361,7 @@ export function AccountPanel({
                       onReverse(entry);
                     }}
                   >
-                    Peru
+                    Kumoa
                   </Button>
                 ) : (
                   <span />

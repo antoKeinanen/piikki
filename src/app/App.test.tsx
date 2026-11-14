@@ -382,8 +382,9 @@ it("charges below zero with custom amounts and products and reopens the saved ac
   expect(quick.hasAttribute("disabled")).toBe(false);
   fireEvent.click(quick);
   await waitFor(() => expect(screen.getByLabelText("Saldo").textContent).toBe("−16,00"));
-  fireEvent.click(screen.getAllByRole("button", { name: "Peru" })[0]);
-  fireEvent.click(await screen.findByRole("button", { name: "Peru tapahtuma" }));
+  fireEvent.click(screen.getAllByRole("button", { name: "Kumoa" })[0]);
+  expect(await screen.findByRole("heading", { name: "Kumoa veloitus?" })).toBeTruthy();
+  fireEvent.click(await screen.findByRole("button", { name: "Kumoa veloitus" }));
   await waitFor(() => expect(screen.getByLabelText("Saldo").textContent).toBe("−7,50"));
   app.unmount();
   pick.mockResolvedValue({ ledger: await Ledger.open(saved), name: "test.sqlite" });
@@ -550,16 +551,22 @@ it("creates customer metadata and saves, updates, and clears a note across datab
   fireEvent.change(custom, { target: { value: "Sen-KyO" } });
   fireEvent.click(within(dialog).getByRole("button", { name: "Lisää henkilö" }));
   // The new person is selected right away.
-  const note = await screen.findByLabelText("Muistiinpano");
+  fireEvent.click(await screen.findByRole("button", { name: "Lisää muistiinpano" }));
+  const panel = screen.getByRole("region", { name: "Valittu henkilö" });
   expect(screen.getByRole("cell", { name: "Sen-KyO" })).toBeTruthy();
-  expect(within(screen.getByRole("region", { name: "Valittu henkilö" })).getByTitle("Aino").textContent).toBe("Aino • Sen-KyO");
-  expect(note.textContent).toBe("");
+  expect(within(panel).getByTitle("Aino").textContent).toBe("Aino");
+  expect(within(panel).getByText("Sen-KyO")).toBeTruthy();
+  expect(screen.getByLabelText("Muistiinpano").textContent).toBe("");
+  expect(screen.getByRole("button", { name: "Tallenna muistiinpano" }).hasAttribute("disabled")).toBe(true);
   for (const value of ["First\nSecond", "Updated", ""]) {
-    fireEvent.change(note, { target: { value } });
+    fireEvent.change(screen.getByLabelText("Muistiinpano"), { target: { value } });
     fireEvent.click(screen.getByRole("button", { name: "Tallenna muistiinpano" }));
     await waitFor(() => expect(ledger.snapshot().customers[0].note).toBe(value));
     expect((await Ledger.open(saved)).snapshot().customers[0].note).toBe(value);
-    await waitFor(() => expect(screen.getByRole("button", { name: "Tallenna muistiinpano" }).hasAttribute("disabled")).toBe(true));
+    // Saving closes the editor and shows the note as a single line.
+    const edit = await within(panel).findByRole("button", { name: value ? "Muokkaa muistiinpanoa" : "Lisää muistiinpano" });
+    if (value) expect(within(panel).getByText((_, el) => el?.classList.contains("note-text") ?? false).textContent).toBe(value);
+    fireEvent.click(edit);
   }
 });
 
@@ -676,7 +683,8 @@ it("edits a person with undo, deletes with undo, and restores from settings", as
   fireEvent.change(within(dialog).getByLabelText("Osakunta (valinnainen)"), { target: { value: "\u0000other" } });
   fireEvent.change(within(dialog).getByLabelText("Uusi osakunta"), { target: { value: "PO" } });
   fireEvent.click(save);
-  expect((await within(account).findByTitle("Aino K")).textContent).toBe("Aino K • PO");
+  expect((await within(account).findByTitle("Aino K")).textContent).toBe("Aino K");
+  expect(within(account).getByText("PO")).toBeTruthy();
   expect(aino()).toMatchObject({ name: "Aino K", osakunta: "PO" });
   fireEvent.click(within(account).getByRole("button", { name: "Kumoa muutos" }));
   await within(account).findByText("Aino Korhonen");
@@ -783,7 +791,8 @@ it("adds a person with an opening balance, warns about duplicates, and selects t
   fireEvent.change(within(dialog).getByLabelText("Alkusaldo (valinnainen)"), { target: { value: "-12,50" } });
   fireEvent.click(within(dialog).getByRole("button", { name: "Lisää henkilö" }));
   await waitFor(() => expect(screen.getByLabelText("Saldo").textContent).toBe("−12,50"));
-  expect(within(screen.getByRole("region", { name: "Valittu henkilö" })).getByTitle("Aino Uusi").textContent).toBe("Aino Uusi • KyO");
+  expect(within(screen.getByRole("region", { name: "Valittu henkilö" })).getByTitle("Aino Uusi").textContent).toBe("Aino Uusi");
+  expect(within(screen.getByRole("region", { name: "Valittu henkilö" })).getByText("KyO")).toBeTruthy();
   expect(screen.getByText("Alkusaldo")).toBeTruthy();
   const added = ledger.snapshot().customers.find((c) => c.name === "Aino Uusi");
   expect(added).toMatchObject({ osakunta: "KyO", balance: -1250 });
