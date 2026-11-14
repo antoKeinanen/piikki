@@ -44,7 +44,7 @@ export const OTHER_PRODUCT = "Muu summa";
 const genericLabels = new Set(["Veloita", "Charge", "Purchase"]);
 // Upper bounds, in cents, of every charge size band but the last.
 const sizeLimits = [200, 500, 1000, 2000];
-const sizeLabels = ["alle 2", "2–5", "5–10", "10–20", "yli 20"];
+const sizeLabels = ["alle 2", "2–4,99", "5–9,99", "10–19,99", "20 tai yli"];
 const TOP_CUSTOMERS = 10;
 const HOUR = 3_600_000;
 
