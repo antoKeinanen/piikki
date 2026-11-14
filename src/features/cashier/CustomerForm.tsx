@@ -114,11 +114,12 @@ export function CustomerForm({
                 disabled={busy}
                 onClick={() => onPick(person.id)}
               >
-                <span>
+                <span className="name-hint-who">
                   {person.name}
-                  {person.osakunta && ` • ${person.osakunta}`}
+                  {person.osakunta && <small>{person.osakunta}</small>}
                 </span>
-                <span className="name-hint-balance">{formatAmount(person.balance)} · Valitse</span>
+                <span className="name-hint-balance">{formatAmount(person.balance)}</span>
+                <span className="name-hint-action">Valitse</span>
               </button>
             ),
           )}
