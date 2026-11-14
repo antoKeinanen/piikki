@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { NativeSelect, Text } from "@chakra-ui/react";
 import { formatAmount, type LedgerEvent } from "../../ledger";
 import type { EventComparison as Comparison, EventSummary } from "./summary";
@@ -5,6 +6,7 @@ import { EmptyNote, CustomerRanking, ProductRanking } from "./Rankings";
 import { CumulativeTotals, ChargesOverTime } from "./TimeCharts";
 import { EventComparison } from "./EventComparison";
 import { ChargeSizes } from "./ChargeSizes";
+import { count } from "./chart-style";
 
 function Tile({ label, value, note }: { label: string; value: string; note?: string }) {
   return (
@@ -16,6 +18,17 @@ function Tile({ label, value, note }: { label: string; value: string; note?: str
   );
 }
 
+function TileGroup({ id, label, children }: { id: string; label: string; children: ReactNode }) {
+  return (
+    <section className={`stat-group stat-group-${id}`} aria-labelledby={`scope-${id}`}>
+      <h2 id={`scope-${id}`} className="stat-scope">
+        {label}
+      </h2>
+      {children}
+    </section>
+  );
+}
+
 function Tiles({ summary }: { summary: EventSummary }) {
   const perPerson = summary.people ? summary.charges / summary.people : 0;
   const undoneShare = summary.charges + summary.undone
@@ -23,37 +36,38 @@ function Tiles({ summary }: { summary: EventSummary }) {
     : 0;
   return (
     <div className="stat-tiles">
-      <Tile label="Veloitettu" value={formatAmount(summary.charged)} />
-      <Tile
-        label="Veloituksia"
-        value={String(summary.charges)}
-        note={summary.charges ? `suurin veloitus ${formatAmount(summary.largest)}` : undefined}
-      />
-      <Tile
-        label="Keskiveloitus"
-        value={formatAmount(summary.average)}
-      />
-      <Tile
-        label="Henkilöitä"
-        value={String(summary.people)}
-        note={summary.people ? `${perPerson.toFixed(1).replace(".", ",")} veloitusta henkilöä kohti` : undefined}
-      />
-      <Tile
-        label="Saldoa lisätty"
-        value={formatAmount(summary.deposits)}
-        note={`${summary.depositCount} lisäystä`}
-      />
-      <Tile label="Saldoa jäljellä" value={formatAmount(summary.held)} />
-      <Tile
-        label="Velkaa"
-        value={formatAmount(summary.debt)}
-        note={`${summary.debtors} henkilöä`}
-      />
-      <Tile
-        label="Perutut veloitukset"
-        value={String(summary.undone)}
-        note={summary.undone ? `${undoneShare} % kaikista veloituksista` : undefined}
-      />
+      <TileGroup id="event" label="Tässä tapahtumassa">
+        <Tile label="Veloitettu" value={formatAmount(summary.charged)} />
+        <Tile
+          label="Veloituksia"
+          value={String(summary.charges)}
+          note={summary.charges ? `suurin veloitus ${formatAmount(summary.largest)}` : undefined}
+        />
+        <Tile label="Keskiveloitus" value={formatAmount(summary.average)} />
+        <Tile
+          label="Henkilöitä"
+          value={String(summary.people)}
+          note={summary.people ? `${perPerson.toFixed(1).replace(".", ",")} veloitusta henkilöä kohti` : undefined}
+        />
+        <Tile
+          label="Saldoa lisätty"
+          value={formatAmount(summary.deposits)}
+          note={count(summary.depositCount, "lisäys", "lisäystä")}
+        />
+        <Tile
+          label="Perutut veloitukset"
+          value={String(summary.undone)}
+          note={summary.undone ? `${undoneShare} % kaikista veloituksista` : undefined}
+        />
+      </TileGroup>
+      <TileGroup id="balances" label="Saldot tapahtuman lopussa">
+        <Tile label="Saldoa jäljellä" value={formatAmount(summary.held)} note="kaikki tilit yhteensä" />
+        <Tile
+          label="Velkaa"
+          value={formatAmount(summary.debt)}
+          note={count(summary.debtors, "henkilö", "henkilöä")}
+        />
+      </TileGroup>
     </div>
   );
 }
@@ -112,8 +126,8 @@ export function EventAnalytics({
         )}
       </div>
       <Text className="stats-note">
-        Luvuissa ei ole mukana peruttuja veloituksia eikä niiden hyvityksiä. Saldo ja velka ovat
-        tilanne valitun tapahtuman lopussa, ja niihin sisältyvät aiemmat tapahtumat.
+        Peruttuja veloituksia ja niiden hyvityksiä ei lasketa mukaan. Alkusaldot näkyvät vain
+        saldoissa ja velassa.
       </Text>
     </main>
   );

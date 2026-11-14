@@ -1,8 +1,7 @@
-import { BarList, useChart, type BarListData } from "@chakra-ui/charts";
-import { Span, Text } from "@chakra-ui/react";
+import { Text } from "@chakra-ui/react";
 import { formatAmount } from "../../ledger";
 import type { EventSummary } from "./summary";
-import { Section, TINT } from "./chart-style";
+import { Section, count } from "./chart-style";
 
 function Ranking({
   rows,
@@ -11,33 +10,28 @@ function Ranking({
   rows: { name: string; value: number; detail: string }[];
   label: string;
 }) {
-  const details = new Map(rows.map((row) => [row.name, row.detail]));
-  const chart = useChart<BarListData>({
-    data: rows.map(({ name, value }) => ({ name, value })),
-    series: [{ name: "name", color: TINT }],
-  });
+  const max = Math.max(...rows.map((row) => row.value), 1);
   return (
-    <BarList.Root chart={chart} barSize="9" aria-label={label}>
-      <BarList.Content>
-        <BarList.Bar
-          label={({ payload }) => (
-            <Span>
-              {payload.name}
-              <Span color="fg.muted" ms="2">
-                {details.get(payload.name)}
-              </Span>
-            </Span>
-          )}
-        />
-        <BarList.Value valueFormatter={(value) => formatAmount(value)} minW="16" />
-      </BarList.Content>
-    </BarList.Root>
+    <ol className="ranking" aria-label={label}>
+      {rows.map((row, index) => (
+        <li key={index}>
+          <span className="ranking-label">
+            <span className="ranking-name">{row.name}</span>
+            <span className="ranking-detail">{row.detail}</span>
+          </span>
+          <span className="ranking-track" aria-hidden="true">
+            <span className="ranking-bar" style={{ width: `${(row.value / max) * 100}%` }} />
+          </span>
+          <span className="ranking-value">{formatAmount(row.value)}</span>
+        </li>
+      ))}
+    </ol>
   );
 }
 
 export function ProductRanking({ summary }: { summary: EventSummary }) {
   return (
-    <Section id="product-charged" title="Nimikkeet" hint="Veloitukset nimikkeittäin, kappalemäärä nimen vieressä.">
+    <Section id="product-charged" title="Nimikkeet" hint="Veloitettu yhteensä nimikkeittäin.">
       <Ranking
         label="Veloitukset nimikkeittäin"
         rows={summary.products.map((product) => ({
@@ -62,7 +56,7 @@ export function CustomerRanking({ summary }: { summary: EventSummary }) {
         rows={summary.topCustomers.map((customer) => ({
           name: customer.name,
           value: customer.cents,
-          detail: `${customer.charges} veloitusta`,
+          detail: count(customer.charges, "veloitus", "veloitusta"),
         }))}
       />
     </Section>

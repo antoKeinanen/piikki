@@ -10,7 +10,7 @@ export function ChargeSizes({ summary }: { summary: EventSummary }) {
   });
   return (
     <Section id="charge-sizes" title="Veloitusten koko" hint="Veloitusten määrä summan mukaan.">
-      <Chart.Root h="240px" aspectRatio="auto" chart={chart}>
+      <Chart.Root h="220px" aspectRatio="auto" chart={chart}>
         <BarChart data={chart.data} responsive>
           <CartesianGrid vertical={false} {...GRID} />
           <XAxis axisLine={false} tickLine={false} dataKey="label" />
