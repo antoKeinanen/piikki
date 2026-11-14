@@ -28,11 +28,11 @@ export function EditCustomer({
         selfId={customer.id}
         save={({ name, osakunta }) => save(name, osakunta)}
       />
-      <section className="delete-customer" aria-labelledby="delete-customer-title">
-        <Text as="h3" id="delete-customer-title" className="delete-customer-title">
+      <section className="danger-section" aria-labelledby="delete-customer-title">
+        <Text as="h3" id="delete-customer-title" className="danger-section-title">
           Henkilön poistaminen
         </Text>
-        <Text className="delete-customer-note">
+        <Text className="danger-section-note">
           {customer.balance
             ? `Saldo ${formatAmount(customer.balance)} ja tapahtumat säilyvät. `
             : "Tapahtumat säilyvät. "}

@@ -195,13 +195,19 @@ export function ProductEditor({
                 setEditing(p.id);
                 setEditDraft({ name: p.name, description: p.description, image: p.image, amount: (p.cents / 100).toFixed(2), category: p.category });
               }}>Muokkaa</Button>}
-          <Button variant="outline" className="danger-outline" disabled={disabled} onClick={() => void apply(
-            () => remove(p.id),
-            () => { setRemoved({ product: p, index: products.indexOf(p) }); if (editing === p.id) reset(); },
-          )}>Poista</Button>
         </div>
       </div>
-      {editing === p.id && <div className="product-edit-panel" ref={editPanel}>{form}</div>}
+      {editing === p.id && <div className="product-edit-panel" ref={editPanel}>
+        {form}
+        <section className="danger-section" aria-labelledby="product-delete-title">
+          <h3 id="product-delete-title" className="danger-section-title">Nimikkeen poistaminen</h3>
+          <p className="danger-section-note">Kirjatut veloitukset säilyvät. Poiston voi perua heti.</p>
+          <Button variant="outline" className="danger-outline" disabled={disabled} onClick={() => void apply(
+            () => remove(p.id),
+            () => { setRemoved({ product: p, index: products.indexOf(p) }); reset(); },
+          )}>Poista nimike</Button>
+        </section>
+      </div>}
     </div>
   ));
   if (removed) rows.splice(Math.min(removed.index, rows.length), 0, (
