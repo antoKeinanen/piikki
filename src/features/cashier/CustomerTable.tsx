@@ -79,15 +79,19 @@ export function CustomerTable({
       {current && (
         <div className="selected-bar">
           <div className="selected-bar-identity">
-            <span className="selected-bar-name">{current.name}</span>
-            <span className="selected-bar-meta">
-              Saldo{" "}
-              <strong className={current.balance < 0 ? "negative-balance" : undefined}>
-                {formatAmount(current.balance)}
-              </strong>
-              {current.osakunta && ` · ${current.osakunta}`}
+            <span className="selected-bar-name" title={current.name}>
+              {current.name}
             </span>
+            {current.osakunta && (
+              <span className="selected-bar-osakunta">{current.osakunta}</span>
+            )}
           </div>
+          <span className="selected-bar-balance">
+            <span className="selected-bar-balance-label">Saldo</span>{" "}
+            <strong className={current.balance < 0 ? "negative-balance" : undefined}>
+              {formatAmount(current.balance)}
+            </strong>
+          </span>
           <button
             type="button"
             className="selected-bar-switch"
