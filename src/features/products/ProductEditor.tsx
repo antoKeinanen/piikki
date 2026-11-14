@@ -196,7 +196,7 @@ export function ProductEditor({
                       setEditing(p.id);
                       setEditDraft({ name: p.name, description: p.description, image: p.image, amount: (p.cents / 100).toFixed(2), category: p.category });
                     }}>Muokkaa</Button>}
-                <Button variant="ghost" disabled={disabled} onClick={() => void apply(
+                <Button variant="outline" className="danger-outline" disabled={disabled} onClick={() => void apply(
                   () => remove(p.id),
                   () => { setRemoved(p); if (editing === p.id) reset(); },
                 )}>Poista</Button>

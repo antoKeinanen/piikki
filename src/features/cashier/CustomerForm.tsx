@@ -75,6 +75,9 @@ export function CustomerForm({
       : [];
   const exact = matches.some((person) => person.name.toLocaleLowerCase("fi") === query);
   const unchanged = name.trim() === initial.name && osakunta === initial.osakunta;
+  const addingDuplicate = matches.length > 0 && !selfId;
+  // Picking the existing person stays the solid action; adding a duplicate is the fallback.
+  const pickable = addingDuplicate && !!onPick && matches.some((person) => !person.removed);
   return (
     <form
       className="settings-form"
@@ -171,7 +174,8 @@ export function CustomerForm({
         </Text>
       )}
       <Button
-        className="primary"
+        className={pickable ? "secondary" : "primary"}
+        variant={pickable ? "outline" : "solid"}
         type="submit"
         disabled={
           !name.trim() ||
@@ -182,7 +186,7 @@ export function CustomerForm({
           busy
         }
       >
-        {matches.length > 0 && !selfId ? "Lisää uutena henkilönä" : submitLabel}
+        {addingDuplicate ? "Lisää uutena henkilönä" : submitLabel}
       </Button>
     </form>
   );

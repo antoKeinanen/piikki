@@ -28,7 +28,10 @@ export function EditCustomer({
         selfId={customer.id}
         save={({ name, osakunta }) => save(name, osakunta)}
       />
-      <div className="delete-customer">
+      <section className="delete-customer" aria-labelledby="delete-customer-title">
+        <Text as="h3" id="delete-customer-title" className="delete-customer-title">
+          Henkilön poistaminen
+        </Text>
         <Text className="delete-customer-note">
           {customer.balance
             ? `Saldo ${formatAmount(customer.balance)} ja tapahtumat säilyvät. `
@@ -37,12 +40,13 @@ export function EditCustomer({
         </Text>
         <Button
           variant="outline"
+          className="danger-outline"
           disabled={busy}
           onClick={() => void remove().catch(() => {})}
         >
           Poista henkilö
         </Button>
-      </div>
+      </section>
     </div>
   );
 }

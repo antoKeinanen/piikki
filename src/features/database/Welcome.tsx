@@ -15,12 +15,15 @@ export function Welcome({
       <div className="welcome-card">
         <h1 className="welcome-title">Aloita vuoro</h1>
         <p className="welcome-text">
-          Valitse osakunnan tietokantatiedosto. Sen nimi päättyy yleensä .sqlite.
+          Tiedosto on yleensä tällä koneella tai muistitikulla, jolle edellinen vuoro sen tallensi.
         </p>
         <Button size="xl" className="primary" disabled={busy} onClick={onOpen}>
           Avaa osakunnan tietokanta
         </Button>
-        <span className="drop-label">Voit myös pudottaa tiedoston tähän.</span>
+        <span className="drop-label">
+          Voit myös pudottaa tiedoston tähän.
+          <span className="drop-hint">Tiedostonimi päättyy yleensä .sqlite.</span>
+        </span>
         <div className="welcome-new">
           <span className="welcome-new-label">Ei vielä tietokantaa?</span>
           <Button variant="outline" className="secondary" disabled={busy} onClick={onCreate}>
