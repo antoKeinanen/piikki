@@ -326,6 +326,26 @@ it("replaces the session snapshot and clears the cashier draft when opening anot
   ).toBe("true");
 });
 
+it("names the manual amount's direction and previews the new balance", async () => {
+  const ledger = await createExample();
+  vi.spyOn(fileAccess, "fileAccessProblem").mockReturnValue(undefined);
+  vi.spyOn(fileAccess, "supportsDirectFiles").mockReturnValue(true);
+  vi.spyOn(fileAccess, "pickDatabase").mockResolvedValue({ ledger, name: "example.sqlite" });
+  mount();
+  fireEvent.click(await screen.findByRole("button", { name: "Avaa osakunnan tietokanta" }));
+  await continueEvent("Aino Korhonen");
+  expect(screen.getByText("Veloitettava summa")).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Veloita 0,00" }).hasAttribute("disabled")).toBe(true);
+  fireEvent.change(screen.getByLabelText("Summa"), { target: { value: "4" } });
+  expect(screen.getByRole("button", { name: "Veloita 4,00" })).toBeTruthy();
+  expect(document.querySelector(".amount-preview")?.textContent).toBe("Saldo 42,50 → 38,50");
+  fireEvent.click(screen.getByRole("button", { name: "Lisää saldoa" }));
+  expect(screen.getByText("Lisättävä summa")).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Lisää saldoa 0,00" }).hasAttribute("disabled")).toBe(true);
+  fireEvent.change(screen.getByLabelText("Summa"), { target: { value: "10" } });
+  expect(document.querySelector(".amount-preview")?.textContent).toBe("Saldo 42,50 → 52,50");
+});
+
 it("keeps the amount and balance after a failed save, then allows retry", async () => {
   let fail = true;
   const example = await createExample();

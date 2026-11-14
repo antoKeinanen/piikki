@@ -365,7 +365,7 @@ select:focus-visible {
 /* Account panel */
 .account {
   --mode: var(--line-soft);
-  padding: 22px 24px 8px;
+  padding: 0 24px 8px;
   position: relative;
 }
 /* Charge is red and deposit is green, so the mode is obvious at a glance. */
@@ -376,18 +376,25 @@ select:focus-visible {
   /* A real border keeps the scrollbar track below the strip instead of over it. */
   border-top: 4px solid var(--mode);
 }
+/* The panel has no top padding, so top: 0 means the same edge whether a browser
+   measures sticky offsets from the padding box or the content box. */
 .account-summary {
   position: sticky;
-  top: -22px;
+  top: 0;
   z-index: 2;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 24px;
-  margin: -22px -24px 0;
-  padding: 22px 24px 12px;
+  margin: 0 -24px 16px;
+  padding: 18px 24px 16px;
   background: var(--surface);
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  border-bottom: 1px solid var(--line-soft);
+  /* Matches the card's inner corner under the 4 px mode border, so the border
+     stays whole and nothing peeks past the corners while scrolling. */
+  border-radius:
+    calc(var(--radius-lg) - 1px) calc(var(--radius-lg) - 1px) 0 0 /
+    calc(var(--radius-lg) - 4px) calc(var(--radius-lg) - 4px) 0 0;
 }
 .account-identity {
   display: flex;
@@ -427,6 +434,7 @@ select:focus-visible {
 .app .recorded button,
 .app .edit-customer {
   flex-shrink: 0;
+  white-space: nowrap;
   height: 40px !important;
   min-width: 0;
   padding: 0 14px !important;
@@ -449,6 +457,17 @@ select:focus-visible {
 .app .edit-customer:hover:not(:disabled) {
   border-color: var(--ink) !important;
   background: var(--tint) !important;
+}
+/* Editing a person or note is rarer than undoing, so these sit back a step. */
+.app .compact-action,
+.app .edit-customer {
+  border-color: var(--line-soft) !important;
+  font-weight: 400;
+}
+.app .compact-action:hover:not(:disabled),
+.app .edit-customer:hover:not(:disabled) {
+  border-color: var(--line) !important;
+  background: var(--surface) !important;
 }
 .balance-block {
   display: flex;
@@ -577,6 +596,13 @@ select:focus-visible {
   font-size: 15px;
   white-space: nowrap;
 }
+.amount-preview {
+  grid-column: 1 / -1;
+  font-size: 14px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.amount-preview strong { color: var(--ink); font-weight: 600; }
 .app .account .mode-submit:not(:disabled),
 .app .account .mode-submit:hover:not(:disabled) {
   background: var(--mode) !important;
@@ -595,17 +621,21 @@ select:focus-visible {
   height: 56px;
 }
 .account > .recorded-slot { margin-bottom: 8px; }
-/* The instruction sits at the bottom of the slot, right where the tap happens. */
 .product-hint {
   display: flex;
   align-items: center;
+  gap: 8px;
   height: 56px;
-  padding: 0 14px;
-  border: 1px dashed var(--line);
-  border-radius: var(--radius);
+  padding: 0 2px;
   font-size: 14px;
   font-weight: 500;
   color: var(--ink);
+}
+.product-hint-icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  color: var(--muted);
 }
 .recorded {
   display: flex;
@@ -681,12 +711,24 @@ select:focus-visible {
   font-variant-numeric: tabular-nums;
   transition: border-color 120ms, background-color 120ms, transform 80ms;
 }
-.app .product-charge:hover:not(:disabled) {
-  border-color: var(--brand) !important;
-  background: var(--tint) !important;
-  color: var(--ink) !important;
+/* Touch screens keep :hover after a tap, which would look like a selection. */
+@media (hover: hover) {
+  .app .product-charge:hover:not(:disabled) {
+    border-color: var(--line) !important;
+    background: var(--surface) !important;
+    color: var(--ink) !important;
+  }
+  .app .category-button:hover:not(:disabled) {
+    border-color: var(--line) !important;
+    background: var(--tint) !important;
+  }
 }
-.product-charge:active:not(:disabled) {
+.app .product-charge:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+.app .product-charge:active:not(:disabled) {
+  border-color: var(--ink) !important;
   transform: scale(0.97);
 }
 .product-charge small {
@@ -712,10 +754,6 @@ select:focus-visible {
   background: var(--tint) !important;
   border-color: transparent !important;
   box-shadow: none;
-}
-.app .category-button:hover:not(:disabled) {
-  border-color: var(--line) !important;
-  background: var(--tint) !important;
 }
 /* The chevron shares the photo's row so the name gets the full tile width. */
 .category-top {
@@ -809,12 +847,13 @@ select:focus-visible {
   font-weight: 500;
 }
 .entry-note {
-  font-size: 13px;
+  font-size: 14px;
+  color: var(--muted);
   margin-top: 2px;
   overflow-wrap: anywhere;
 }
 .entry-date {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--muted);
   margin-top: 2px;
 }
@@ -1801,7 +1840,7 @@ input:focus-visible + .image-picker-button {
   .search-row button { flex: 1; }
 }
 /* Below this the panel is too narrow for the submit button beside both fields. */
-@media (max-width: 960px) {
+@media (max-width: 1100px) {
   .amount-form { grid-template-columns: 1fr 1fr; }
   .amount-form button { grid-column: 1 / -1; }
 }
@@ -1833,7 +1872,7 @@ input:focus-visible + .image-picker-button {
   .customers { padding: 14px 12px 12px; }
   .account { padding: 18px 16px 8px; scroll-margin-top: 80px; }
   /* The selected-person bar stays on top instead, so this one scrolls away. */
-  .account-summary { position: static; margin: -18px -16px 0; padding: 18px 16px 12px; }
+  .account-summary { position: static; margin: -18px -16px 0; padding: 18px 16px 12px; border-bottom: 0; }
   .customer-scroll { max-height: 340px; }
   .sort-row { flex-wrap: wrap; gap: 4px 8px; }
   .sort-options { flex: 1 1 100%; }
@@ -1931,6 +1970,26 @@ input:focus-visible + .image-picker-button {
   .search-row input { flex-basis: 100%; }
   .search-row button { flex: 1; }
   .product-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  /* Three categories in a two-column grid leave a hole, so each gets a full row. */
+  .app .category-button {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    align-items: center;
+    gap: 12px !important;
+    min-height: 62px;
+    padding: 8px 12px 8px 14px !important;
+  }
+  .category-button .category-top { display: contents; }
+  .category-button .product-thumbnail { order: 0; }
+  .category-button > span:last-child {
+    order: 1;
+    flex: 1;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+  .category-button > span:last-child small { margin: 0 0 0 auto; }
+  .category-button .category-chevron { order: 2; margin-left: 0; }
   .stats { padding: 4px 12px 32px; }
   .stat-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .stat-value { font-size: 24px; }
