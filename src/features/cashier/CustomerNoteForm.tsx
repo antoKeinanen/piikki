@@ -21,14 +21,13 @@ export function CustomerNoteForm({
           variant="ghost"
           size="sm"
           className="compact-action"
-          aria-label={customer.note ? "Muokkaa muistiinpanoa" : undefined}
           disabled={busy}
           onClick={() => {
             setNote(customer.note);
             setEditing(true);
           }}
         >
-          {customer.note ? "Muokkaa" : "Lisää muistiinpano"}
+          {customer.note ? "Muokkaa muistiinpanoa" : "Lisää muistiinpano"}
         </Button>
       </div>
     );

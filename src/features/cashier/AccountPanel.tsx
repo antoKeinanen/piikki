@@ -130,7 +130,11 @@ export function AccountPanel({
     setError("");
     setJustPosted(false);
   }
-  const validAmount = amount && /^\d+([.,]\d{1,2})?$/.test(amount.trim());
+  const typed = amount.trim();
+  const typedCents = /^\d+([.,]\d{1,2})?$/.test(typed)
+    ? Math.round(Number(typed.replace(",", ".")) * 100)
+    : undefined;
+  const actionLabel = action === "charge" ? "Veloita" : "Lisää saldoa";
   const showPicker = action === "charge" && products.length > 0;
   // One fixed-height slot holds either the instruction or the receipt, so the
   // item tiles below never move when a charge is recorded.
@@ -170,6 +174,11 @@ export function AccountPanel({
       </div>
       {!recorded && (
         <Text className="product-hint">
+          <svg className="product-hint-icon" viewBox="0 0 16 16" aria-hidden="true">
+            <circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" strokeWidth="1.5" />
+            <path d="M8 7v4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            <circle cx="8" cy="4.75" r="1" fill="currentColor" />
+          </svg>
           {action === "deposit"
             ? "Kirjoita lisättävä summa."
             : products.length
@@ -204,7 +213,7 @@ export function AccountPanel({
                     onEdit();
                   }}
                 >
-                  Muokkaa
+                  Muokkaa henkilöä
                 </Button>
               </div>
               {customer.osakunta && <Text className="account-osakunta">{customer.osakunta}</Text>}
@@ -309,7 +318,7 @@ export function AccountPanel({
             }}
           >
             <FormField
-              label={action === "charge" ? "Muu summa" : "Lisättävä summa"}
+              label={action === "charge" ? "Veloitettava summa" : "Lisättävä summa"}
             >
               <Input
                 aria-label="Summa"
@@ -332,16 +341,22 @@ export function AccountPanel({
             <Button
               className="primary mode-submit"
               type="submit"
-              disabled={!amount.trim() || busy}
+              disabled={!typed || busy}
             >
-              {!amount.trim()
-                ? "Kirjoita summa"
-                : `${action === "charge" ? "Veloita" : "Lisää saldoa"}${
-                    validAmount
-                      ? ` ${formatAmount(Math.round(Number(amount.trim().replace(",", ".")) * 100))}`
-                      : ""
-                  }`}
+              {!typed
+                ? `${actionLabel} ${formatAmount(0)}`
+                : typedCents !== undefined
+                  ? `${actionLabel} ${formatAmount(typedCents)}`
+                  : actionLabel}
             </Button>
+            {typedCents !== undefined && (
+              <Text className="amount-preview">
+                Saldo {formatAmount(customer.balance)} →{" "}
+                <strong>
+                  {formatAmount(customer.balance + (action === "charge" ? -typedCents : typedCents))}
+                </strong>
+              </Text>
+            )}
           </form>
           {error && (
             <Text role="alert" className="error">
