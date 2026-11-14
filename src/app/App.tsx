@@ -384,6 +384,11 @@ function CashierApp() {
               setError("");
               setModal({ kind: "settings" });
             }}
+            edit={() => {
+              if (!customer) return;
+              setError("");
+              setModal({ kind: "edit-customer", customer });
+            }}
           />
           <AccountPanel
             key={active.kind === "active" ? active.revision : 0}

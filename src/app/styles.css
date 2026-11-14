@@ -208,7 +208,7 @@ select:focus-visible {
   border: 1px solid var(--line-soft);
 }
 .sort-row button {
-  border: 0;
+  border: 1px solid transparent;
   background: transparent;
   height: 36px;
   padding: 0 12px;
@@ -220,9 +220,11 @@ select:focus-visible {
 }
 .sort-row button[aria-pressed="true"],
 .app .sort-row button[aria-pressed="true"]:hover {
+  border-color: var(--line);
   background: var(--surface);
   color: var(--ink);
-  box-shadow: 0 1px 2px rgb(0 0 0 / 0.12);
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.08);
 }
 .customer-scroll,
 .account {
@@ -434,7 +436,6 @@ select:focus-visible {
 }
 /* Secondary actions are drawn at their full tap size, so they read as real
    buttons next to the large item tiles. Kumoa gets the full 44 px. */
-.app .compact-action,
 .app .entry button,
 .app .recorded button,
 .app .edit-customer {
@@ -456,24 +457,34 @@ select:focus-visible {
   height: 44px !important;
   padding: 0 16px !important;
 }
-.app .compact-action:hover:not(:disabled),
 .app .entry button:hover:not(:disabled),
 .app .recorded button:hover:not(:disabled),
 .app .edit-customer:hover:not(:disabled) {
   border-color: var(--ink) !important;
   background: var(--tint) !important;
 }
-/* Editing a person or note is rarer than undoing, so these sit back a step. */
-.app .compact-action,
+/* Editing a person is rarer than undoing, so it sits back a step. */
 .app .edit-customer {
   border-color: var(--line-soft) !important;
   font-weight: 400;
 }
-.app .note-line .compact-action { border-color: var(--line) !important; }
-.app .compact-action:hover:not(:disabled),
 .app .edit-customer:hover:not(:disabled) {
   border-color: var(--line) !important;
   background: var(--surface) !important;
+}
+.app .entry button.quiet-undo {
+  padding: 0 10px !important;
+  border-color: transparent !important;
+  background: transparent !important;
+  color: var(--muted) !important;
+  font-weight: 400;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.app .entry button.quiet-undo:hover:not(:disabled) {
+  border-color: transparent !important;
+  background: var(--tint) !important;
+  color: var(--ink) !important;
 }
 .app .edit-customer { gap: 6px; padding: 0 12px !important; }
 .edit-customer-icon {
@@ -507,16 +518,38 @@ select:focus-visible {
   display: flex;
   align-items: center;
   gap: 10px;
+  min-height: 44px;
   margin: 0 0 12px;
-  padding: 12px 12px 12px 14px;
+  padding: 0 2px 0 12px;
   border: 1px solid var(--line-soft);
   border-radius: var(--radius);
   background: var(--surface);
 }
 .note-line.empty {
+  min-height: 0;
   padding: 0;
   border: 0;
 }
+/* Text style, so the note reads as reference and not as another big action. */
+.app .note-edit {
+  flex-shrink: 0;
+  height: 40px;
+  padding: 0 10px;
+  border-radius: var(--radius-sm);
+  gap: 6px;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 500;
+}
+.link-label {
+  text-decoration: underline;
+  text-decoration-color: var(--line);
+  text-underline-offset: 3px;
+}
+.app .note-line.empty { margin: -6px 0 6px; }
+.app .note-line.empty .note-edit { height: 44px; margin-left: -10px; }
+.app .note-edit:hover:not(:disabled) { background: var(--tint); }
+.app .note-edit:hover:not(:disabled) .link-label { text-decoration-color: currentColor; }
 .note-icon {
   width: 16px;
   height: 16px;
@@ -526,6 +559,7 @@ select:focus-visible {
 .note-text {
   flex: 1;
   min-width: 0;
+  padding: 10px 0;
   font-size: 15px;
   line-height: 1.35;
   white-space: pre-line;
@@ -562,15 +596,16 @@ select:focus-visible {
 }
 .note-actions button:disabled { opacity: 0.5; }
 /* Two tabs on a neutral track. The chosen one is a light tint with a coloured
-   underline, because solid red or green is kept for controls that record. */
+   underline, because solid red or green is kept for controls that record. The
+   track stays uncoloured so a green tab still stands out on a green brand. */
 .mode {
   display: grid !important;
   grid-template-columns: 1fr 1fr;
   gap: 4px;
-  padding: 4px;
+  padding: 3px;
   margin: 0 0 12px;
   border-radius: 12px;
-  background: var(--tint);
+  background: var(--surface);
   border: 1px solid var(--line-soft);
 }
 .mode button {
@@ -582,49 +617,71 @@ select:focus-visible {
   font-weight: 500;
 }
 .app .mode button:hover:not(:disabled):not(.mode-active) {
-  background: var(--surface);
+  background: color-mix(in srgb, var(--ink) 4%, var(--surface));
 }
 .app .mode button.mode-active,
 .app .mode button.mode-active:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--mode) 12%, var(--surface));
+  background: color-mix(in srgb, var(--mode) 11%, var(--surface));
   color: var(--mode);
-  font-weight: 700;
-  box-shadow: inset 0 -3px 0 var(--mode);
+  font-weight: 600;
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--mode) 35%, transparent),
+    inset 0 -3px 0 var(--mode);
 }
+.mode-heading {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--mode);
+}
+.mode-heading-name { color: var(--ink); }
 .mode-sign { margin-right: 8px; font-weight: 700; }
 /* The idle choice keeps its colour in the sign only, so it still reads as available. */
 .mode-charge-tab:not(.mode-active) .mode-sign { color: var(--charge); }
 .mode-deposit-tab:not(.mode-active) .mode-sign { color: var(--deposit); }
 .amount-form {
   display: grid;
-  grid-template-columns: minmax(128px, 1fr) minmax(136px, 1.2fr) minmax(150px, 188px);
+  grid-template-columns: minmax(150px, 1fr) minmax(110px, 1.2fr) minmax(160px, 0.9fr);
+  grid-template-areas: "amount note submit";
   align-items: end;
-  gap: 8px 10px;
+  gap: 12px 10px;
   margin-bottom: 12px;
 }
-.amount-form > div {
-  flex: 1;
+.amount-form .amount-field { grid-area: amount; min-width: 0; gap: 8px; }
+.amount-form .note-field { grid-area: note; min-width: 0; gap: 8px; }
+.amount-submit {
+  grid-area: submit;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
   min-width: 0;
-  gap: 8px;
 }
+.note-toggle { display: none; }
 .amount-form input {
   height: 48px;
   font-size: 16px;
 }
-.amount-form button {
+.amount-form .mode-submit {
   height: 48px;
   width: 100%;
   padding: 0 12px;
   font-size: 15px;
   white-space: nowrap;
 }
+/* Sits right above the submit button, in the row the field labels use. It adds
+   no width of its own, so a long balance never resizes the button column. */
 .amount-preview {
-  grid-column: 1 / -1;
-  font-size: 14px;
-  color: var(--muted);
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.3em;
+  contain: inline-size;
+  font-size: 15px;
+  line-height: 1.35;
+  white-space: nowrap;
+  color: var(--ink);
   font-variant-numeric: tabular-nums;
 }
-.amount-preview strong { color: var(--ink); font-weight: 600; }
+.amount-preview strong { font-size: 16px; font-weight: 700; }
 .app .account .mode-submit:not(:disabled),
 .app .account .mode-submit:hover:not(:disabled) {
   background: var(--mode) !important;
@@ -640,35 +697,29 @@ select:focus-visible {
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  height: 56px;
+  height: 58px;
 }
 .account > .recorded-slot { margin-bottom: 8px; }
 .product-hint {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  height: 56px;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  height: 58px;
   padding: 0 2px;
-  font-size: 15px;
-  font-weight: 500;
-  color: var(--ink);
 }
-.product-hint-icon {
-  width: 16px;
-  height: 16px;
-  flex-shrink: 0;
-  color: var(--muted);
-}
+.product-hint p { margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.product-hint-text { font-size: 15px; line-height: 1.35; color: var(--ink); }
 .recorded {
   display: flex;
   align-items: center;
   gap: 12px;
-  height: 56px;
-  padding: 0 5px 0 12px;
+  height: 58px;
+  padding: 0 6px 0 12px;
   border-radius: var(--radius);
-  border: 1px solid color-mix(in srgb, var(--deposit) 22%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--deposit) 60%, var(--surface));
   border-left: 3px solid var(--deposit);
-  background: color-mix(in srgb, var(--deposit) 9%, var(--surface));
+  background: color-mix(in srgb, var(--deposit) 8%, var(--surface));
   animation: recorded-in 180ms ease-out;
 }
 .recorded-check {
@@ -695,15 +746,15 @@ select:focus-visible {
   white-space: nowrap;
   font-size: 16px;
   font-weight: 600;
-  line-height: 1.3;
+  line-height: 1.35;
 }
 .recorded-change {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 400;
   color: var(--ink);
   font-variant-numeric: tabular-nums;
 }
-.recorded-change strong { font-weight: 600; }
+.recorded-change strong { font-size: 16px; font-weight: 700; }
 .recorded-amount { font-weight: 600; font-variant-numeric: tabular-nums; }
 .recorded.negative .recorded-amount { color: var(--charge); }
 .recorded.positive .recorded-amount { color: var(--deposit); }
@@ -743,7 +794,7 @@ select:focus-visible {
   }
   .app .category-button:hover:not(:disabled) {
     border-color: var(--line) !important;
-    background: var(--tint) !important;
+    background: color-mix(in srgb, var(--ink) 7%, var(--surface)) !important;
   }
 }
 .app .product-charge:focus-visible {
@@ -767,15 +818,16 @@ select:focus-visible {
   color: var(--charge);
   font-variant-numeric: tabular-nums;
 }
-/* Categories open a group, so they read as a flat tinted folder with a chevron
-   rather than a raised button that charges. */
+/* Categories open a group, so they read as a flat grey folder with a chevron
+   rather than a raised button that charges. Grey, not the brand tint, keeps the
+   receipt the only green surface. */
 .app .category-button {
   align-items: stretch;
   justify-content: flex-start;
   padding: 12px !important;
   text-align: left;
-  background: var(--tint) !important;
-  border-color: transparent !important;
+  background: color-mix(in srgb, var(--ink) 4%, var(--surface)) !important;
+  border-color: var(--line-soft) !important;
   box-shadow: none;
 }
 /* The chevron shares the photo's row so the name gets the full tile width. */
@@ -1723,9 +1775,11 @@ input:focus-visible + .image-picker-button {
 .stat-tile-lead .stat-label { color: var(--ink); font-weight: 600; }
 .stat-tile-lead .stat-value { margin-top: 2px; font-size: 38px; font-weight: 700; letter-spacing: -1px; line-height: 1.15; }
 .stat-note-line { color: var(--muted); font-size: 13px; }
+/* Cards keep their own height; a short card must not stretch to its neighbour. */
 .stat-panels {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 440px), 1fr));
+  align-items: start;
   gap: 16px;
   margin-top: 16px;
 }
@@ -1828,19 +1882,18 @@ input:focus-visible + .image-picker-button {
 .series-key-large {
   flex-direction: column;
   gap: 0;
-  margin: 0;
+  margin: -6px 0 0;
   font-size: 15px;
 }
 .series-key-large li {
-  padding: 12px 0;
+  padding: 6px 0;
   border-bottom: 1px solid var(--line-soft);
 }
 .series-key-large li:last-child { border-bottom: 0; }
 .series-key-large .series-name { color: var(--ink); }
-.series-key-large .series-value { margin-left: auto; font-size: 22px; }
+.series-key-large .series-value { margin-left: auto; font-size: 20px; }
 .chart-table { margin-top: 16px; font-size: 14px; }
-/* The card stretches to its neighbour's height, so the table toggle sits at the bottom. */
-.series-key-large + .chart-table { margin-top: auto; padding-top: 8px; }
+.series-key-large + .chart-table { margin-top: 16px; }
 .chart-table summary { cursor: pointer; font-weight: 500; }
 .chart-table table,
 .chart-table-plain {
@@ -1989,16 +2042,20 @@ input:focus-visible + .image-picker-button {
   }
   .customer-row[data-selected="true"] .customer-meta { color: var(--on-brand); }
   .account-name { font-size: 21px; }
+  .account-summary { margin-bottom: 12px; padding: 16px 24px 14px; }
   .balance { font-size: 34px; }
   .product-grid { gap: 8px; }
   .search-row { flex-wrap: wrap; }
   .search-row input { flex-basis: 100%; }
   .search-row button { flex: 1; }
 }
-/* Below this the panel is too narrow for the submit button beside both fields. */
+/* Below this the panel is too narrow for all three side by side, so the
+   description moves under the amount and the submit button. */
 @container (max-width: 440px) {
-  .amount-form { grid-template-columns: 1fr 1fr; }
-  .amount-form button { grid-column: 1 / -1; }
+  .amount-form {
+    grid-template-columns: minmax(120px, 1fr) minmax(150px, auto);
+    grid-template-areas: "amount submit" "note note";
+  }
 }
 @media (max-width: 800px) {
   /* A classic scrollbar must not change the layout width when the page stops scrolling. */
@@ -2030,6 +2087,31 @@ input:focus-visible + .image-picker-button {
   /* The selected-person bar stays on top instead, so this one scrolls away. */
   .account-summary { position: static; margin: -18px -16px 0; padding: 18px 16px 12px; border-bottom: 0; }
   .customer-scroll { max-height: 340px; }
+  .amount-form {
+    grid-template-columns: minmax(120px, 1fr) minmax(150px, auto);
+    grid-template-areas: "amount submit" "note note";
+  }
+  .amount-form:not(.describing) .note-field,
+  .amount-form.describing .note-toggle { display: none; }
+  .note-toggle {
+    grid-area: note;
+    justify-self: start;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 44px;
+    margin: -10px 0 -8px -8px;
+    padding: 0 8px;
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--ink);
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .recorded-slot,
+  .product-hint,
+  .recorded { height: 54px; }
   .sort-row { flex-wrap: wrap; gap: 4px 8px; }
   .sort-options { flex: 1 1 100%; }
   .sort-row button { flex: 1; padding: 0 8px; }
@@ -2083,24 +2165,26 @@ input:focus-visible + .image-picker-button {
     font-variant-numeric: tabular-nums;
   }
   .selected-bar-balance strong.negative-balance { color: var(--charge); }
-  .selected-bar-switch {
+  .selected-bar-switch,
+  .selected-bar-edit {
     flex-shrink: 0;
     white-space: nowrap;
   }
-  /* The bar already shows name and balance, so the panel header keeps only the
-     edit control, at the right under the bar, and the mode switch comes next. */
-  .customers.collapsed ~ .account { padding-top: 10px; }
-  .customers.collapsed ~ .account > .account-summary {
-    justify-content: flex-end;
-    margin: 0 0 10px;
-    padding: 0;
-    background: none;
+  .app .selected-bar-edit {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 0 12px;
+    border-color: var(--line-soft) !important;
+    font-weight: 400;
   }
-  .customers.collapsed ~ .account .account-identity { align-items: flex-end; }
-  .customers.collapsed ~ .account .edit-customer { margin: 0; }
-  .customers.collapsed ~ .account .balance-block,
-  .customers.collapsed ~ .account .account-name,
-  .customers.collapsed ~ .account .account-osakunta { display: none; }
+  .app .selected-bar-edit:hover:not(:disabled) { border-color: var(--line) !important; }
+  .selected-bar-edit svg { width: 14px; height: 14px; color: var(--muted); }
+  /* The bar already shows name and balance and holds the edit control, so the
+     panel starts straight with the mode switch. */
+  .customers.collapsed ~ .account { padding-top: 12px; }
+  .customers.collapsed ~ .account > .account-summary { display: none; }
   .search-row { flex-wrap: wrap; margin-bottom: 10px; }
   .search-row input { flex-basis: 100%; }
   .search-row button { flex: 1; }
@@ -2111,8 +2195,8 @@ input:focus-visible + .image-picker-button {
     flex-direction: row;
     align-items: center;
     gap: 12px !important;
-    min-height: 62px;
-    padding: 8px 12px 8px 14px !important;
+    min-height: 54px;
+    padding: 6px 12px 6px 14px !important;
   }
   .category-button .category-top { display: contents; }
   .category-button .product-thumbnail { order: 0; }
@@ -2132,16 +2216,20 @@ input:focus-visible + .image-picker-button {
   /* Name and balance share the top row so the button label fits on one line. */
   .selected-bar {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-areas: "name balance" "osakunta switch";
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-areas: "name balance balance" "osakunta edit switch";
     align-items: center;
-    gap: 2px 12px;
+    gap: 2px 8px;
   }
+  .selected-bar-edit { grid-area: edit; }
+  .app .selected-bar-edit { width: 44px; padding: 0; }
+  .selected-bar-edit-label { display: none; }
   .selected-bar-identity { display: contents; }
   .selected-bar-name { grid-area: name; }
   .selected-bar-osakunta { grid-area: osakunta; align-self: start; }
   .selected-bar-balance {
     grid-area: balance;
+    justify-self: end;
     flex-direction: row;
     align-items: baseline;
     gap: 6px;

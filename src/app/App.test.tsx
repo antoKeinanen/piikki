@@ -136,7 +136,7 @@ it("charges immediately, hides IDs and filenames, and opens branding settings", 
   fireEvent.change(screen.getByLabelText("Nimikkeen summa"), {
     target: { value: "4.25" },
   });
-  fireEvent.change(screen.getByLabelText("Kuvaus"), { target: { value: "Lämmin juoma" } });
+  fireEvent.change(within(screen.getByRole("dialog")).getByLabelText("Kuvaus"), { target: { value: "Lämmin juoma" } });
   fireEvent.change(screen.getByLabelText("Nimikkeen kuva"), {
     target: { files: [new File(["image"], "product.png", { type: "image/png" })] },
   });
@@ -408,6 +408,7 @@ it("charges below zero with custom amounts and products and reopens the saved ac
   expect(await screen.findByRole("heading", { name: "Kumoa veloitus?" })).toBeTruthy();
   fireEvent.click(await screen.findByRole("button", { name: "Kumoa veloitus" }));
   await waitFor(() => expect(screen.getByLabelText("Saldo").textContent).toBe("−7,50"));
+  expect(screen.getByText("Hyvitys · Lounas")).toBeTruthy();
   app.unmount();
   pick.mockResolvedValue({ ledger: await Ledger.open(saved), name: "test.sqlite" });
   mount();
@@ -709,7 +710,7 @@ it("edits a person with undo, deletes with undo, and restores from settings", as
   expect(within(account).getByText("PO")).toBeTruthy();
   expect(aino()).toMatchObject({ name: "Aino K", osakunta: "PO" });
   fireEvent.click(within(account).getByRole("button", { name: "Kumoa muutos" }));
-  await within(account).findByText("Aino Korhonen");
+  await within(account).findByTitle("Aino Korhonen");
   expect(aino()).toMatchObject({ name: "Aino Korhonen", osakunta: "" });
   expect(within(account).queryByRole("button", { name: "Kumoa muutos" })).toBeNull();
 

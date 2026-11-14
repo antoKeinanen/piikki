@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Button, Field, Flex, Input, Text } from "@chakra-ui/react";
 import { CustomerNoteForm } from "./CustomerNoteForm";
 import bustedImage from "./busted.jpg";
@@ -12,13 +12,15 @@ import {
 } from "../../ledger";
 function FormField({
   label,
+  className,
   children,
 }: {
   label: string;
+  className: string;
   children: ReactNode;
 }) {
   return (
-    <Field.Root>
+    <Field.Root className={className}>
       <Field.Label>{label}</Field.Label>
       {children}
     </Field.Root>
@@ -26,8 +28,14 @@ function FormField({
 }
 type PostInput = Omit<Parameters<Ledger["post"]>[0], "operator">;
 const GENERIC_CHARGE_LABELS = new Set(["Veloita", "Charge", "Purchase"]);
-export function entryTitle(entry: Entry) {
-  if (entry.reversal_of) return "Hyvitys";
+export function entryTitle(entry: Entry, original?: Entry): string {
+  if (entry.reversal_of) {
+    // A reversal stores "Undo <original label>"; the original entry, when at
+    // hand, also knows whether it was an opening balance.
+    const label = entry.label.replace(/^Undo /, "");
+    const reversed = original ?? { ...entry, reversal_of: null, opening: 0, label, cents: -entry.cents };
+    return `Hyvitys · ${entryTitle(reversed)}`;
+  }
   if (entry.opening) return "Alkusaldo";
   if (entry.cents > 0) return "Saldon lisäys";
   // Charges without a product button store a generic label.
@@ -66,6 +74,9 @@ export function AccountPanel({
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<string>();
   const [justPosted, setJustPosted] = useState(false);
+  // Phones fold the optional description away until it is asked for.
+  const [describing, setDescribing] = useState(false);
+  const noteInput = useRef<HTMLInputElement>(null);
   const query = search.trim().toLocaleLowerCase("fi");
   const categories = [...new Set(products.map((p) => p.category).filter(Boolean))];
   // Searching looks through every product; otherwise categories come first.
@@ -93,13 +104,18 @@ export function AccountPanel({
     setSearch("");
     setCategory(undefined);
     setJustPosted(false);
+    setDescribing(false);
   }, [customer?.id, selectionRevision]);
+  useEffect(() => {
+    if (describing) noteInput.current?.focus();
+  }, [describing]);
   useEffect(() => {
     if (!justPosted) return;
     const timer = setTimeout(() => setJustPosted(false), 8000);
     return () => clearTimeout(timer);
   }, [justPosted, entries[0]?.id]);
   const latest = entries[0];
+  const byId = new Map(entries.map((entry) => [entry.id, entry]));
   const recorded = justPosted && latest && !latest.reversed && !latest.reversal_of ? latest : undefined;
   function post(kind: "charge" | "deposit", product?: Product) {
     if (!customer || busy) return;
@@ -136,8 +152,8 @@ export function AccountPanel({
     : undefined;
   const actionLabel = action === "charge" ? "Veloita" : "Lisää saldoa";
   const showPicker = action === "charge" && products.length > 0;
-  // One fixed-height slot holds either the instruction or the receipt, so the
-  // item tiles below never move when a charge is recorded.
+  // One fixed-height slot holds either the mode heading with an instruction or
+  // the receipt, so the item tiles below never move when a charge is recorded.
   const feedback = customer && (
     <div className="recorded-slot">
       <div role="status">
@@ -173,20 +189,21 @@ export function AccountPanel({
         )}
       </div>
       {!recorded && (
-        <Text className="product-hint">
-          <svg className="product-hint-icon" viewBox="0 0 16 16" aria-hidden="true">
-            <circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" strokeWidth="1.5" />
-            <path d="M8 7v4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-            <circle cx="8" cy="4.75" r="1" fill="currentColor" />
-          </svg>
-          {action === "deposit"
-            ? "Kirjoita lisättävä summa."
-            : !products.length
-              ? "Kirjoita veloitettava summa."
-              : shownCategories.length && !visibleProducts.length
-                ? "Valitse kategoria tai hae nimikettä."
-                : "Nimike veloitetaan heti, kun napautat sitä."}
-        </Text>
+        <div className="product-hint">
+          <p className="mode-heading">
+            {action === "charge" ? "Veloita henkilöltä " : "Lisää saldoa henkilölle "}
+            <span className="mode-heading-name">{customer.name}</span>
+          </p>
+          <p className="product-hint-text">
+            {action === "deposit"
+              ? "Kirjoita lisättävä summa."
+              : !products.length
+                ? "Kirjoita veloitettava summa."
+                : shownCategories.length && !visibleProducts.length
+                  ? "Valitse kategoria tai hae nimikettä."
+                  : "Nimike veloitetaan heti, kun napautat sitä."}
+          </p>
+        </div>
       )}
     </div>
   );
@@ -316,13 +333,14 @@ export function AccountPanel({
             </div>
           )}
           <form
-            className="amount-form"
+            className={`amount-form ${describing || note ? "describing" : ""}`}
             onSubmit={(e) => {
               e.preventDefault();
               post(action);
             }}
           >
             <FormField
+              className="amount-field"
               label={action === "charge" ? "Veloitettava summa" : "Lisättävä summa"}
             >
               <Input
@@ -334,34 +352,47 @@ export function AccountPanel({
                 onChange={(e) => setAmount(e.target.value)}
               />
             </FormField>
-            <FormField label="Kuvaus (valinnainen)">
+            <FormField className="note-field" label="Kuvaus">
               <Input
+                ref={noteInput}
                 aria-label="Tapahtuman kuvaus"
+                placeholder="Valinnainen"
                 maxLength={200}
                 value={note}
                 disabled={busy}
                 onChange={(e) => setNote(e.target.value)}
               />
             </FormField>
-            <Button
-              className="primary mode-submit"
-              type="submit"
-              disabled={!typed || busy}
+            <div className="amount-submit">
+              {typedCents !== undefined && (
+                <Text className="amount-preview">
+                  Saldo {formatAmount(customer.balance)} →{" "}
+                  <strong>
+                    {formatAmount(customer.balance + (action === "charge" ? -typedCents : typedCents))}
+                  </strong>
+                </Text>
+              )}
+              <Button
+                className="primary mode-submit"
+                type="submit"
+                disabled={!typed || busy}
+              >
+                {!typed
+                  ? `${actionLabel} ${formatAmount(0)}`
+                  : typedCents !== undefined
+                    ? `${actionLabel} ${formatAmount(typedCents)}`
+                    : actionLabel}
+              </Button>
+            </div>
+            <button
+              type="button"
+              className="note-toggle"
+              disabled={busy}
+              onClick={() => setDescribing(true)}
             >
-              {!typed
-                ? `${actionLabel} ${formatAmount(0)}`
-                : typedCents !== undefined
-                  ? `${actionLabel} ${formatAmount(typedCents)}`
-                  : actionLabel}
-            </Button>
-            {typedCents !== undefined && (
-              <Text className="amount-preview">
-                Saldo {formatAmount(customer.balance)} →{" "}
-                <strong>
-                  {formatAmount(customer.balance + (action === "charge" ? -typedCents : typedCents))}
-                </strong>
-              </Text>
-            )}
+              <span aria-hidden="true">+</span>
+              <span className="link-label">Lisää kuvaus</span>
+            </button>
           </form>
           {error && (
             <Text role="alert" className="error">
@@ -385,7 +416,9 @@ export function AccountPanel({
                 className={`entry ${entry.reversed ? "reversed" : ""}`}
               >
                 <div>
-                  <Text className="entry-label">{entryTitle(entry)}</Text>
+                  <Text className="entry-label">
+                    {entryTitle(entry, entry.reversal_of ? byId.get(entry.reversal_of) : undefined)}
+                  </Text>
                   {entry.note && <Text className="entry-note">{entry.note}</Text>}
                   <Text className="entry-date">
                     {new Date(entry.created_at).toLocaleString("fi-FI", {
@@ -406,6 +439,8 @@ export function AccountPanel({
                   <Button
                     variant="ghost"
                     size="sm"
+                    // An opening balance is rarely undone, so its control sits back.
+                    className={entry.opening ? "quiet-undo" : undefined}
                     disabled={busy}
                     onClick={() => {
                       setError("");
