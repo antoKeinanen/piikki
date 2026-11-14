@@ -54,7 +54,7 @@ export function Settings({
             setError={setError}
           />
         </Tabs.Content>
-        <Tabs.Content value="removed">
+        <Tabs.Content value="removed" className="settings-panel-fill">
           <RemovedCustomers
             customers={snapshot.removedCustomers}
             busy={busy}

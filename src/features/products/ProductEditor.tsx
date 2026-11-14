@@ -73,7 +73,8 @@ export function ProductEditor({
     editPanel.current?.scrollIntoView?.({ block: "nearest", behavior: "smooth" });
     editPanel.current?.querySelector("input")?.focus({ preventScroll: true });
   }, [editing]);
-  const [removed, setRemoved] = useState<Product>();
+  // Removal is undoable, so instead of a confirm step the row stays in place with a restore action.
+  const [removed, setRemoved] = useState<{ product: Product; index: number }>();
   const [reading, setReading] = useState(false);
   const disabled = busy || reading;
   const categories = [...new Set(products.map((p) => p.category).filter(Boolean))].sort((a, b) => a.localeCompare(b, "fi"));
@@ -181,34 +182,40 @@ export function ProductEditor({
       {editing && <Button variant="ghost" disabled={disabled} onClick={reset}>Peruuta muokkaus</Button>}
     </form>
   );
+  const rows = products.map((p) => (
+    <div key={p.id} className={editing === p.id ? "product-item editing" : "product-item"}>
+      <div className="product-row">
+        {p.image && <img className="product-thumbnail" src={p.image} alt="" />}
+        <span>{p.name}<small>{p.category ? `${p.category} · ` : ""}{formatAmount(p.cents)}</small></span>
+        <div className="product-row-actions">
+          {editing === p.id
+            ? <span className="product-editing-badge" aria-live="polite">Muokataan</span>
+            : <Button variant="outline" disabled={disabled} onClick={() => {
+                setEditing(p.id);
+                setEditDraft({ name: p.name, description: p.description, image: p.image, amount: (p.cents / 100).toFixed(2), category: p.category });
+              }}>Muokkaa</Button>}
+          <Button variant="ghost" className="danger-text" disabled={disabled} onClick={() => void apply(
+            () => remove(p.id),
+            () => { setRemoved({ product: p, index: products.indexOf(p) }); if (editing === p.id) reset(); },
+          )}>Poista</Button>
+        </div>
+      </div>
+      {editing === p.id && <div className="product-edit-panel" ref={editPanel}>{form}</div>}
+    </div>
+  ));
+  if (removed) rows.splice(Math.min(removed.index, rows.length), 0, (
+    <div key="removed" className="product-row product-removed" role="status">
+      <span>{removed.product.name}<small>Poistettu</small></span>
+      <div className="product-row-actions">
+        <Button variant="outline" disabled={disabled} onClick={() => void apply(
+          () => save(removed.product), () => setRemoved(undefined),
+        )}>Palauta {removed.product.name}</Button>
+      </div>
+    </div>
+  ));
   return (
     <div className="settings-form">
-      <div className="product-list">
-        {products.map((p) => (
-          <div key={p.id} className={editing === p.id ? "product-item editing" : "product-item"}>
-            <div className="product-row">
-              {p.image && <img className="product-thumbnail" src={p.image} alt="" />}
-              <span>{p.name}<small>{p.category ? `${p.category} · ` : ""}{formatAmount(p.cents)}</small></span>
-              <div className="product-row-actions">
-                {editing === p.id
-                  ? <span className="product-editing-badge" aria-live="polite">Muokataan</span>
-                  : <Button variant="ghost" disabled={disabled} onClick={() => {
-                      setEditing(p.id);
-                      setEditDraft({ name: p.name, description: p.description, image: p.image, amount: (p.cents / 100).toFixed(2), category: p.category });
-                    }}>Muokkaa</Button>}
-                <Button variant="outline" className="danger-outline" disabled={disabled} onClick={() => void apply(
-                  () => remove(p.id),
-                  () => { setRemoved(p); if (editing === p.id) reset(); },
-                )}>Poista</Button>
-              </div>
-            </div>
-            {editing === p.id && <div className="product-edit-panel" ref={editPanel}>{form}</div>}
-          </div>
-        ))}
-      </div>
-      {removed && <Button variant="outline" disabled={disabled} onClick={() => void apply(
-        () => save(removed), () => setRemoved(undefined),
-      )}>Palauta {removed.name}</Button>}
+      <div className="product-list">{rows}</div>
       {!editing && <section className="product-new">
         <h2 className="product-section-title">Lisää uusi nimike</h2>
         {form}

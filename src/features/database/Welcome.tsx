@@ -22,7 +22,7 @@ export function Welcome({
         </Button>
         <span className="drop-label">
           Voit myös pudottaa tiedoston tähän.
-          <span className="drop-hint">Tiedostonimi päättyy yleensä .sqlite.</span>
+          <span>Tiedostonimi päättyy yleensä .sqlite.</span>
         </span>
         <div className="welcome-new">
           <span className="welcome-new-label">Ei vielä tietokantaa?</span>
