@@ -12,13 +12,19 @@ export function Welcome({
 }) {
   return (
     <main className="welcome">
-      <Button size="xl" className="primary" disabled={busy} onClick={onOpen}>
-        Avaa tietokanta
-      </Button>
-      <span className="drop-label">tai pudota SQLite-tiedosto tähän</span>
-      <Button variant="ghost" disabled={busy} onClick={onCreate}>
-        Luo tietokanta
-      </Button>
+      <div className="welcome-card">
+        <h1 className="welcome-title">Aloita vuoro</h1>
+        <p className="welcome-text">
+          Avaa osakunnan tietokanta. Jos tietokantaa ei vielä ole, luo uusi.
+        </p>
+        <Button size="xl" className="primary" disabled={busy} onClick={onOpen}>
+          Avaa tietokanta
+        </Button>
+        <Button variant="outline" className="secondary" disabled={busy} onClick={onCreate}>
+          Luo tietokanta
+        </Button>
+        <span className="drop-label">Voit myös pudottaa tietokantatiedoston tähän.</span>
+      </div>
       {error && (
         <Text role="alert" className="error">
           {error}

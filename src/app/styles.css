@@ -230,6 +230,17 @@ select:focus-visible {
   color: var(--ink);
   box-shadow: 0 1px 2px rgb(0 0 0 / 0.12);
 }
+.customer-scroll,
+.account {
+  /* Shadows appear at an edge only while more content scrolls past it. */
+  background:
+    linear-gradient(var(--surface) 30%, transparent) top / 100% 24px no-repeat local,
+    linear-gradient(transparent, var(--surface) 70%) bottom / 100% 24px no-repeat local,
+    radial-gradient(farthest-side at 50% 0, rgb(0 0 0 / 0.12), transparent) top / 100% 8px no-repeat scroll,
+    radial-gradient(farthest-side at 50% 100%, rgb(0 0 0 / 0.12), transparent) bottom / 100% 8px no-repeat scroll,
+    var(--surface);
+}
+.customer-meta { display: none; }
 .customer-scroll {
   min-height: 0;
   flex: 1;
@@ -476,16 +487,57 @@ select:focus-visible {
   background: var(--mode) !important;
   color: #ffffff !important;
 }
-.app .account .mode-submit:disabled {
-  background: var(--accent) !important;
-  color: var(--muted) !important;
-  border: 1px dashed var(--line) !important;
-  opacity: 1;
-}
 .product-picker {
   display: grid;
   gap: 10px;
   margin-bottom: 22px;
+}
+.product-hint {
+  font-size: 13px;
+  color: var(--muted);
+}
+.recorded-slot:empty { display: none; }
+.recorded {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+  padding: 8px 8px 8px 14px;
+  border-radius: var(--radius);
+  border: 1px solid var(--line-soft);
+  background: var(--surface);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.05);
+  font-size: 15px;
+  animation: recorded-in 180ms ease-out;
+}
+.recorded-check {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--deposit);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.recorded-text { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.recorded-amount { font-weight: 600; font-variant-numeric: tabular-nums; }
+.recorded.negative .recorded-amount { color: var(--charge); }
+.recorded.positive .recorded-amount { color: var(--deposit); }
+.recorded button {
+  height: 36px;
+  padding: 0 14px;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  font-size: 14px;
+  font-weight: 500;
+}
+@keyframes recorded-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: none; }
 }
 .product-grid {
   display: grid;
@@ -699,8 +751,20 @@ input[type="file"]::file-selector-button {
   color: var(--on-brand);
   filter: brightness(0.93);
 }
-.primary:disabled {
-  opacity: 0.4;
+.primary:disabled,
+.app .account .mode-submit:disabled {
+  background: var(--line-soft) !important;
+  color: var(--muted) !important;
+  border: 0 !important;
+  opacity: 1;
+}
+.secondary {
+  height: 44px;
+  border: 1px solid var(--line) !important;
+  border-radius: var(--radius) !important;
+  background: var(--surface) !important;
+  color: var(--ink) !important;
+  font-weight: 600 !important;
 }
 .modal [data-part="trigger"],
 .app button[data-scope="button"] {
@@ -868,6 +932,13 @@ input[type="file"]::file-selector-button {
   box-shadow: inset 0 0 0 1px var(--indicator, var(--ink));
   font-weight: 600;
 }
+.settings-modal .close-modal {
+  position: sticky;
+  bottom: -28px;
+  margin-bottom: -28px;
+  box-shadow: 0 -12px 16px -4px var(--accent), 0 16px 0 0 var(--accent);
+  background: var(--accent) !important;
+}
 .close-modal {
   width: 100%;
   height: 44px !important;
@@ -881,6 +952,42 @@ input[type="file"]::file-selector-button {
 .reversal-name {
   font-size: 18px;
   font-weight: 600;
+}
+.reversal-entry {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.reversal-title { font-size: 16px; font-weight: 600; }
+.reversal-time { font-size: 13px; color: var(--muted); margin-top: 2px; }
+.reversal-amount { font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.reversal-amount.negative { color: var(--charge); }
+.reversal-amount.positive { color: var(--deposit); }
+.reversal-balance { font-size: 15px; font-variant-numeric: tabular-nums; }
+.event-option {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.event-option-title { font-size: 15px; font-weight: 500; }
+.event-option-help { font-size: 14px; color: var(--muted); }
+.event-or {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.event-or::before,
+.event-or::after {
+  content: "";
+  flex: 1;
+  border-top: 1px solid var(--line-soft);
 }
 .delete-customer {
   display: flex;
@@ -953,10 +1060,35 @@ input[type="file"]::file-selector-button {
   justify-content: center;
   align-items: center;
 }
-.welcome > button { min-width: 260px; height: 52px; border-radius: 12px; font-size: 16px; }
-.drop-label {
+.welcome-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: min(400px, 100%);
+  padding: 32px;
+  background: var(--surface);
+  border: 1px solid var(--line-soft);
+  border-radius: 16px;
+  box-shadow: var(--shadow-card);
+}
+.welcome-title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.4px;
+}
+.welcome-text {
+  margin: 0 0 12px;
   color: var(--muted);
-  font-size: 14px;
+  font-size: 15px;
+  line-height: 1.5;
+}
+.welcome-card > button { height: 48px; font-size: 15px; }
+.drop-label {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 13px;
+  text-align: center;
 }
 .dragging {
   outline: 2px dashed var(--indicator);
@@ -1169,6 +1301,20 @@ input[type="file"]::file-selector-button {
   .account { padding: 18px 16px 8px; }
   .account-summary { top: -18px; margin: -18px -16px 0; padding: 18px 16px 12px; }
   .customer-scroll { max-height: 340px; }
+  .osakunta-column { width: 0; }
+  .customers th:nth-child(2),
+  .customers td:nth-child(2) { padding: 0; font-size: 0; border-bottom-color: var(--line-soft); }
+  .customers tbody td { height: 58px; }
+  .customer-select { min-height: 58px; padding: 6px 0; }
+  .customer-meta {
+    display: block;
+    margin-top: 1px;
+    font-size: 13px;
+    color: var(--muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .customer-row[data-selected="true"] .customer-meta { color: var(--on-brand); }
   .search-row { flex-wrap: wrap; margin-bottom: 10px; }
   .search-row input { flex-basis: 100%; }
   .search-row button { flex: 1; }

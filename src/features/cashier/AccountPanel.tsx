@@ -26,7 +26,7 @@ function FormField({
 }
 type PostInput = Omit<Parameters<Ledger["post"]>[0], "operator">;
 const GENERIC_CHARGE_LABELS = new Set(["Veloita", "Charge", "Purchase"]);
-function entryTitle(entry: Entry) {
+export function entryTitle(entry: Entry) {
   if (entry.reversal_of) return "Hyvitys";
   if (entry.opening) return "Alkusaldo";
   if (entry.cents > 0) return "Saldon lisäys";
@@ -65,6 +65,7 @@ export function AccountPanel({
   const [action, setAction] = useState<"charge" | "deposit">("charge");
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<string>();
+  const [justPosted, setJustPosted] = useState(false);
   const query = search.trim().toLocaleLowerCase("fi");
   const categories = [...new Set(products.map((p) => p.category).filter(Boolean))];
   // Searching looks through every product; otherwise categories come first.
@@ -91,7 +92,15 @@ export function AccountPanel({
     setNote("");
     setSearch("");
     setCategory(undefined);
+    setJustPosted(false);
   }, [customer?.id, selectionRevision]);
+  useEffect(() => {
+    if (!justPosted) return;
+    const timer = setTimeout(() => setJustPosted(false), 8000);
+    return () => clearTimeout(timer);
+  }, [justPosted, entries[0]?.id]);
+  const latest = entries[0];
+  const recorded = justPosted && latest && !latest.reversed && !latest.reversal_of ? latest : undefined;
   function post(kind: "charge" | "deposit", product?: Product) {
     if (!customer || busy) return;
     try {
@@ -107,6 +116,7 @@ export function AccountPanel({
         () => {
           if (!product) setAmount("");
           setNote("");
+          setJustPosted(true);
         },
         () => {},
       );
@@ -118,6 +128,7 @@ export function AccountPanel({
     setAction(next);
     setAmount("");
     setError("");
+    setJustPosted(false);
   }
   const validAmount = amount && /^\d+([.,]\d{1,2})?$/.test(amount.trim());
   return (
@@ -155,12 +166,6 @@ export function AccountPanel({
               </Text>
             </div>
           </div>
-          <CustomerNoteForm
-            key={customer.id}
-            customer={customer}
-            busy={busy}
-            save={onSaveNote}
-          />
           <Flex className="mode" role="group" aria-label="Tapahtuman tyyppi">
             <Button
               variant="plain"
@@ -181,52 +186,34 @@ export function AccountPanel({
               <span aria-hidden="true" className="mode-sign">+</span>Lisää saldoa
             </Button>
           </Flex>
-          <form
-            className="amount-form"
-            onSubmit={(e) => {
-              e.preventDefault();
-              post(action);
-            }}
-          >
-            <FormField
-              label={action === "charge" ? "Muu summa" : "Lisättävä summa"}
-            >
-              <Input
-                aria-label="Summa"
-                inputMode="decimal"
-                placeholder="0,00"
-                value={amount}
-                disabled={busy}
-                onChange={(e) => setAmount(e.target.value)}
-              />
-            </FormField>
-            <FormField label="Kuvaus (valinnainen)">
-              <Input
-                aria-label="Tapahtuman kuvaus"
-                maxLength={200}
-                value={note}
-                disabled={busy}
-                onChange={(e) => setNote(e.target.value)}
-              />
-            </FormField>
-            <Button
-              className="primary mode-submit"
-              type="submit"
-              disabled={!amount || busy}
-            >
-              {action === "charge" ? "Veloita" : "Lisää saldoa"}
-              {validAmount
-                ? ` ${formatAmount(Math.round(Number(amount.trim().replace(",", ".")) * 100))}`
-                : ""}
-            </Button>
-          </form>
-          {error && (
-            <Text role="alert" className="error">
-              {error}
-            </Text>
-          )}
+          <div className="recorded-slot" role="status">
+            {recorded && (
+              <div className={`recorded ${recorded.cents > 0 ? "positive" : "negative"}`}>
+                <span className="recorded-check" aria-hidden="true">✓</span>
+                <span className="recorded-text">
+                  Kirjattu <strong>{entryTitle(recorded)}</strong>
+                </span>
+                <span className="recorded-amount">
+                  {recorded.cents > 0 ? "+" : "−"}
+                  {formatAmount(Math.abs(recorded.cents))}
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={busy}
+                  onClick={() => {
+                    setError("");
+                    onReverse(recorded);
+                  }}
+                >
+                  Peru
+                </Button>
+              </div>
+            )}
+          </div>
           {action === "charge" && !!products.length && (
             <div className="product-picker">
+              <Text className="product-hint">Nimike veloitetaan heti, kun napautat sitä.</Text>
               <Input aria-label="Hae nimikettä" placeholder="Hae nimikettä" value={search}
                 onChange={(e) => setSearch(e.target.value)} />
               <div className="product-grid">
@@ -273,6 +260,56 @@ export function AccountPanel({
               {!visibleProducts.length && !shownCategories.length && <Text>Nimikkeitä ei löytynyt.</Text>}
             </div>
           )}
+          <form
+            className="amount-form"
+            onSubmit={(e) => {
+              e.preventDefault();
+              post(action);
+            }}
+          >
+            <FormField
+              label={action === "charge" ? "Muu summa" : "Lisättävä summa"}
+            >
+              <Input
+                aria-label="Summa"
+                inputMode="decimal"
+                placeholder="0,00"
+                value={amount}
+                disabled={busy}
+                onChange={(e) => setAmount(e.target.value)}
+              />
+            </FormField>
+            <FormField label="Kuvaus (valinnainen)">
+              <Input
+                aria-label="Tapahtuman kuvaus"
+                maxLength={200}
+                value={note}
+                disabled={busy}
+                onChange={(e) => setNote(e.target.value)}
+              />
+            </FormField>
+            <Button
+              className="primary mode-submit"
+              type="submit"
+              disabled={!amount || busy}
+            >
+              {action === "charge" ? "Veloita" : "Lisää saldoa"}
+              {validAmount
+                ? ` ${formatAmount(Math.round(Number(amount.trim().replace(",", ".")) * 100))}`
+                : ""}
+            </Button>
+          </form>
+          {error && (
+            <Text role="alert" className="error">
+              {error}
+            </Text>
+          )}
+          <CustomerNoteForm
+            key={customer.id}
+            customer={customer}
+            busy={busy}
+            save={onSaveNote}
+          />
           <div className="history" aria-label="Tapahtumat">
             <h3 className="history-title">Tapahtumat</h3>
             {!entries.length && (

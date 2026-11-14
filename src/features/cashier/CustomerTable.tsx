@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Button, Input, Table, Text, Flex } from "@chakra-ui/react";
 import {
   useReactTable,
@@ -53,6 +53,14 @@ export function CustomerTable({
   const sortedBy = (id: string) =>
     sorting[0]?.id === id ? (sorting[0].desc ? "descending" : "ascending") : "none";
   const recent = sorting[0]?.id === "recent";
+  // While someone is selected, a charge must not move rows under the cashier's finger.
+  const frozen = useRef<{ selected?: string; ids: string[] }>({ ids: [] });
+  let rows = table.getRowModel().rows;
+  if (recent && selected && frozen.current.selected === selected) {
+    const index = new Map(frozen.current.ids.map((id, i) => [id, i]));
+    rows = [...rows].sort((a, b) => (index.get(a.original.id) ?? -1) - (index.get(b.original.id) ?? -1));
+  }
+  frozen.current = { selected, ids: rows.map((row) => row.original.id) };
   return (
     <section className="customers">
       <Flex gap="3" className="search-row">
@@ -117,7 +125,7 @@ export function CustomerTable({
             </Table.Row>
           </Table.Header>
           <Table.Body>
-            {table.getRowModel().rows.map((row) => (
+            {rows.map((row) => (
               <Table.Row
                 key={row.id}
                 data-selected={row.original.id === selected}
@@ -133,6 +141,9 @@ export function CustomerTable({
                     }}
                   >
                     <span className="customer-name">{row.original.name}</span>
+                    {row.original.osakunta && (
+                      <span className="customer-meta">{row.original.osakunta}</span>
+                    )}
                   </button>
                 </Table.Cell>
                 <Table.Cell className="osakunta-cell" title={row.original.osakunta || undefined}>
@@ -151,7 +162,7 @@ export function CustomerTable({
             ))}
           </Table.Body>
         </Table.Root>
-        {!table.getRowModel().rows.length && (
+        {!rows.length && (
           <Text p="8" className="empty-history">
             Ei hakutuloksia.
           </Text>

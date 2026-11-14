@@ -10,14 +10,14 @@ export function EventChoice({ previousName, busy, onContinue, onCreate }: {
   const [name, setName] = useState("");
   return (
     <Stack gap="4">
-      {previousName && <>
-        <Text>Edellinen tapahtuma: {previousName}</Text>
-        <Button disabled={busy} onClick={onContinue} whiteSpace="normal" height="auto" minH="10" py="2" overflowWrap="anywhere">
+      {previousName && <section className="event-option">
+        <Text className="event-option-title">Edellinen tapahtuma: {previousName}</Text>
+        <Button className="primary" disabled={busy} onClick={onContinue} whiteSpace="normal" height="auto" minH="11" py="2" overflowWrap="anywhere">
           Jatka tapahtumaa {previousName}
         </Button>
-        <Text>Saldot jatkuvat edellisestä tapahtumasta. Aiemmat tapahtumat säilyvät tietokannassa.</Text>
-      </>}
-      <form onSubmit={(event) => {
+      </section>}
+      {previousName && <div className="event-or" aria-hidden="true">tai</div>}
+      <form className="event-option" onSubmit={(event) => {
         event.preventDefault();
         if (!busy && name.trim()) void onCreate(name);
       }}>
@@ -27,7 +27,12 @@ export function EventChoice({ previousName, busy, onContinue, onCreate }: {
             <Input id="event-name" required maxLength={100} value={name}
               disabled={busy} onChange={(event) => setName(event.target.value)} />
           </Field.Root>
-          <Button className="primary" type="submit" disabled={busy || !name.trim()}>
+          {previousName && (
+            <Text className="event-option-help">
+              Saldot jatkuvat edellisestä tapahtumasta. Aiemmat tapahtumat säilyvät tietokannassa.
+            </Text>
+          )}
+          <Button variant="outline" className={previousName ? "secondary" : "primary"} type="submit" disabled={busy || !name.trim()}>
             Luo uusi tapahtuma
           </Button>
         </Stack>

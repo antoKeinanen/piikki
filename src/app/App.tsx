@@ -20,7 +20,7 @@ const EventStats = lazy(() =>
   import("./EventStats").then((module) => ({ default: module.EventStats })),
 );
 import { CustomerTable } from "../features/cashier/CustomerTable";
-import { AccountPanel } from "../features/cashier/AccountPanel";
+import { AccountPanel, entryTitle } from "../features/cashier/AccountPanel";
 import { CustomerForm } from "../features/cashier/CustomerForm";
 import { EditCustomer } from "../features/cashier/EditCustomer";
 import { UndoNotice, type Undo } from "../features/cashier/UndoNotice";
@@ -31,6 +31,7 @@ import { EventChoice } from "../features/database/EventChoice";
 import { OperatorPrompt } from "../features/cashier/OperatorPrompt";
 /** With no input for this long, the selected person is cleared so nobody gets charged by mistake. */
 export const IDLE_TIMEOUT_MS = 2 * 60 * 1000;
+const NEUTRAL_BRANDING: Branding = { ...defaultBranding, primary: "#1F2A2E", secondary: "#F4F3EF" };
 const ACTIVITY_EVENTS = ["pointerdown", "keydown", "wheel", "touchstart", "input"] as const;
 type Modal =
   | { kind: "event"; next: OpenedDatabase }
@@ -258,7 +259,10 @@ function CashierApp() {
     />
   );
   const branding = data?.branding ?? defaultBranding;
-  const brandStyle = brandingStyle(branding);
+  // Before a file opens there is no organization yet, so use a soft neutral background.
+  const brandStyle = brandingStyle(data?.branding ?? NEUTRAL_BRANDING);
+  const modalStyle =
+    modal?.kind === "event" ? brandingStyle(modal.next.ledger.snapshot().branding) : brandStyle;
   const fileControls = (
     <FileControls
       busy={busy}
@@ -277,6 +281,11 @@ function CashierApp() {
     setSelected(id);
     setSelectionRevision((revision) => revision + 1);
     setError("");
+    // On a phone the account panel sits below the list, so bring it into view.
+    if (window.matchMedia?.("(max-width: 800px)").matches)
+      requestAnimationFrame(() =>
+        document.querySelector(".account")?.scrollIntoView({ behavior: "smooth", block: "start" }),
+      );
   }
   return (
     <Box
@@ -435,7 +444,7 @@ function CashierApp() {
           <Dialog.Positioner>
             <Dialog.Content
               className={`modal ${modal?.kind === "settings" || modal?.kind === "onboarding" ? "settings-modal" : ""}`}
-              style={brandStyle}
+              style={modalStyle}
               aria-label={
                 modal?.kind === "event" || modal?.kind === "create-event"
                   ? "Valitse tapahtuma"
@@ -556,6 +565,8 @@ function CashierApp() {
                 {modal?.kind === "reverse" && (
                   <ReversalConfirmation
                     entry={modal.entry}
+                    title={entryTitle(modal.entry)}
+                    balance={customer?.balance ?? 0}
                     customerName={modal.customerName}
                     busy={busy}
                     confirm={async () => {
@@ -581,7 +592,7 @@ function CashierApp() {
                         setError("");
                       }}
                     >
-                      {modal?.kind === "settings" ? "Valmis" : "Peruuta"}
+                      {modal?.kind === "settings" ? "Valmis" : modal?.kind === "reverse" ? "Takaisin" : "Peruuta"}
                     </Button>
                 )}
               </Dialog.Body>
