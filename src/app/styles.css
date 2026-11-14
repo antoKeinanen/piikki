@@ -1106,13 +1106,16 @@ input[type="file"]::file-selector-button {
 .modal .settings-title {
   flex: none;
   margin: 0;
-  padding: 28px 28px 12px;
+  padding: 28px 28px 16px;
 }
 .settings-tabs [role="tablist"] {
   flex: none;
-  padding: 0 28px;
+  /* Tab padding supplies the rest, so labels line up with the title. */
+  padding: 0 12px;
   border-color: var(--line-soft);
-  gap: 24px;
+  gap: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
 }
 .settings-scroll {
   flex: 1 1 auto;
@@ -1154,22 +1157,38 @@ input[type="file"]::file-selector-button {
   margin-top: 0;
 }
 .settings-tabs [role="tab"] {
-  padding: 0 0 14px;
+  flex: none;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
   color: var(--muted);
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 500;
+  --indicator-thickness: 3px;
+  /* The scrolling tab rail clips anything below it, so keep the underline inside the tab. */
+  --indicator-offset-y: 0px;
 }
 .modal .settings-tabs [role="tab"]:hover:not(:disabled) {
-  background: transparent;
+  background: color-mix(in srgb, var(--brand) 4%, transparent);
   color: var(--ink);
 }
-.settings-tabs [role="tab"][aria-selected="true"] {
+.settings-tabs [role="tab"][aria-selected="true"],
+.modal .settings-tabs [role="tab"][aria-selected="true"]:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--brand) 6%, transparent);
   color: var(--ink);
   font-weight: 600;
-  --indicator-color: var(--brand);
+  --indicator-color: var(--indicator);
 }
 .settings-tabs [role="tabpanel"] {
   padding: 0;
+}
+/* Phone width: all four tabs stay visible instead of scrolling off the rail. */
+@media (max-width: 480px) {
+  .settings-tabs [role="tablist"] { padding: 0 8px; gap: 0; }
+  .settings-tabs [role="tab"] { flex: 1 1 auto; justify-content: center; padding: 0 6px; font-size: 14px; }
+  .modal .settings-title { padding: 24px 20px 12px; }
+  .settings-scroll { padding: 20px 20px 28px; }
+  .settings-shell .modal-footer { padding: 16px 20px !important; }
 }
 .settings-form {
   display: flex;
@@ -1287,9 +1306,23 @@ input:focus-visible + .image-picker-button {
 .settings-files {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 24px;
   align-items: stretch;
 }
+.file-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.modal .file-section-title {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.file-section-help { color: var(--muted); font-size: 14px; line-height: 1.5; }
 .settings-files button,
 .operator-recent button,
 .product-row button {
@@ -1304,7 +1337,6 @@ input:focus-visible + .image-picker-button {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  margin-bottom: 4px;
   padding: 14px 16px;
   border: 1px solid var(--line-soft);
   border-radius: var(--radius);
@@ -1478,7 +1510,7 @@ input:focus-visible + .image-picker-button {
   font-weight: 600;
 }
 .event-option-help { font-size: 15px; line-height: 1.5; color: var(--muted); }
-.modal .event-action { min-height: 48px; font-size: 15px; }
+.modal .event-action { min-height: 48px; }
 .event-or {
   display: flex;
   align-items: center;
@@ -1492,7 +1524,7 @@ input:focus-visible + .image-picker-button {
   flex: 1;
   border-top: 1px solid var(--line-soft);
 }
-.delete-customer {
+.danger-section {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -1503,19 +1535,38 @@ input:focus-visible + .image-picker-button {
   border-radius: var(--radius);
   background: var(--surface);
 }
-.delete-customer-title { margin: 0; font-size: 14px; font-weight: 600; }
-.delete-customer-note {
+.modal .danger-section-title { margin: 0; font-size: 14px; font-weight: 600; }
+.danger-section-note {
+  margin: 0;
   color: var(--muted);
   font-size: 14px;
   line-height: 1.5;
 }
-.delete-customer .danger-outline { margin-top: 4px; padding: 0 18px; }
+.danger-section .danger-outline { margin-top: 4px; padding: 0 18px; }
+.product-edit-panel > .danger-section { margin: 24px 0 0; }
 .operator-help { color: var(--muted); font-size: 15px; line-height: 1.5; margin-top: -12px; }
-.modal .operator-submit { height: 48px; font-size: 15px; }
+
 .operator-recent-section { display: flex; flex-direction: column; gap: 8px; }
 .operator-recent-label { font-size: 14px; font-weight: 500; }
 .operator-recent { display: flex; flex-wrap: wrap; gap: 8px; }
-.operator-recent button { padding: 0 18px; }
+.modal .operator-recent button {
+  min-width: 88px;
+  height: 44px;
+  padding: 0 18px;
+  font-size: 15px;
+  font-weight: 500;
+  transition: background-color 120ms, border-color 120ms, transform 80ms;
+}
+.modal .operator-recent button:hover:not(:disabled) {
+  border-color: var(--indicator) !important;
+  background: color-mix(in srgb, var(--brand) 8%, var(--surface));
+  color: var(--ink);
+}
+.modal .operator-recent button:active:not(:disabled) {
+  border-color: var(--indicator) !important;
+  background: color-mix(in srgb, var(--brand) 16%, var(--surface));
+  transform: scale(0.97);
+}
 .name-hints {
   display: flex;
   flex-direction: column;
@@ -1595,8 +1646,8 @@ input:focus-visible + .image-picker-button {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  width: min(400px, 100%);
-  padding: 32px;
+  width: min(420px, 100%);
+  padding: 28px;
   background: var(--surface);
   border: 1px solid var(--line-soft);
   border-radius: 16px;
@@ -1614,7 +1665,7 @@ input:focus-visible + .image-picker-button {
   font-size: 15px;
   line-height: 1.5;
 }
-.welcome-card > button { height: 48px; font-size: 16px; }
+
 .drop-label {
   display: flex;
   flex-direction: column;
@@ -1633,7 +1684,18 @@ input:focus-visible + .image-picker-button {
   border-top: 1px solid var(--line-soft);
 }
 .welcome-new-label { color: var(--muted); font-size: 15px; }
-.welcome-new > button { height: 48px; font-size: 15px; }
+/* The welcome card and the dialogs that open a file share one button size so the first steps read as one flow. */
+.welcome-card > button,
+.welcome-new > button,
+.modal .event-action,
+.modal .operator-submit,
+.opening-modal .settings-form > button {
+  height: auto;
+  min-height: 48px;
+  border-radius: var(--radius) !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+}
 .dragging {
   outline: 2px dashed var(--indicator);
   outline-offset: -16px;

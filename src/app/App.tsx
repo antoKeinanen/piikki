@@ -261,8 +261,6 @@ function CashierApp() {
   const branding = data?.branding ?? defaultBranding;
   // Before a file opens there is no organization yet, so use a soft neutral background.
   const brandStyle = brandingStyle(data?.branding ?? NEUTRAL_BRANDING);
-  const modalStyle =
-    modal?.kind === "event" ? brandingStyle(modal.next.ledger.snapshot().branding) : brandStyle;
   const osakunnat = data
     ? [...data.customers, ...data.removedCustomers].map((c) => c.osakunta).concat(branding.organization)
     : [];
@@ -435,8 +433,8 @@ function CashierApp() {
           <Dialog.Backdrop />
           <Dialog.Positioner>
             <Dialog.Content
-              className={`modal ${modal?.kind === "settings" || modal?.kind === "onboarding" ? "settings-modal" : ""} ${modal?.kind === "settings" ? "settings-shell" : ""}`}
-              style={modalStyle}
+              className={`modal ${modal?.kind === "settings" || modal?.kind === "onboarding" ? "settings-modal" : ""} ${modal?.kind === "settings" ? "settings-shell" : ""} ${modal?.kind === "onboarding" ? "opening-modal" : ""}`}
+              style={brandStyle}
               aria-label={
                 modal?.kind === "event" || modal?.kind === "create-event"
                   ? "Valitse tapahtuma"

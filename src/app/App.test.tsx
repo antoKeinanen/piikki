@@ -158,7 +158,9 @@ it("charges immediately, hides IDs and filenames, and opens branding settings", 
   fireEvent.click(screen.getByRole("button", { name: "Tallenna nimike" }));
   await waitFor(() => expect(ledger.snapshot().products.find((p) => p.id === preset.id)?.cents).toBe(450));
   preset.cents = 450;
-  fireEvent.click(within(row).getByRole("button", { name: "Poista" }));
+  expect(within(row).queryByRole("button", { name: /Poista/ })).toBeNull();
+  fireEvent.click(within(row).getByRole("button", { name: "Muokkaa" }));
+  fireEvent.click(within(item).getByRole("button", { name: "Poista nimike" }));
   const restore = await screen.findByRole("button", { name: "Palauta Kaakao" });
   expect(
     ledger.snapshot().products.some((value) => value.id === preset.id),
@@ -313,7 +315,7 @@ it("replaces the session snapshot and clears the cashier draft when opening anot
   fireEvent.click(screen.getByRole("button", { name: "Asetukset" }));
   fireEvent.click(await screen.findByRole("tab", { name: "Tietokanta" }));
   fireEvent.click(
-    await screen.findByRole("button", { name: "Avaa tietokanta" }),
+    await screen.findByRole("button", { name: "Vaihda tietokantaa" }),
   );
   await continueEvent("Second customer", { shift: false });
   await waitFor(() =>
@@ -431,7 +433,7 @@ it("preserves the active database when opening a replacement is cancelled", asyn
   fireEvent.click(screen.getByRole("button", { name: "Asetukset" }));
   fireEvent.click(await screen.findByRole("tab", { name: "Tietokanta" }));
   fireEvent.click(
-    await screen.findByRole("button", { name: "Avaa tietokanta" }),
+    await screen.findByRole("button", { name: "Vaihda tietokantaa" }),
   );
   await waitFor(() =>
     expect(
@@ -521,7 +523,7 @@ it("keeps the current cashier session when the replacement event choice is cance
   await continueEvent("Aino Korhonen");
   fireEvent.click(screen.getByRole("button", { name: "Asetukset" }));
   fireEvent.click(await screen.findByRole("tab", { name: "Tietokanta" }));
-  fireEvent.click(await screen.findByRole("button", { name: "Avaa tietokanta" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Vaihda tietokantaa" }));
   await screen.findByRole("button", { name: "Jatka tapahtumaa Toinen juhla" });
   fireEvent.click(screen.getByRole("button", { name: "Peruuta" }));
   await waitFor(() => expect(document.querySelector('[role="dialog"][data-state="open"]')).toBeNull());

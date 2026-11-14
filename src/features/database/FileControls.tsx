@@ -15,16 +15,25 @@ export function FileControls({
 }) {
   return (
     <>
-      <div className="file-status">
-        <Text className="file-status-title">Muutokset tallentuvat automaattisesti.</Text>
-        {note}
-      </div>
-      <Button variant="outline" disabled={busy} onClick={onOpen}>
-        Avaa tietokanta
-      </Button>
-      <Button variant="outline" disabled={busy} onClick={onBackup}>
-        Lataa varmuuskopio
-      </Button>
+      <section className="file-section" aria-labelledby="file-save-title">
+        <h3 id="file-save-title" className="file-section-title">Tallennus</h3>
+        <div className="file-status">
+          <Text className="file-status-title">Muutokset tallentuvat automaattisesti.</Text>
+          {note}
+        </div>
+        <Button variant="outline" disabled={busy} onClick={onBackup}>
+          Lataa varmuuskopio
+        </Button>
+      </section>
+      <section className="file-section" aria-labelledby="file-switch-title">
+        <h3 id="file-switch-title" className="file-section-title">Toinen tietokanta</h3>
+        <Text className="file-section-help">
+          Vuoro jatkuu valitusta tiedostosta. Tämän tiedoston muutokset on jo tallennettu.
+        </Text>
+        <Button variant="outline" disabled={busy} onClick={onOpen}>
+          Vaihda tietokantaa
+        </Button>
+      </section>
       {error && (
         <Text role="alert" className="error">
           {error}
