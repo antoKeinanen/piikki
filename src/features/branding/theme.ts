@@ -29,7 +29,8 @@ export function brandingStyle(branding: Branding): CSSProperties & Record<`--${s
     "--on-brand": readableText(branding.primary),
     "--on-accent": ink,
     "--ink": ink,
-    "--muted": contrastingTone(branding.secondary, ink, 4.5),
+    // Above the 4.5 minimum so timestamps and labels stay legible in a dim, busy room.
+    "--muted": contrastingTone(branding.secondary, ink, 5.5),
     "--line": contrastingTone(branding.secondary, ink, 3),
     "--focus": ink,
     "--indicator": contrastRatio(branding.primary, branding.secondary) >= 3
