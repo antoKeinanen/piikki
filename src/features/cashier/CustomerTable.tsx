@@ -29,6 +29,7 @@ export function CustomerTable({
   select,
   add,
   settings,
+  edit,
   disabled,
 }: {
   customers: Customer[];
@@ -36,6 +37,8 @@ export function CustomerTable({
   select: (id: string) => void;
   add: () => void;
   settings: () => void;
+  /** Opens the selected person's details; shown in the phone selection bar. */
+  edit: () => void;
   disabled: boolean;
 }) {
   const [filter, setFilter] = useState("");
@@ -92,6 +95,25 @@ export function CustomerTable({
               {formatAmount(current.balance)}
             </strong>
           </span>
+          <button
+            type="button"
+            className="selected-bar-edit secondary"
+            aria-label="Muokkaa henkilöä"
+            title="Muokkaa henkilöä"
+            disabled={disabled}
+            onClick={edit}
+          >
+            <svg viewBox="0 0 16 16" aria-hidden="true">
+              <path
+                d="M10.5 2.5l3 3L6 13H3v-3z"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinejoin="round"
+              />
+            </svg>
+            <span className="selected-bar-edit-label">Muokkaa</span>
+          </button>
           <button
             type="button"
             className="selected-bar-switch secondary"

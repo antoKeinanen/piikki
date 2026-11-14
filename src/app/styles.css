@@ -351,7 +351,7 @@ textarea::placeholder {
 .sort-row button {
   height: 36px;
   padding: 0 12px;
-  border: 0;
+  border: 1px solid transparent;
   border-radius: calc(var(--radius) - 3px);
   background: transparent;
   color: var(--muted);
@@ -360,9 +360,11 @@ textarea::placeholder {
   white-space: nowrap;
 }
 .sort-row button[aria-pressed="true"] {
+  border-color: var(--line);
   background: var(--surface);
   color: var(--ink);
-  box-shadow: 0 1px 2px rgb(0 0 0 / 0.12);
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.08);
 }
 .customer-meta { display: none; }
 .customer-scroll {
@@ -567,15 +569,17 @@ textarea::placeholder {
 .balance.negative { color: var(--charge); }
 
 /* Mode tabs: the chosen one is a light tint with a coloured underline, because
-   solid red or green is kept for the control that records. */
+   solid red or green is kept for the control that records. The track stays
+   uncoloured so a green tab still stands out on a green brand. */
 .mode {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 4px;
   margin: 0 0 12px;
   padding: 4px;
+  border: 1px solid var(--line-soft);
   border-radius: var(--radius-lg);
-  background: var(--tint);
+  background: var(--surface);
 }
 .mode button {
   min-width: 0;
@@ -586,14 +590,25 @@ textarea::placeholder {
   font-weight: 500;
 }
 .mode .mode-active {
-  background: color-mix(in srgb, var(--mode) 12%, var(--surface));
+  background: color-mix(in srgb, var(--mode) 11%, var(--surface));
   color: var(--mode);
   font-weight: 600;
-  box-shadow: inset 0 -3px 0 var(--mode);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--mode) 35%, transparent),
+    inset 0 -3px 0 var(--mode);
 }
 @media (hover: hover) {
-  .mode button:not(.mode-active):hover:not(:disabled) { background: var(--surface); }
+  .mode button:not(.mode-active):hover:not(:disabled) {
+    background: color-mix(in srgb, var(--ink) 4%, var(--surface));
+  }
 }
+.mode-heading {
+  color: var(--mode);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+.mode-heading-name { color: var(--ink); }
 .mode-sign { margin-right: 8px; font-weight: 600; }
 /* The idle choice keeps its colour in the sign only, so it still reads as available. */
 .mode-charge-tab:not(.mode-active) .mode-sign { color: var(--charge); }
@@ -610,35 +625,38 @@ textarea::placeholder {
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  height: 56px;
+  height: 58px;
 }
 .account > .recorded-slot { margin-bottom: 8px; }
 .product-hint {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  height: 56px;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  height: 58px;
   padding: 0 2px;
+}
+.product-hint p {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.product-hint-text {
   color: var(--ink);
   font-size: 15px;
-  font-weight: 500;
-}
-.product-hint-icon {
-  flex-shrink: 0;
-  width: 16px;
-  height: 16px;
-  color: var(--muted);
+  line-height: 1.35;
 }
 .recorded {
   display: flex;
   align-items: center;
   gap: 12px;
-  height: 56px;
+  height: 58px;
   padding: 0 4px 0 12px;
-  border: 1px solid color-mix(in srgb, var(--deposit) 22%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--deposit) 60%, var(--surface));
   border-left: 3px solid var(--deposit);
   border-radius: var(--radius);
-  background: color-mix(in srgb, var(--deposit) 9%, var(--surface));
+  background: color-mix(in srgb, var(--deposit) 8%, var(--surface));
   animation: recorded-in 180ms ease-out;
 }
 .recorded-check {
@@ -663,17 +681,17 @@ textarea::placeholder {
   overflow: hidden;
   font-size: 16px;
   font-weight: 600;
-  line-height: 1.3;
+  line-height: 1.35;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .recorded-change {
   color: var(--ink);
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 400;
   font-variant-numeric: tabular-nums;
 }
-.recorded-change strong,
+.recorded-change strong { font-size: 16px; font-weight: 700; }
 .recorded-amount { font-weight: 600; font-variant-numeric: tabular-nums; }
 .recorded.negative .recorded-amount { color: var(--charge); }
 .recorded.positive .recorded-amount { color: var(--deposit); }
@@ -734,19 +752,23 @@ textarea::placeholder {
   border-radius: var(--radius-sm);
   object-fit: contain;
 }
-/* Categories open a group, so they read as a flat tinted folder with a chevron
-   rather than a raised button that charges. */
+/* Categories open a group, so they read as a flat grey folder with a chevron
+   rather than a raised button that charges. Grey, not the brand tint, keeps the
+   receipt the only green surface. */
 .category-button {
   align-items: stretch;
   justify-content: flex-start;
-  border-color: transparent;
-  background: var(--tint);
+  border-color: var(--line-soft);
+  background: color-mix(in srgb, var(--ink) 4%, var(--surface));
   box-shadow: none;
   text-align: left;
 }
 @media (hover: hover) {
   .product-charge:hover:not(:disabled) { border-color: var(--ink); }
-  .category-button:hover:not(:disabled) { border-color: var(--line); }
+  .category-button:hover:not(:disabled) {
+    border-color: var(--line);
+    background: color-mix(in srgb, var(--ink) 7%, var(--surface));
+  }
 }
 /* The chevron shares the photo's row so the name gets the full tile width. */
 .category-top {
@@ -788,46 +810,80 @@ textarea::placeholder {
 /* Manual amount */
 .amount-form {
   display: grid;
-  grid-template-columns: minmax(128px, 1fr) minmax(136px, 1.2fr) minmax(150px, 188px);
+  grid-template-columns: minmax(150px, 1fr) minmax(110px, 1.2fr) minmax(160px, 0.9fr);
+  grid-template-areas: "amount note submit";
   align-items: end;
-  gap: 8px 12px;
+  gap: 12px;
   margin-bottom: 12px;
 }
-.amount-form > div {
-  flex: 1;
-  gap: 8px;
+.amount-form .amount-field { grid-area: amount; gap: 8px; min-width: 0; }
+.amount-form .note-field { grid-area: note; gap: 8px; min-width: 0; }
+.amount-submit {
+  display: flex;
+  grid-area: submit;
+  flex-direction: column;
+  gap: 4px;
   min-width: 0;
 }
+.note-toggle { display: none; }
 .amount-form input {
   height: var(--control-lg);
   font-size: 16px;
 }
-.amount-form button {
+.amount-form .mode-submit {
   width: 100%;
   padding: 0 12px;
 }
+/* Sits right above the submit button, in the row the field labels use. It adds
+   no width of its own, so a long balance never resizes the button column. */
 .amount-preview {
-  grid-column: 1 / -1;
-  color: var(--muted);
-  font-size: 14px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.3em;
+  contain: inline-size;
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 1.35;
+  white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
-.amount-preview strong { color: var(--ink); font-weight: 600; }
+.amount-preview strong { font-size: 16px; font-weight: 700; }
 
 /* Person note: reference, not a mode or a category, so it sits on a plain card. */
 .note-line {
   display: flex;
   align-items: center;
   gap: 8px;
+  min-height: var(--control);
   margin: 0 0 12px;
-  padding: 8px 8px 8px 16px;
+  padding: 0 0 0 12px;
   border: 1px solid var(--line-soft);
   border-radius: var(--radius);
   background: var(--surface);
 }
 .note-line.empty {
+  min-height: 0;
+  margin: -4px 0 8px;
   padding: 0;
   border: 0;
+}
+/* Text style, so the note reads as reference and not as another big action. */
+.note-edit {
+  gap: 4px;
+  height: 40px;
+  border-radius: var(--radius-sm);
+}
+.note-line.empty .note-edit {
+  height: var(--control);
+  margin-left: -12px;
+}
+.link-label {
+  text-decoration: underline;
+  text-decoration-color: var(--line);
+  text-underline-offset: 3px;
+}
+@media (hover: hover) {
+  :is(.note-edit, .note-toggle):hover:not(:disabled) .link-label { text-decoration-color: currentColor; }
 }
 .note-icon {
   flex-shrink: 0;
@@ -838,6 +894,7 @@ textarea::placeholder {
 .note-text {
   flex: 1;
   min-width: 0;
+  padding: 8px 0;
   font-size: 15px;
   line-height: 1.35;
   white-space: pre-line;
@@ -896,6 +953,12 @@ textarea::placeholder {
   text-decoration: line-through;
 }
 .entry.reversed .entry-amount { color: var(--muted); }
+.quiet-undo {
+  color: var(--muted);
+  font-weight: 400;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
 .empty-history {
   padding: 24px 0;
   color: var(--muted);
@@ -1619,9 +1682,11 @@ input:focus-visible + .image-picker-button {
 .stat-tile-lead .stat-label { color: var(--ink); font-weight: 600; }
 .stat-tile-lead .stat-value { margin-top: 2px; font-size: 40px; letter-spacing: -1.2px; line-height: 1.1; }
 .stat-note-line { color: var(--muted); font-size: 13px; }
+/* Cards keep their own height; a short card must not stretch to its neighbour. */
 .stat-panels {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 440px), 1fr));
+  align-items: start;
   gap: 16px;
   margin-top: 16px;
 }
@@ -1724,19 +1789,18 @@ input:focus-visible + .image-picker-button {
 .series-key-large {
   flex-direction: column;
   gap: 0;
-  margin: 0;
+  margin: -8px 0 0;
   font-size: 15px;
 }
 .series-key-large li {
-  padding: 12px 0;
+  padding: 8px 0;
   border-bottom: 1px solid var(--line-soft);
 }
 .series-key-large li:last-child { border-bottom: 0; }
 .series-key-large .series-name { color: var(--ink); }
-.series-key-large .series-value { margin-left: auto; font-size: 24px; }
+.series-key-large .series-value { margin-left: auto; font-size: 20px; }
 .chart-table { margin-top: 16px; font-size: 14px; }
-/* The card stretches to its neighbour's height, so the table toggle sits at the bottom. */
-.series-key-large + .chart-table { margin-top: auto; padding-top: 8px; }
+.series-key-large + .chart-table { margin-top: 16px; }
 .chart-table summary { cursor: pointer; font-weight: 500; }
 .chart-table table,
 .chart-table-plain {
@@ -1886,6 +1950,7 @@ input:focus-visible + .image-picker-button {
     white-space: nowrap;
   }
   .customer-row[data-selected="true"] .customer-meta { color: var(--on-brand); }
+  .account-summary { margin-bottom: 12px; padding: 16px 24px 12px; }
   .account-name { font-size: 20px; letter-spacing: -0.2px; }
   .balance { font-size: 32px; letter-spacing: -0.8px; }
   .product-grid { gap: 8px; }
@@ -1893,10 +1958,13 @@ input:focus-visible + .image-picker-button {
   .search-row input { flex-basis: 100%; }
   .search-row button { flex: 1; }
 }
-/* Below this the panel is too narrow for the submit button beside both fields. */
+/* Below this the panel is too narrow for all three side by side, so the
+   description moves under the amount and the submit button. */
 @container (max-width: 440px) {
-  .amount-form { grid-template-columns: 1fr 1fr; }
-  .amount-form button { grid-column: 1 / -1; }
+  .amount-form {
+    grid-template-columns: minmax(120px, 1fr) minmax(150px, auto);
+    grid-template-areas: "amount submit" "note note";
+  }
 }
 @media (max-width: 800px) {
   :root { --gutter: 12px; }
@@ -1933,6 +2001,22 @@ input:focus-visible + .image-picker-button {
   /* The selected-person bar stays on top instead, so this one scrolls away. */
   .account-summary { position: static; margin: -16px -16px 0; padding: 16px 16px 12px; border-bottom: 0; }
   .customer-scroll { max-height: 340px; }
+  .amount-form {
+    grid-template-columns: minmax(120px, 1fr) minmax(150px, auto);
+    grid-template-areas: "amount submit" "note note";
+  }
+  .amount-form:not(.describing) .note-field,
+  .amount-form.describing .note-toggle { display: none; }
+  .note-toggle {
+    display: inline-flex;
+    grid-area: note;
+    justify-self: start;
+    gap: 4px;
+    margin: -8px 0 -8px -12px;
+  }
+  .recorded-slot,
+  .product-hint,
+  .recorded { height: 54px; }
   .sort-row { flex-wrap: wrap; gap: 4px 8px; }
   .sort-options { flex: 1 1 100%; }
   .sort-row button { flex: 1; padding: 0 8px; }
@@ -1980,19 +2064,12 @@ input:focus-visible + .image-picker-button {
     font-variant-numeric: tabular-nums;
   }
   .selected-bar-balance strong.negative-balance { color: var(--charge); }
-  /* The bar already shows name and balance, so the panel header keeps only the
-     edit control, at the right under the bar, and the mode switch comes next. */
+  .selected-bar-edit { padding: 0 12px; }
+  .selected-bar-edit svg { width: 14px; height: 14px; color: var(--muted); }
+  /* The bar already shows name and balance and holds the edit control, so the
+     panel starts straight with the mode switch. */
   .customers.collapsed ~ .account { padding-top: 12px; }
-  .customers.collapsed ~ .account > .account-summary {
-    justify-content: flex-end;
-    margin: 0 0 12px;
-    padding: 0;
-    background: none;
-  }
-  .customers.collapsed ~ .account .account-identity { align-items: flex-end; }
-  .customers.collapsed ~ .account .balance-block,
-  .customers.collapsed ~ .account .account-name,
-  .customers.collapsed ~ .account .account-osakunta { display: none; }
+  .customers.collapsed ~ .account > .account-summary { display: none; }
   .product-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   /* Three categories in a two-column grid leave a hole, so each gets a full row. */
   .category-button {
@@ -2000,8 +2077,8 @@ input:focus-visible + .image-picker-button {
     flex-direction: row;
     align-items: center;
     gap: 12px;
-    min-height: 60px;
-    padding: 8px 12px;
+    min-height: 54px;
+    padding: 4px 12px;
   }
   .category-button .category-top { display: contents; }
   .category-button .product-thumbnail { order: 0; }
@@ -2029,16 +2106,19 @@ input:focus-visible + .image-picker-button {
   /* Name and balance share the top row so the button label fits on one line. */
   .selected-bar {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-areas: "name balance" "osakunta switch";
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-areas: "name balance balance" "osakunta edit switch";
     align-items: center;
-    gap: 2px 12px;
+    gap: 2px 8px;
   }
+  .selected-bar-edit { grid-area: edit; width: var(--control); padding: 0; }
+  .selected-bar-edit-label { display: none; }
   .selected-bar-identity { display: contents; }
   .selected-bar-name { grid-area: name; }
   .selected-bar-osakunta { grid-area: osakunta; align-self: start; }
   .selected-bar-balance {
     grid-area: balance;
+    justify-self: end;
     flex-direction: row;
     align-items: baseline;
     gap: 8px;

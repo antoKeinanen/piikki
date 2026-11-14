@@ -32,16 +32,24 @@ export function CustomerNoteForm({
           </>
         )}
         <Button
-          variant="outline"
+          variant="ghost"
           size="sm"
-          className="secondary"
+          className="note-edit quiet"
+          aria-label={customer.note ? "Muokkaa muistiinpanoa" : undefined}
           disabled={busy}
           onClick={() => {
             setNote(customer.note);
             setEditing(true);
           }}
         >
-          {customer.note ? "Muokkaa muistiinpanoa" : "Lisää muistiinpano"}
+          {customer.note ? (
+            <span className="link-label">Muokkaa</span>
+          ) : (
+            <>
+              <span aria-hidden="true">+</span>
+              <span className="link-label">Lisää muistiinpano</span>
+            </>
+          )}
         </Button>
       </div>
     );
