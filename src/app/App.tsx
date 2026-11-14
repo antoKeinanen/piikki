@@ -20,7 +20,7 @@ const EventStats = lazy(() =>
   import("./EventStats").then((module) => ({ default: module.EventStats })),
 );
 import { CustomerTable } from "../features/cashier/CustomerTable";
-import { AccountPanel } from "../features/cashier/AccountPanel";
+import { AccountPanel, entryTitle } from "../features/cashier/AccountPanel";
 import { CustomerForm } from "../features/cashier/CustomerForm";
 import { EditCustomer } from "../features/cashier/EditCustomer";
 import { UndoNotice, type Undo } from "../features/cashier/UndoNotice";
@@ -31,6 +31,7 @@ import { EventChoice } from "../features/database/EventChoice";
 import { OperatorPrompt } from "../features/cashier/OperatorPrompt";
 /** With no input for this long, the selected person is cleared so nobody gets charged by mistake. */
 export const IDLE_TIMEOUT_MS = 2 * 60 * 1000;
+const NEUTRAL_BRANDING: Branding = { ...defaultBranding, primary: "#1F2A2E", secondary: "#F4F3EF" };
 const ACTIVITY_EVENTS = ["pointerdown", "keydown", "wheel", "touchstart", "input"] as const;
 type Modal =
   | { kind: "event"; next: OpenedDatabase }
@@ -258,15 +259,8 @@ function CashierApp() {
     />
   );
   const branding = data?.branding ?? defaultBranding;
-  const brandStyle = brandingStyle(branding);
-  const fileControls = (
-    <FileControls
-      busy={busy}
-      error={error}
-      onOpen={() => void chooseDatabase()}
-      onBackup={() => void download()}
-    />
-  );
+  // Before a file opens there is no organization yet, so use a soft neutral background.
+  const brandStyle = brandingStyle(data?.branding ?? NEUTRAL_BRANDING);
   const osakunnat = data
     ? [...data.customers, ...data.removedCustomers].map((c) => c.osakunta).concat(branding.organization)
     : [];
@@ -277,6 +271,11 @@ function CashierApp() {
     setSelected(id);
     setSelectionRevision((revision) => revision + 1);
     setError("");
+    // On a phone the account panel sits below the list, so bring it into view.
+    if (window.matchMedia?.("(max-width: 800px)").matches)
+      requestAnimationFrame(() =>
+        document.querySelector(".account")?.scrollIntoView({ behavior: "smooth", block: "start" }),
+      );
   }
   return (
     <Box
@@ -306,48 +305,50 @@ function CashierApp() {
         className="masthead"
         aria-label={ledger ? branding.organization : "Piikki"}
       >
-        {ledger && branding.logo && (
-          <img
-            className="organization-logo"
-            src={branding.logo}
-            alt={`${branding.organization} logo`}
-          />
-        )}
+        <div className="masthead-brand">
+          {ledger && branding.logo && (
+            <img
+              className="organization-logo"
+              src={branding.logo}
+              alt={`${branding.organization} logo`}
+            />
+          )}
+          {ledger && (
+            <>
+              <span className="organization-name">{branding.organization}</span>
+              <span className="masthead-divider" aria-hidden="true">
+                /
+              </span>
+            </>
+          )}
+          <span className="wordmark">Piikki</span>
+          {data && <span className="event-name">{data.event.name}</span>}
+        </div>
         {ledger && (
-          <>
-            <span className="organization-name">{branding.organization}</span>
-            <span className="masthead-divider" aria-hidden="true">
-              /
-            </span>
-          </>
-        )}
-        <span className="wordmark">Piikki</span>
-        {data && <span className="event-name">{data.event.name}</span>}
-        {ledger && operator && (
-          <Button
-            variant="ghost"
-            className="operator-switch"
-            aria-label={`Vuorossa ${operator}, vaihda`}
-            disabled={busy}
-            onClick={() => setModal({ kind: "operator" })}
-          >
-            <span className="operator-label">Vuorossa</span> {operator}
-          </Button>
-        )}
-        {ledger && (
-          <Button
-            variant="ghost"
-            className="view-switch"
-            disabled={busy}
-            onClick={() => setView(view === "stats" ? "cashier" : "stats")}
-          >
-            {view === "stats" ? "Tilit" : "Tilastot"}
-          </Button>
-        )}
-        {ledger && (
-          <Button variant="ghost" className="logout" disabled={busy} onClick={logout}>
-            Kirjaudu ulos
-          </Button>
+          <nav className="masthead-actions" aria-label="Valikko">
+            {operator && (
+              <Button
+                variant="ghost"
+                className="operator-switch secondary"
+                aria-label={`Vuorossa ${operator}, vaihda`}
+                disabled={busy}
+                onClick={() => setModal({ kind: "operator" })}
+              >
+                <span className="operator-label">Vuorossa</span> {operator}
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              className="view-switch secondary"
+              disabled={busy}
+              onClick={() => setView(view === "stats" ? "cashier" : "stats")}
+            >
+              {view === "stats" ? "Tilit" : "Tilastot"}
+            </Button>
+            <Button variant="ghost" className="logout secondary" disabled={busy} onClick={logout}>
+              Kirjaudu ulos
+            </Button>
+          </nav>
         )}
       </header>
       {!ledger ? (
@@ -380,6 +381,11 @@ function CashierApp() {
             settings={() => {
               setError("");
               setModal({ kind: "settings" });
+            }}
+            edit={() => {
+              if (!customer) return;
+              setError("");
+              setModal({ kind: "edit-customer", customer });
             }}
           />
           <AccountPanel
@@ -432,7 +438,7 @@ function CashierApp() {
           <Dialog.Backdrop />
           <Dialog.Positioner>
             <Dialog.Content
-              className={`modal ${modal?.kind === "settings" || modal?.kind === "onboarding" ? "settings-modal" : ""}`}
+              className={`modal ${modal?.kind === "settings" || modal?.kind === "onboarding" ? "settings-modal" : ""} ${modal?.kind === "settings" ? "settings-shell" : ""} ${modal?.kind === "onboarding" ? "opening-modal" : ""}`}
               style={brandStyle}
               aria-label={
                 modal?.kind === "event" || modal?.kind === "create-event"
@@ -447,7 +453,9 @@ function CashierApp() {
                       ? "Lisää henkilö"
                       : modal?.kind === "edit-customer"
                         ? "Muokkaa henkilöä"
-                        : "Peru tapahtuma"
+                        : modal?.kind === "reverse" && modal.entry.cents > 0
+                          ? "Kumoa saldon lisäys?"
+                          : "Kumoa veloitus?"
               }
             >
               <Dialog.Body>
@@ -489,6 +497,8 @@ function CashierApp() {
                   </>
                 )}
                 {modal?.kind === "customer" && (
+                  <>
+                  <Dialog.Title>Lisää henkilö</Dialog.Title>
                   <CustomerForm
                     busy={busy}
                     withOpening
@@ -508,6 +518,7 @@ function CashierApp() {
                       choose(id);
                     }}
                   />
+                  </>
                 )}
                 {modal?.kind === "edit-customer" && (
                   <>
@@ -537,20 +548,27 @@ function CashierApp() {
                     }
                     restoreCustomer={restoreCustomer}
                     files={
-                      <>
-                        {fileControls}
-                        <Text className="file-saving-help" role="status">
-                          {protection?.encrypted()
-                            ? "Tiedosto on salattu. Ilman sovelluksen salasanaa sitä ei voi lukea, myös uloskirjautumisen jälkeen."
-                            : "Tiedostoa ei salata, koska sovellukselle ei ole asetettu salasanaa."}
-                        </Text>
-                      </>
+                      <FileControls
+                        busy={busy}
+                        error={error}
+                        onOpen={() => void chooseDatabase()}
+                        onBackup={() => void download()}
+                        note={
+                          <Text className="file-saving-help" role="status">
+                            {protection?.encrypted()
+                              ? "Tiedosto on salattu. Ilman sovelluksen salasanaa sitä ei voi lukea, myös uloskirjautumisen jälkeen."
+                              : "Tiedostoa ei salata, koska sovellukselle ei ole asetettu salasanaa."}
+                          </Text>
+                        }
+                      />
                     }
                   />
                 )}
                 {modal?.kind === "reverse" && (
                   <ReversalConfirmation
                     entry={modal.entry}
+                    title={entryTitle(modal.entry)}
+                    balance={customer?.balance ?? 0}
                     customerName={modal.customerName}
                     busy={busy}
                     confirm={async () => {
@@ -566,20 +584,22 @@ function CashierApp() {
                     {error}
                   </Text>
                 )}
-                {!(modal?.kind === "operator" && !operator) && (
-                    <Button
-                      variant="ghost"
-                      className="close-modal"
-                      disabled={busy}
-                      onClick={() => {
-                        setModal(undefined);
-                        setError("");
-                      }}
-                    >
-                      {modal?.kind === "settings" ? "Valmis" : "Peruuta"}
-                    </Button>
-                )}
               </Dialog.Body>
+              {!(modal?.kind === "operator" && !operator) && (
+                <Dialog.Footer className="modal-footer">
+                  <Button
+                    variant="ghost"
+                    className="close-modal secondary"
+                    disabled={busy}
+                    onClick={() => {
+                      setModal(undefined);
+                      setError("");
+                    }}
+                  >
+                    {modal?.kind === "settings" ? "Valmis" : modal?.kind === "reverse" ? "Takaisin" : "Peruuta"}
+                  </Button>
+                </Dialog.Footer>
+              )}
             </Dialog.Content>
           </Dialog.Positioner>
         </Portal>

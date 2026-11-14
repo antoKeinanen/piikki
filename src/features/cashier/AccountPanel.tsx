@@ -1,5 +1,5 @@
-import { useEffect, useState, type ReactNode } from "react";
-import { Button, Field, Flex, Input, Text } from "@chakra-ui/react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { Button, Field, Input, Text } from "@chakra-ui/react";
 import { CustomerNoteForm } from "./CustomerNoteForm";
 import bustedImage from "./busted.jpg";
 import {
@@ -12,13 +12,15 @@ import {
 } from "../../ledger";
 function FormField({
   label,
+  className,
   children,
 }: {
   label: string;
+  className: string;
   children: ReactNode;
 }) {
   return (
-    <Field.Root>
+    <Field.Root className={className}>
       <Field.Label>{label}</Field.Label>
       {children}
     </Field.Root>
@@ -26,8 +28,14 @@ function FormField({
 }
 type PostInput = Omit<Parameters<Ledger["post"]>[0], "operator">;
 const GENERIC_CHARGE_LABELS = new Set(["Veloita", "Charge", "Purchase"]);
-function entryTitle(entry: Entry) {
-  if (entry.reversal_of) return "Hyvitys";
+export function entryTitle(entry: Entry, original?: Entry): string {
+  if (entry.reversal_of) {
+    // A reversal stores "Undo <original label>"; the original entry, when at
+    // hand, also knows whether it was an opening balance.
+    const label = entry.label.replace(/^Undo /, "");
+    const reversed = original ?? { ...entry, reversal_of: null, opening: 0, label, cents: -entry.cents };
+    return `Hyvitys · ${entryTitle(reversed)}`;
+  }
   if (entry.opening) return "Alkusaldo";
   if (entry.cents > 0) return "Saldon lisäys";
   // Charges without a product button store a generic label.
@@ -65,6 +73,10 @@ export function AccountPanel({
   const [action, setAction] = useState<"charge" | "deposit">("charge");
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<string>();
+  const [justPosted, setJustPosted] = useState(false);
+  // Phones fold the optional description away until it is asked for.
+  const [describing, setDescribing] = useState(false);
+  const noteInput = useRef<HTMLInputElement>(null);
   const query = search.trim().toLocaleLowerCase("fi");
   const categories = [...new Set(products.map((p) => p.category).filter(Boolean))];
   // Searching looks through every product; otherwise categories come first.
@@ -91,7 +103,20 @@ export function AccountPanel({
     setNote("");
     setSearch("");
     setCategory(undefined);
+    setJustPosted(false);
+    setDescribing(false);
   }, [customer?.id, selectionRevision]);
+  useEffect(() => {
+    if (describing) noteInput.current?.focus();
+  }, [describing]);
+  useEffect(() => {
+    if (!justPosted) return;
+    const timer = setTimeout(() => setJustPosted(false), 8000);
+    return () => clearTimeout(timer);
+  }, [justPosted, entries[0]?.id]);
+  const latest = entries[0];
+  const byId = new Map(entries.map((entry) => [entry.id, entry]));
+  const recorded = justPosted && latest && !latest.reversed && !latest.reversal_of ? latest : undefined;
   function post(kind: "charge" | "deposit", product?: Product) {
     if (!customer || busy) return;
     try {
@@ -107,6 +132,7 @@ export function AccountPanel({
         () => {
           if (!product) setAmount("");
           setNote("");
+          setJustPosted(true);
         },
         () => {},
       );
@@ -118,8 +144,70 @@ export function AccountPanel({
     setAction(next);
     setAmount("");
     setError("");
+    setJustPosted(false);
   }
-  const validAmount = amount && /^\d+([.,]\d{1,2})?$/.test(amount.trim());
+  const typed = amount.trim();
+  const typedCents = /^\d+([.,]\d{1,2})?$/.test(typed)
+    ? Math.round(Number(typed.replace(",", ".")) * 100)
+    : undefined;
+  const actionLabel = action === "charge" ? "Veloita" : "Lisää saldoa";
+  const showPicker = action === "charge" && products.length > 0;
+  // One fixed-height slot holds either the mode heading with an instruction or
+  // the receipt, so the item tiles below never move when a charge is recorded.
+  const feedback = customer && (
+    <div className="recorded-slot">
+      <div role="status">
+        {recorded && (
+          <div className={`recorded ${recorded.cents > 0 ? "positive" : "negative"}`}>
+            <span className="recorded-check" aria-hidden="true">✓</span>
+            <span className="recorded-body">
+              <span className="recorded-line">
+                {entryTitle(recorded)} kirjattu · {customer.name}
+              </span>
+              <span className="recorded-line recorded-change">
+                <span className="recorded-amount">
+                  {recorded.cents > 0 ? "+" : "−"}
+                  {formatAmount(Math.abs(recorded.cents))}
+                </span>
+                {" · Saldo "}
+                {formatAmount(customer.balance - recorded.cents)} →{" "}
+                <strong>{formatAmount(customer.balance)}</strong>
+              </span>
+            </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="secondary"
+              disabled={busy}
+              onClick={() => {
+                setError("");
+                onReverse(recorded);
+              }}
+            >
+              Kumoa
+            </Button>
+          </div>
+        )}
+      </div>
+      {!recorded && (
+        <div className="product-hint">
+          <p className="mode-heading">
+            {action === "charge" ? "Veloita henkilöltä " : "Lisää saldoa henkilölle "}
+            <span className="mode-heading-name">{customer.name}</span>
+          </p>
+          <p className="product-hint-text">
+            {action === "deposit"
+              ? "Kirjoita lisättävä summa."
+              : !products.length
+                ? "Kirjoita veloitettava summa."
+                : shownCategories.length && !visibleProducts.length
+                  ? "Valitse kategoria tai hae nimikettä."
+                  : "Nimike veloitetaan heti, kun napautat sitä."}
+          </p>
+        </div>
+      )}
+    </div>
+  );
   return (
     <section
       className={`account ${customer ? `mode-${action}` : ""}`}
@@ -129,14 +217,15 @@ export function AccountPanel({
       {customer ? (
         <>
           <div className="account-summary">
-            <div className="account-identity">
-              <Text className="account-name" title={customer.name}>
-                {customer.name}{customer.osakunta && ` • ${customer.osakunta}`}
-              </Text>
+            <Text className="account-name" title={customer.name}>
+              {customer.name}
+            </Text>
+            <div className="account-meta">
+              {customer.osakunta && <Text className="account-osakunta">{customer.osakunta}</Text>}
               <Button
                 variant="ghost"
                 size="sm"
-                className="edit-customer"
+                className="edit-customer secondary"
                 aria-label={`Muokkaa henkilöä ${customer.name}`}
                 disabled={busy}
                 onClick={() => {
@@ -144,20 +233,26 @@ export function AccountPanel({
                   onEdit();
                 }}
               >
+                <svg className="edit-customer-icon" viewBox="0 0 16 16" aria-hidden="true">
+                  <path
+                    d="M10.5 2.5l3 3L6 13H3v-3z"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinejoin="round"
+                  />
+                </svg>
                 Muokkaa
               </Button>
             </div>
-            <Text className="balance" aria-label="Saldo">
-              {formatAmount(customer.balance)}
-            </Text>
+            <div className="balance-block">
+              <span className="balance-label" aria-hidden="true">Saldo</span>
+              <Text className={`balance ${customer.balance < 0 ? "negative" : ""}`} aria-label="Saldo">
+                {formatAmount(customer.balance)}
+              </Text>
+            </div>
           </div>
-          <CustomerNoteForm
-            key={customer.id}
-            customer={customer}
-            busy={busy}
-            save={onSaveNote}
-          />
-          <Flex className="mode" role="group" aria-label="Tapahtuman tyyppi">
+          <div className="mode" role="group" aria-label="Tapahtuman tyyppi">
             <Button
               variant="plain"
               className={`mode-charge-tab ${action === "charge" ? "mode-active" : ""}`}
@@ -176,66 +271,29 @@ export function AccountPanel({
             >
               <span aria-hidden="true" className="mode-sign">+</span>Lisää saldoa
             </Button>
-          </Flex>
-          <form
-            className="amount-form"
-            onSubmit={(e) => {
-              e.preventDefault();
-              post(action);
-            }}
-          >
-            <FormField
-              label={action === "charge" ? "Muu summa" : "Lisättävä summa"}
-            >
-              <Input
-                aria-label="Summa"
-                inputMode="decimal"
-                placeholder="0,00"
-                value={amount}
-                disabled={busy}
-                onChange={(e) => setAmount(e.target.value)}
-              />
-            </FormField>
-            <FormField label="Kuvaus (valinnainen)">
-              <Input
-                aria-label="Tapahtuman kuvaus"
-                maxLength={200}
-                value={note}
-                disabled={busy}
-                onChange={(e) => setNote(e.target.value)}
-              />
-            </FormField>
-            <Button
-              className="primary mode-submit"
-              type="submit"
-              disabled={!amount || busy}
-            >
-              {action === "charge" ? "Veloita" : "Lisää saldoa"}
-              {validAmount
-                ? ` ${formatAmount(Math.round(Number(amount.trim().replace(",", ".")) * 100))}`
-                : ""}
-            </Button>
-          </form>
-          {error && (
-            <Text role="alert" className="error">
-              {error}
-            </Text>
-          )}
-          {action === "charge" && !!products.length && (
+          </div>
+          {!showPicker && feedback}
+          {showPicker && (
             <div className="product-picker">
               <Input aria-label="Hae nimikettä" placeholder="Hae nimikettä" value={search}
                 onChange={(e) => setSearch(e.target.value)} />
-              <div className="product-grid">
-                {openCategory !== undefined && (
+              {openCategory !== undefined && (
+                <div className="category-crumbs">
                   <Button
-                    variant="outline"
-                    className="product-charge category-back"
+                    variant="ghost"
+                    className="category-crumb secondary"
                     disabled={busy}
                     onClick={() => setCategory(undefined)}
                   >
-                    <span>‹ Takaisin<small>{openCategory}</small></span>
+                    <span className="category-crumb-chevron" aria-hidden="true">‹</span>
+                    Kaikki kategoriat
                   </Button>
-                )}
+                  <span className="category-crumb-separator" aria-hidden="true">/</span>
+                  <span className="category-crumb-current" aria-current="location">{openCategory}</span>
+                </div>
+              )}
+              {feedback}
+              <div className="product-grid">
                 {shownCategories.map((name) => (
                   <Button
                     key={`category:${name}`}
@@ -245,9 +303,12 @@ export function AccountPanel({
                     disabled={busy}
                     onClick={() => setCategory(name)}
                   >
-                    {categoryImages.has(name) && <img className="product-thumbnail" src={categoryImages.get(name)} alt="" />}
+                    <span className="category-top">
+                      {categoryImages.has(name) && <img className="product-thumbnail" src={categoryImages.get(name)} alt="" />}
+                      <span className="category-chevron" aria-hidden="true">›</span>
+                    </span>
                     <span>
-                      {name} ›
+                      {name}
                       <small>{products.filter((p) => p.category === name).length} nimikettä</small>
                     </span>
                   </Button>
@@ -262,14 +323,93 @@ export function AccountPanel({
                     onClick={() => post("charge", p)}
                   >
                     {p.image && <img className="product-thumbnail" src={p.image} alt="" />}
-                    <span>{p.name}<small>{formatAmount(p.cents)}</small></span>
+                    <span>{p.name}</span>
+                    <span className="product-price">Veloita {formatAmount(p.cents)}</span>
                   </Button>
                 ))}
               </div>
               {!visibleProducts.length && !shownCategories.length && <Text>Nimikkeitä ei löytynyt.</Text>}
             </div>
           )}
+          <form
+            className={`amount-form ${describing || note ? "describing" : ""}`}
+            aria-labelledby="amount-form-title"
+            onSubmit={(e) => {
+              e.preventDefault();
+              post(action);
+            }}
+          >
+            <p className="amount-form-title" id="amount-form-title">
+              {action === "deposit" ? "Lisää saldoa" : showPicker ? "Muu veloitus" : "Veloitus"}
+            </p>
+            <FormField
+              className="amount-field"
+              label={action === "charge" ? "Veloitettava summa" : "Lisättävä summa"}
+            >
+              <Input
+                aria-label="Summa"
+                inputMode="decimal"
+                placeholder="0,00"
+                value={amount}
+                disabled={busy}
+                onChange={(e) => setAmount(e.target.value)}
+              />
+            </FormField>
+            <FormField className="note-field" label="Kuvaus">
+              <Input
+                ref={noteInput}
+                aria-label="Tapahtuman kuvaus"
+                placeholder="Valinnainen"
+                maxLength={200}
+                value={note}
+                disabled={busy}
+                onChange={(e) => setNote(e.target.value)}
+              />
+            </FormField>
+            <div className="amount-submit">
+              {typedCents !== undefined && (
+                <Text className="amount-preview">
+                  Saldo {formatAmount(customer.balance)} →{" "}
+                  <strong>
+                    {formatAmount(customer.balance + (action === "charge" ? -typedCents : typedCents))}
+                  </strong>
+                </Text>
+              )}
+              <Button
+                className="primary mode-submit"
+                type="submit"
+                disabled={!typed || busy}
+              >
+                {!typed
+                  ? `${actionLabel} ${formatAmount(0)}`
+                  : typedCents !== undefined
+                    ? `${actionLabel} ${formatAmount(typedCents)}`
+                    : actionLabel}
+              </Button>
+            </div>
+            <button
+              type="button"
+              className="note-toggle quiet"
+              disabled={busy}
+              onClick={() => setDescribing(true)}
+            >
+              <span aria-hidden="true">+</span>
+              <span className="link-label">Lisää kuvaus</span>
+            </button>
+          </form>
+          {error && (
+            <Text role="alert" className="error">
+              {error}
+            </Text>
+          )}
+          <CustomerNoteForm
+            key={customer.id}
+            customer={customer}
+            busy={busy}
+            save={onSaveNote}
+          />
           <div className="history" aria-label="Tapahtumat">
+            <h3 className="history-title">Tapahtumat</h3>
             {!entries.length && (
               <Text className="empty-history">Ei tapahtumia.</Text>
             )}
@@ -279,7 +419,9 @@ export function AccountPanel({
                 className={`entry ${entry.reversed ? "reversed" : ""}`}
               >
                 <div>
-                  <Text className="entry-label">{entryTitle(entry)}</Text>
+                  <Text className="entry-label">
+                    {entryTitle(entry, entry.reversal_of ? byId.get(entry.reversal_of) : undefined)}
+                  </Text>
                   {entry.note && <Text className="entry-note">{entry.note}</Text>}
                   <Text className="entry-date">
                     {new Date(entry.created_at).toLocaleString("fi-FI", {
@@ -288,7 +430,7 @@ export function AccountPanel({
                       hour: "2-digit",
                       minute: "2-digit",
                     })}
-                    {entry.reversed ? " · Peruttu" : ""}
+                    {entry.reversed ? " · Kumottu" : ""}
                     {entry.operator ? ` · ${entry.operator}` : ""}
                   </Text>
                 </div>
@@ -300,13 +442,14 @@ export function AccountPanel({
                   <Button
                     variant="ghost"
                     size="sm"
+                    className="secondary"
                     disabled={busy}
                     onClick={() => {
                       setError("");
                       onReverse(entry);
                     }}
                   >
-                    Peru
+                    Kumoa
                   </Button>
                 ) : (
                   <span />
@@ -317,7 +460,12 @@ export function AccountPanel({
         </>
       ) : (
         <>
-          <Text className="empty-account">Valitse tai lisää henkilö.</Text>
+          <div className="empty-account">
+            <h2 className="empty-account-title">Valitse henkilö listasta</h2>
+            <Text className="empty-account-text">
+              Saldo ja veloitukset näkyvät tässä. Voit myös hakea nimellä tai lisätä uuden henkilön.
+            </Text>
+          </div>
           <figure className="busted" aria-hidden="true">
             <img src={bustedImage} alt="" />
             <figcaption>you have been busted</figcaption>

@@ -11,7 +11,14 @@ export function RemovedCustomers({
   restore(id: string): Promise<void>;
 }) {
   if (!customers.length)
-    return <Text className="empty-history">Ei poistettuja henkilöitä.</Text>;
+    return (
+      <div className="settings-empty">
+        <Text className="settings-empty-title">Ei poistettuja henkilöitä.</Text>
+        <Text className="settings-empty-text">
+          Poistetut henkilöt näkyvät tässä. Heidät voi palauttaa saldoineen.
+        </Text>
+      </div>
+    );
   return (
     <div className="product-list">
       {customers.map((customer) => (
@@ -22,8 +29,8 @@ export function RemovedCustomers({
             <small>{formatAmount(customer.balance)}</small>
           </span>
           <Button
-            variant="ghost"
-            size="sm"
+            variant="outline"
+            className="secondary"
             disabled={busy}
             onClick={() => void restore(customer.id).catch(() => {})}
           >

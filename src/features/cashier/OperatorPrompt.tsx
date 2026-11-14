@@ -20,13 +20,21 @@ export function OperatorPrompt({
         Nimesi tallentuu jokaiseen tekemääsi saldomuutokseen.
       </Text>
       {!!others.length && (
-        <div className="operator-recent" role="group" aria-label="Aiemmat vuorot">
-          {others.map((value) => (
-            <Button key={value} variant="outline" onClick={() => choose(value)}>
-              {value}
-            </Button>
-          ))}
-        </div>
+        <>
+          <div className="operator-recent-section">
+            <Text id="operator-recent-label" className="operator-recent-label">
+              Valitse aiempi nimi
+            </Text>
+            <div className="operator-recent" role="group" aria-labelledby="operator-recent-label">
+              {others.map((value) => (
+                <Button key={value} variant="outline" className="secondary" onClick={() => choose(value)}>
+                  {value}
+                </Button>
+              ))}
+            </div>
+          </div>
+          <div className="event-or">tai kirjoita nimi</div>
+        </>
       )}
       <form
         onSubmit={(event) => {
@@ -46,8 +54,9 @@ export function OperatorPrompt({
               value={name}
               onChange={(event) => setName(event.target.value)}
             />
+            <Field.HelperText>Kirjoita nimesi, niin voit aloittaa vuoron.</Field.HelperText>
           </Field.Root>
-          <Button className="primary" type="submit" disabled={!name.trim()}>
+          <Button className="primary operator-submit" type="submit" disabled={!name.trim()}>
             Aloita vuoro
           </Button>
         </Stack>

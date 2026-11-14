@@ -12,13 +12,25 @@ export function Welcome({
 }) {
   return (
     <main className="welcome">
-      <Button size="xl" className="primary" disabled={busy} onClick={onOpen}>
-        Avaa tietokanta
-      </Button>
-      <span className="drop-label">tai pudota SQLite-tiedosto tähän</span>
-      <Button variant="ghost" disabled={busy} onClick={onCreate}>
-        Luo tietokanta
-      </Button>
+      <div className="welcome-card">
+        <h1 className="welcome-title">Aloita vuoro</h1>
+        <p className="welcome-text">
+          Tiedosto on yleensä tällä koneella tai muistitikulla, jolle edellinen vuoro sen tallensi.
+        </p>
+        <Button size="xl" className="primary" disabled={busy} onClick={onOpen}>
+          Avaa osakunnan tietokanta
+        </Button>
+        <span className="drop-label">
+          Voit myös pudottaa tiedoston tähän.
+          <span>Tiedostonimi päättyy yleensä .sqlite.</span>
+        </span>
+        <div className="welcome-new">
+          <span className="welcome-new-label">Ei vielä tietokantaa?</span>
+          <Button variant="outline" className="secondary" disabled={busy} onClick={onCreate}>
+            Luo tietokanta
+          </Button>
+        </div>
+      </div>
       {error && (
         <Text role="alert" className="error">
           {error}

@@ -97,6 +97,7 @@ it("sorts charges into size bands", () => {
     [150, 199, 200, 499, 500, 999, 1000, 1999, 2000, 5000].map((cents) => entry({ cents: -cents })),
   );
   expect(summary.sizes.map((band) => band.count)).toEqual([2, 2, 2, 2, 2]);
+  expect(summary.sizes.map((band) => band.label)).toEqual(["alle 2", "2–4,99", "5–9,99", "10–19,99", "20 tai yli"]);
 });
 
 it("buckets by hour, filling quiet hours and keeping running totals", () => {

@@ -7,9 +7,9 @@ import type { EventSummary } from "./summary";
 // Chart colors come from the branding CSS variables, so charts match the organisation's theme.
 export const PRIMARY = "var(--indicator)";
 export const SECONDARY = "color-mix(in srgb, var(--indicator) 55%, var(--accent))";
-// Light enough for text to sit on top of it.
-export const TINT = "color-mix(in srgb, var(--indicator) 30%, var(--accent))";
 export const GRID = { stroke: "var(--line)", strokeOpacity: 0.5 };
+
+export const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
 export const tickMoney = (cents: number) => formatAmount(cents).replace(/,00$/, "");
 export const tooltipMoney = (value: unknown) => formatAmount(Number(value));
@@ -50,7 +50,7 @@ export function Section({
   children: ReactNode;
 }) {
   return (
-    <section className={`stat-section ${wide ? "stat-wide" : ""}`} aria-labelledby={id}>
+    <section className={wide ? "stat-section stat-wide" : "stat-section"} aria-labelledby={id}>
       <h2 id={id}>{title}</h2>
       {hint && <Text className="stat-hint">{hint}</Text>}
       {children}

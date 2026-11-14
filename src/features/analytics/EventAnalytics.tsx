@@ -1,18 +1,43 @@
+import type { ReactNode } from "react";
 import { NativeSelect, Text } from "@chakra-ui/react";
 import { formatAmount, type LedgerEvent } from "../../ledger";
 import type { EventComparison as Comparison, EventSummary } from "./summary";
 import { EmptyNote, CustomerRanking, ProductRanking } from "./Rankings";
-import { CumulativeTotals, ChargesOverTime } from "./TimeCharts";
+import { TimeCharts } from "./TimeCharts";
 import { EventComparison } from "./EventComparison";
 import { ChargeSizes } from "./ChargeSizes";
+import { count } from "./chart-style";
 
-function Tile({ label, value, note }: { label: string; value: string; note?: string }) {
+function Tile({
+  label,
+  value,
+  note,
+  lead,
+  total,
+}: {
+  label: string;
+  value: string;
+  note?: string;
+  lead?: boolean;
+  total?: boolean;
+}) {
   return (
-    <div className="stat-tile">
+    <div className={`stat-tile${lead ? " stat-tile-lead" : ""}${total ? " stat-tile-total" : ""}`}>
       <Text className="stat-label">{label}</Text>
       <Text className="stat-value">{value}</Text>
       <Text className="stat-note-line">{note ?? " "}</Text>
     </div>
+  );
+}
+
+function TileGroup({ id, label, children }: { id: string; label: string; children: ReactNode }) {
+  return (
+    <section className={`stat-group stat-group-${id}`} aria-labelledby={`scope-${id}`}>
+      <h2 id={`scope-${id}`} className="stat-scope">
+        {label}
+      </h2>
+      {children}
+    </section>
   );
 }
 
@@ -23,37 +48,39 @@ function Tiles({ summary }: { summary: EventSummary }) {
     : 0;
   return (
     <div className="stat-tiles">
-      <Tile label="Veloitettu" value={formatAmount(summary.charged)} />
-      <Tile
-        label="Veloituksia"
-        value={String(summary.charges)}
-        note={summary.charges ? `suurin veloitus ${formatAmount(summary.largest)}` : undefined}
-      />
-      <Tile
-        label="Keskiveloitus"
-        value={formatAmount(summary.average)}
-      />
-      <Tile
-        label="Henkilöitä"
-        value={String(summary.people)}
-        note={summary.people ? `${perPerson.toFixed(1).replace(".", ",")} veloitusta henkilöä kohti` : undefined}
-      />
-      <Tile
-        label="Saldoa lisätty"
-        value={formatAmount(summary.deposits)}
-        note={`${summary.depositCount} lisäystä`}
-      />
-      <Tile label="Saldoa jäljellä" value={formatAmount(summary.held)} />
-      <Tile
-        label="Velkaa"
-        value={formatAmount(summary.debt)}
-        note={`${summary.debtors} henkilöä`}
-      />
-      <Tile
-        label="Perutut veloitukset"
-        value={String(summary.undone)}
-        note={summary.undone ? `${undoneShare} % kaikista veloituksista` : undefined}
-      />
+      <TileGroup id="event" label="Tässä tapahtumassa">
+        <Tile lead label="Veloitettu" value={formatAmount(summary.charged)} />
+        <Tile
+          label="Veloituksia"
+          value={String(summary.charges)}
+          note={summary.charges ? `suurin veloitus ${formatAmount(summary.largest)}` : undefined}
+        />
+        <Tile label="Keskiveloitus" value={formatAmount(summary.average)} />
+        <Tile
+          label="Henkilöitä"
+          value={String(summary.people)}
+          note={summary.people ? `${perPerson.toFixed(1).replace(".", ",")} veloitusta henkilöä kohti` : undefined}
+        />
+        <Tile
+          label="Saldoa lisätty"
+          value={formatAmount(summary.deposits)}
+          note={count(summary.depositCount, "lisäys", "lisäystä")}
+        />
+        <Tile
+          label="Perutut veloitukset"
+          value={String(summary.undone)}
+          note={summary.undone ? `${undoneShare} % kaikista veloituksista` : undefined}
+        />
+      </TileGroup>
+      <TileGroup id="balances" label="Saldot tapahtuman lopussa">
+        <Tile total label="Saldoa jäljellä" value={formatAmount(summary.held)} note="kaikki tilit yhteensä" />
+        <Tile
+          total
+          label="Velkaa"
+          value={formatAmount(summary.debt)}
+          note={count(summary.debtors, "henkilö", "henkilöä")}
+        />
+      </TileGroup>
     </div>
   );
 }
@@ -92,12 +119,7 @@ export function EventAnalytics({
       </div>
       <Tiles summary={summary} />
       <div className="stat-panels">
-        {summary.timeline.length > 0 && (
-          <>
-            <ChargesOverTime summary={summary} />
-            <CumulativeTotals summary={summary} />
-          </>
-        )}
+        <TimeCharts summary={summary} />
         {summary.charges > 0 ? (
           <>
             <ChargeSizes summary={summary} />
@@ -112,8 +134,8 @@ export function EventAnalytics({
         )}
       </div>
       <Text className="stats-note">
-        Luvuissa ei ole mukana peruttuja veloituksia eikä niiden hyvityksiä. Saldo ja velka ovat
-        tilanne valitun tapahtuman lopussa, ja niihin sisältyvät aiemmat tapahtumat.
+        Peruttuja veloituksia ja niiden hyvityksiä ei lasketa mukaan. Alkusaldot näkyvät vain
+        saldoissa ja velassa.
       </Text>
     </main>
   );

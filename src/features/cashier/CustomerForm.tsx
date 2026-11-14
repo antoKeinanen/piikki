@@ -75,6 +75,9 @@ export function CustomerForm({
       : [];
   const exact = matches.some((person) => person.name.toLocaleLowerCase("fi") === query);
   const unchanged = name.trim() === initial.name && osakunta === initial.osakunta;
+  const addingDuplicate = matches.length > 0 && !selfId;
+  // Picking the existing person stays the solid action; adding a duplicate is the fallback.
+  const pickable = addingDuplicate && !!onPick && matches.some((person) => !person.removed);
   return (
     <form
       className="settings-form"
@@ -96,6 +99,7 @@ export function CustomerForm({
       </FormField>
       {!!matches.length && (
         <div className="name-hints" role="status" aria-label="Samankaltaiset nimet">
+          <Text className="name-hints-heading">Tarkista ennen lisäämistä</Text>
           <Text className={exact ? "name-hint-warning" : "name-hint-title"}>
             {exact ? "Tämä nimi on jo kannassa." : "Kannassa on jo samankaltaisia nimiä:"}
           </Text>
@@ -114,11 +118,14 @@ export function CustomerForm({
                 disabled={busy}
                 onClick={() => onPick(person.id)}
               >
-                <span>
+                <span className="name-hint-who">
                   {person.name}
-                  {person.osakunta && ` • ${person.osakunta}`}
+                  <small>
+                    {person.osakunta && `${person.osakunta} · `}
+                    <span className="name-hint-balance">Saldo {formatAmount(person.balance)}</span>
+                  </small>
                 </span>
-                <span className="name-hint-balance">{formatAmount(person.balance)} · Valitse</span>
+                <span className="name-hint-action">Valitse henkilö</span>
               </button>
             ),
           )}
@@ -167,7 +174,8 @@ export function CustomerForm({
         </Text>
       )}
       <Button
-        className="primary"
+        className={pickable ? "secondary" : "primary"}
+        variant={pickable ? "outline" : "solid"}
         type="submit"
         disabled={
           !name.trim() ||
@@ -178,7 +186,7 @@ export function CustomerForm({
           busy
         }
       >
-        {submitLabel}
+        {addingDuplicate ? "Lisää uutena henkilönä" : submitLabel}
       </Button>
     </form>
   );
