@@ -40,6 +40,19 @@ export function CustomerTable({
 }) {
   const [filter, setFilter] = useState("");
   const [sorting, setSorting] = useState<SortingState>(RECENT_FIRST);
+  // On a phone the list folds away after a pick; "browsing" reopens it.
+  const [browsing, setBrowsing] = useState(false);
+  const [browsingFor, setBrowsingFor] = useState(selected);
+  if (browsingFor !== selected) {
+    setBrowsingFor(selected);
+    setBrowsing(false);
+  }
+  const current = customers.find((customer) => customer.id === selected);
+  const pick = (id: string) => {
+    if (disabled) return;
+    setBrowsing(false);
+    select(id);
+  };
   const table = useReactTable({
     data: customers,
     columns,
@@ -62,7 +75,29 @@ export function CustomerTable({
   }
   frozen.current = { selected, ids: rows.map((row) => row.original.id) };
   return (
-    <section className="customers">
+    <section className={`customers ${current && !browsing ? "collapsed" : ""}`}>
+      {current && (
+        <div className="selected-bar">
+          <div className="selected-bar-identity">
+            <span className="selected-bar-name">{current.name}</span>
+            <span className="selected-bar-meta">
+              Saldo{" "}
+              <strong className={current.balance < 0 ? "negative-balance" : undefined}>
+                {formatAmount(current.balance)}
+              </strong>
+              {current.osakunta && ` · ${current.osakunta}`}
+            </span>
+          </div>
+          <button
+            type="button"
+            className="selected-bar-switch"
+            aria-expanded={browsing}
+            onClick={() => setBrowsing(!browsing)}
+          >
+            {browsing ? "Piilota lista" : "Vaihda henkilö"}
+          </button>
+        </div>
+      )}
       <Flex gap="3" className="search-row">
         <Input
           aria-label="Hae henkilöä"
@@ -136,9 +171,7 @@ export function CustomerTable({
                     className="customer-select"
                     disabled={disabled}
                     aria-pressed={row.original.id === selected}
-                    onClick={() => {
-                      if (!disabled) select(row.original.id);
-                    }}
+                    onClick={() => pick(row.original.id)}
                   >
                     <span className="customer-name">{row.original.name}</span>
                     {row.original.osakunta && (
@@ -152,9 +185,7 @@ export function CustomerTable({
                 <Table.Cell
                   textAlign="right"
                   className={row.original.balance < 0 ? "negative-balance" : undefined}
-                  onClick={() => {
-                    if (!disabled) select(row.original.id);
-                  }}
+                  onClick={() => pick(row.original.id)}
                 >
                   {formatAmount(row.original.balance)}
                 </Table.Cell>

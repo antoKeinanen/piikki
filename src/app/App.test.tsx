@@ -747,6 +747,21 @@ it("resets to charge on another person and colours the mode", async () => {
   expect(account.className).toContain("mode-charge");
 });
 
+it("folds the person list after a pick and reopens it to switch", async () => {
+  await openExample();
+  await continueEvent();
+  const list = document.querySelector(".customers")!;
+  expect(list.className).not.toContain("collapsed");
+  await pick("Aino Korhonen");
+  expect(list.className).toContain("collapsed");
+  fireEvent.click(screen.getByRole("button", { name: "Vaihda henkilö", expanded: false }));
+  expect(list.className).not.toContain("collapsed");
+  expect(screen.getByRole("button", { name: "Piilota lista", expanded: true })).toBeTruthy();
+  await pick("Emma Virtanen");
+  expect(list.className).toContain("collapsed");
+  expect(document.querySelector(".selected-bar-name")?.textContent).toBe("Emma Virtanen");
+});
+
 it("clears the selected person after two idle minutes", async () => {
   await openExample();
   await continueEvent("Aino Korhonen");
