@@ -373,7 +373,8 @@ select:focus-visible {
 .account.mode-deposit { --mode: var(--deposit); }
 .account.mode-charge,
 .account.mode-deposit {
-  box-shadow: inset 0 4px 0 var(--mode), var(--shadow-card);
+  /* A real border keeps the scrollbar track below the strip instead of over it. */
+  border-top: 4px solid var(--mode);
 }
 .account-summary {
   position: sticky;
@@ -596,7 +597,12 @@ select:focus-visible {
 .account > .recorded-slot { margin-bottom: 8px; }
 /* The instruction sits at the bottom of the slot, right where the tap happens. */
 .product-hint {
-  padding: 0 4px 4px;
+  display: flex;
+  align-items: center;
+  height: 56px;
+  padding: 0 14px;
+  border: 1px dashed var(--line);
+  border-radius: var(--radius);
   font-size: 14px;
   font-weight: 500;
   color: var(--ink);
