@@ -1382,14 +1382,18 @@ input:focus-visible + .image-picker-button {
   gap: 14px;
   margin-bottom: 20px;
 }
-.stats h1,
-.stat-section h2 {
+.stats h1 {
   margin: 0;
-  font-size: 12px;
+  font-size: 20px;
   font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--muted);
+  letter-spacing: -0.2px;
+}
+.stat-section h2,
+.stat-scope {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.35;
 }
 .stats-filter select {
   height: 40px;
@@ -1400,24 +1404,29 @@ input:focus-visible + .image-picker-button {
 }
 .stat-tiles {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  /* The empty track plus two gaps makes a 24px gutter before the balances while all tiles stay equal width. */
+  grid-template-columns: repeat(3, minmax(0, 1fr)) 0 minmax(0, 1fr);
   gap: 12px;
 }
 .stat-group {
   display: grid;
   grid-template-columns: subgrid;
+  /* Shared rows keep the balance tiles level with the taller lead tile row. */
+  grid-row: span 3;
+  grid-template-rows: subgrid;
   align-content: start;
   gap: 12px;
 }
-.stat-group-event { grid-column: span 3; }
-.stat-group-balances { grid-column: span 1; }
-.stat-scope {
-  grid-column: 1 / -1;
-  margin: 0 0 -4px 2px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--muted);
+.stat-group-event { grid-column: 1 / span 3; }
+.stat-group-balances { grid-column: 5 / span 1; position: relative; }
+.stat-group-balances::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 -12.5px;
+  width: 1px;
+  background: var(--line-soft);
 }
+.stat-scope { grid-column: 1 / -1; margin-bottom: -2px; }
 .stat-tile {
   padding: 16px 18px;
   background: var(--surface);
@@ -1433,6 +1442,8 @@ input:focus-visible + .image-picker-button {
   letter-spacing: -0.5px;
   font-variant-numeric: tabular-nums;
 }
+.stat-tile-lead .stat-label { color: var(--ink); font-weight: 600; }
+.stat-tile-lead .stat-value { font-size: 34px; font-weight: 700; letter-spacing: -0.8px; }
 .stat-note-line { color: var(--muted); font-size: 13px; }
 .stat-panels {
   display: grid;
@@ -1441,6 +1452,8 @@ input:focus-visible + .image-picker-button {
   margin-top: 16px;
 }
 .stat-section {
+  display: flex;
+  flex-direction: column;
   min-width: 0;
   padding: 20px;
   background: var(--surface);
@@ -1452,7 +1465,7 @@ input:focus-visible + .image-picker-button {
 .stat-hint { margin: 4px 0 14px; color: var(--muted); font-size: 14px; }
 .stat-panels > .empty-history { grid-column: 1 / -1; }
 .stat-section .recharts-cartesian-axis-tick-value { fill: var(--muted); font-size: 13px; }
-.chart-value { fill: var(--ink); font-size: 12px; font-weight: 500; font-variant-numeric: tabular-nums; }
+.chart-value { fill: var(--ink); font-size: 13px; font-weight: 500; font-variant-numeric: tabular-nums; }
 .ranking {
   display: grid;
   grid-template-columns: minmax(0, 15rem) minmax(48px, 1fr) max-content;
@@ -1514,7 +1527,7 @@ input:focus-visible + .image-picker-button {
   margin: 0 0 12px;
   padding: 0;
   list-style: none;
-  font-size: 13px;
+  font-size: 14px;
 }
 .series-key li { display: flex; align-items: center; gap: 8px; }
 .series-name { color: var(--muted); }
@@ -1532,9 +1545,10 @@ input:focus-visible + .image-picker-button {
 .series-key-large li:last-child { border-bottom: 0; }
 .series-key-large .series-name { color: var(--ink); }
 .series-key-large .series-value { margin-left: auto; font-size: 22px; }
-.stat-single { margin-bottom: 4px; font-size: 14px; }
 .chart-table { margin-top: 12px; font-size: 14px; }
-.chart-table summary { cursor: pointer; color: var(--muted); }
+/* Pushes the toggle to the card bottom when a grid row makes the card taller than its content. */
+.stat-section > .chart-table { margin-top: auto; padding-top: 12px; }
+.chart-table summary { cursor: pointer; font-weight: 500; }
 .chart-table table,
 .chart-table-plain {
   width: 100%;
@@ -1560,9 +1574,12 @@ input:focus-visible + .image-picker-button {
 }
 .chart-table-plain tr[aria-current="true"] th,
 .chart-table-plain tr[aria-current="true"] td { font-weight: 600; }
-.stats-note { margin-top: 24px; color: var(--muted); font-size: 13px; }
+.stats-note { margin-top: 24px; color: var(--muted); font-size: 14px; }
 @media (max-width: 800px) {
-  .stat-group { grid-column: 1 / -1; }
+  .stat-group { grid-column: 1 / -1; grid-row: auto; grid-template-rows: none; }
+  .stat-group-balances { margin-top: 12px; }
+  .stat-group-balances::before { display: none; }
+  .stat-tile-lead .stat-value { font-size: 28px; }
   .ranking { grid-template-columns: minmax(0, 1.4fr) minmax(40px, 1fr) max-content; column-gap: 12px; }
   .ranking li { padding: 6px 0; }
   .ranking-label { flex-direction: column; align-items: stretch; gap: 0; }

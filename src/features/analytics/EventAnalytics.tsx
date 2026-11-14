@@ -3,14 +3,24 @@ import { NativeSelect, Text } from "@chakra-ui/react";
 import { formatAmount, type LedgerEvent } from "../../ledger";
 import type { EventComparison as Comparison, EventSummary } from "./summary";
 import { EmptyNote, CustomerRanking, ProductRanking } from "./Rankings";
-import { CumulativeTotals, ChargesOverTime } from "./TimeCharts";
+import { TimeCharts } from "./TimeCharts";
 import { EventComparison } from "./EventComparison";
 import { ChargeSizes } from "./ChargeSizes";
 import { count } from "./chart-style";
 
-function Tile({ label, value, note }: { label: string; value: string; note?: string }) {
+function Tile({
+  label,
+  value,
+  note,
+  lead,
+}: {
+  label: string;
+  value: string;
+  note?: string;
+  lead?: boolean;
+}) {
   return (
-    <div className="stat-tile">
+    <div className={lead ? "stat-tile stat-tile-lead" : "stat-tile"}>
       <Text className="stat-label">{label}</Text>
       <Text className="stat-value">{value}</Text>
       <Text className="stat-note-line">{note ?? " "}</Text>
@@ -37,7 +47,7 @@ function Tiles({ summary }: { summary: EventSummary }) {
   return (
     <div className="stat-tiles">
       <TileGroup id="event" label="Tässä tapahtumassa">
-        <Tile label="Veloitettu" value={formatAmount(summary.charged)} />
+        <Tile lead label="Veloitettu" value={formatAmount(summary.charged)} />
         <Tile
           label="Veloituksia"
           value={String(summary.charges)}
@@ -106,12 +116,7 @@ export function EventAnalytics({
       </div>
       <Tiles summary={summary} />
       <div className="stat-panels">
-        {summary.timeline.length > 0 && (
-          <>
-            <ChargesOverTime summary={summary} />
-            <CumulativeTotals summary={summary} />
-          </>
-        )}
+        <TimeCharts summary={summary} />
         {summary.charges > 0 ? (
           <>
             <ChargeSizes summary={summary} />
