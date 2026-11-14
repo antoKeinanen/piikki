@@ -3,6 +3,11 @@ import { Bar, BarChart, CartesianGrid, LabelList, Tooltip, XAxis, YAxis } from "
 import type { EventSummary } from "./summary";
 import { GRID, PRIMARY, Section } from "./chart-style";
 
+// The band labels are HTML below the plot so long labels wrap on narrow screens.
+// These offsets line its columns up with the bars.
+const Y_AXIS = 32;
+const RIGHT = 4;
+
 export function ChargeSizes({ summary }: { summary: EventSummary }) {
   const chart = useChart({
     data: summary.sizes,
@@ -10,11 +15,11 @@ export function ChargeSizes({ summary }: { summary: EventSummary }) {
   });
   return (
     <Section id="charge-sizes" title="Veloitusten koko" hint="Veloitusten määrä summan mukaan.">
-      <Chart.Root h="220px" aspectRatio="auto" chart={chart}>
-        <BarChart data={chart.data} responsive>
+      <Chart.Root h="200px" aspectRatio="auto" chart={chart}>
+        <BarChart data={chart.data} margin={{ top: 20, right: RIGHT, left: 0, bottom: 10 }} responsive>
           <CartesianGrid vertical={false} {...GRID} />
-          <XAxis axisLine={false} tickLine={false} dataKey="label" />
-          <YAxis axisLine={false} tickLine={false} width={32} allowDecimals={false} />
+          <XAxis dataKey="label" hide />
+          <YAxis axisLine={false} tickLine={false} width={Y_AXIS} allowDecimals={false} />
           <Tooltip
             cursor={false}
             animationDuration={100}
@@ -31,6 +36,14 @@ export function ChargeSizes({ summary }: { summary: EventSummary }) {
           </Bar>
         </BarChart>
       </Chart.Root>
+      <div className="size-axis" style={{ paddingLeft: Y_AXIS, paddingRight: RIGHT }}>
+        <ol className="size-ticks">
+          {summary.sizes.map((band) => (
+            <li key={band.label}>{band.label}</li>
+          ))}
+        </ol>
+        <p className="chart-caption">Veloituksen summa</p>
+      </div>
     </Section>
   );
 }
