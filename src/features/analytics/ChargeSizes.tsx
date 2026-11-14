@@ -19,7 +19,7 @@ export function ChargeSizes({ summary }: { summary: EventSummary }) {
         <BarChart data={chart.data} margin={{ top: 20, right: RIGHT, left: 0, bottom: 10 }} responsive>
           <CartesianGrid vertical={false} {...GRID} />
           <XAxis dataKey="label" hide />
-          <YAxis axisLine={false} tickLine={false} width={Y_AXIS} allowDecimals={false} />
+          <YAxis axisLine={false} tickLine={false} width={Y_AXIS} allowDecimals={false} interval={0} />
           <Tooltip
             cursor={false}
             animationDuration={100}

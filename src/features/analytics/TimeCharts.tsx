@@ -87,7 +87,6 @@ function SingleBucket({ summary }: { summary: EventSummary }) {
   const [row] = data;
   return (
     <Section
-      fit
       id="charged-over-time"
       title={title(summary)}
       hint={`Kaikki kirjaukset ovat ${summary.unit === "hour" ? "samalta tunnilta" : "samalta päivältä"} (${row.label}).`}

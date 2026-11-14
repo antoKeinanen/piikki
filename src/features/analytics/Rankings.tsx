@@ -48,8 +48,8 @@ export function CustomerRanking({ summary }: { summary: EventSummary }) {
   return (
     <Section
       id="top-people"
-      title="Aktiivisimmat henkilöt"
-      hint={`Kymmenen eniten veloitettua${summary.people > 10 ? ` ${summary.people} henkilöstä` : ""}.`}
+      title="Eniten veloitettu yhteensä"
+      hint={`Henkilöt veloitetun summan mukaan${summary.people > 10 ? `, kymmenen ensimmäistä ${summary.people} henkilöstä` : ""}.`}
     >
       <Ranking
         label="Eniten veloitetut henkilöt"

@@ -94,7 +94,7 @@ export function CustomerTable({
           </span>
           <button
             type="button"
-            className="selected-bar-switch"
+            className="selected-bar-switch outline-action"
             aria-expanded={browsing}
             onClick={() => setBrowsing(!browsing)}
           >
@@ -109,10 +109,10 @@ export function CustomerTable({
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
         />
-        <Button variant="ghost" className="add-person" disabled={disabled} onClick={add}>
+        <Button variant="ghost" className="outline-action" disabled={disabled} onClick={add}>
           Lisää henkilö
         </Button>
-        <Button variant="ghost" disabled={disabled} onClick={settings}>
+        <Button variant="ghost" className="outline-action" disabled={disabled} onClick={settings}>
           Asetukset
         </Button>
       </Flex>
@@ -178,12 +178,12 @@ export function CustomerTable({
                     onClick={() => pick(row.original.id)}
                   >
                     <span className="customer-check" aria-hidden="true">
-                      <svg viewBox="0 0 16 16" width="14" height="14">
+                      <svg viewBox="0 0 16 16" width="12" height="12">
                         <path
                           d="m3.5 8.5 3 3 6-7"
                           fill="none"
                           stroke="currentColor"
-                          strokeWidth="2.25"
+                          strokeWidth="2.5"
                           strokeLinecap="round"
                           strokeLinejoin="round"
                         />

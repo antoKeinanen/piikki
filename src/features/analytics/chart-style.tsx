@@ -41,20 +41,16 @@ export function Section({
   title,
   hint,
   wide,
-  fit,
   children,
 }: {
   id: string;
   title: string;
   hint?: string;
   wide?: boolean;
-  /** Keeps the card at its content height instead of stretching to its grid row. */
-  fit?: boolean;
   children: ReactNode;
 }) {
-  const classes = ["stat-section", wide && "stat-wide", fit && "stat-fit"].filter(Boolean).join(" ");
   return (
-    <section className={classes} aria-labelledby={id}>
+    <section className={wide ? "stat-section stat-wide" : "stat-section"} aria-labelledby={id}>
       <h2 id={id}>{title}</h2>
       {hint && <Text className="stat-hint">{hint}</Text>}
       {children}
