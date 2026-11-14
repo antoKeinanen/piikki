@@ -13,14 +13,16 @@ function Tile({
   value,
   note,
   lead,
+  total,
 }: {
   label: string;
   value: string;
   note?: string;
   lead?: boolean;
+  total?: boolean;
 }) {
   return (
-    <div className={lead ? "stat-tile stat-tile-lead" : "stat-tile"}>
+    <div className={`stat-tile${lead ? " stat-tile-lead" : ""}${total ? " stat-tile-total" : ""}`}>
       <Text className="stat-label">{label}</Text>
       <Text className="stat-value">{value}</Text>
       <Text className="stat-note-line">{note ?? " "}</Text>
@@ -71,8 +73,9 @@ function Tiles({ summary }: { summary: EventSummary }) {
         />
       </TileGroup>
       <TileGroup id="balances" label="Saldot tapahtuman lopussa">
-        <Tile label="Saldoa jäljellä" value={formatAmount(summary.held)} note="kaikki tilit yhteensä" />
+        <Tile total label="Saldoa jäljellä" value={formatAmount(summary.held)} note="kaikki tilit yhteensä" />
         <Tile
+          total
           label="Velkaa"
           value={formatAmount(summary.debt)}
           note={count(summary.debtors, "henkilö", "henkilöä")}

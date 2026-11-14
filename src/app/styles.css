@@ -504,31 +504,20 @@ textarea::placeholder {
   position: sticky;
   top: 0;
   z-index: 2;
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 24px;
-  margin: 0 -24px 16px;
-  padding: 16px 24px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: "name balance" "meta balance";
+  align-items: center;
+  gap: 4px 20px;
+  margin: 0 -24px 8px;
+  padding: 12px 24px;
   border-bottom: 1px solid var(--line-soft);
   /* Matches the card's inner corner so nothing peeks past it while scrolling. */
   border-radius: calc(var(--radius-lg) - 1px) calc(var(--radius-lg) - 1px) 0 0;
   background: var(--surface);
 }
-.account-identity {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
-  min-width: 0;
-}
-.account-name-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  max-width: 100%;
-}
 .account-name {
+  grid-area: name;
   min-width: 0;
   overflow: hidden;
   font-size: 24px;
@@ -538,15 +527,24 @@ textarea::placeholder {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.account-meta {
+  display: flex;
+  grid-area: meta;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
 .account-osakunta {
-  max-width: 100%;
+  min-width: 0;
   overflow: hidden;
   color: var(--muted);
   font-size: 14px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.edit-customer { padding: 0 16px 0 12px; }
+/* The full 44 px target reaches into the header padding instead of adding to
+   the header height, which the history below needs. */
+.edit-customer { margin-block: -4px; padding: 0 12px; }
 .edit-customer-icon {
   flex-shrink: 0;
   width: 14px;
@@ -555,8 +553,8 @@ textarea::placeholder {
 }
 .balance-block {
   display: flex;
+  grid-area: balance;
   flex-direction: column;
-  flex-shrink: 0;
   align-items: flex-end;
 }
 .balance {
@@ -575,7 +573,7 @@ textarea::placeholder {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 4px;
-  margin: 0 0 12px;
+  margin: 0 0 8px;
   padding: 4px;
   border: 1px solid var(--line-soft);
   border-radius: var(--radius-lg);
@@ -618,22 +616,22 @@ textarea::placeholder {
 .product-picker {
   display: grid;
   gap: 8px;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
 }
 /* Always the same height, so the item buttons never move when a charge is recorded. */
 .recorded-slot {
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  height: 58px;
+  height: 52px;
 }
-.account > .recorded-slot { margin-bottom: 8px; }
+.account > .recorded-slot { margin-bottom: 16px; }
 .product-hint {
   display: flex;
   flex-direction: column;
   justify-content: center;
   gap: 2px;
-  height: 58px;
+  height: 52px;
   padding: 0 2px;
 }
 .product-hint p {
@@ -651,7 +649,7 @@ textarea::placeholder {
   display: flex;
   align-items: center;
   gap: 12px;
-  height: 58px;
+  height: 52px;
   padding: 0 4px 0 12px;
   border: 1px solid color-mix(in srgb, var(--deposit) 60%, var(--surface));
   border-left: 3px solid var(--deposit);
@@ -699,9 +697,11 @@ textarea::placeholder {
   from { opacity: 0; transform: translateY(-4px); }
   to { opacity: 1; transform: none; }
 }
+/* Three equal columns fill the pane; a narrow pane drops to two rather than
+   leaving an empty track at the right. */
 .product-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(max(140px, calc((100% - 24px) / 3)), 1fr));
   gap: 12px;
 }
 .product-charge {
@@ -709,7 +709,7 @@ textarea::placeholder {
   flex-direction: column;
   gap: 4px;
   height: auto;
-  min-height: 92px;
+  min-height: 88px;
   padding: 12px;
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
@@ -752,12 +752,14 @@ textarea::placeholder {
   border-radius: var(--radius-sm);
   object-fit: contain;
 }
+.product-grid .product-thumbnail { width: 32px; height: 32px; }
 /* Categories open a group, so they read as a flat grey folder with a chevron
    rather than a raised button that charges. Grey, not the brand tint, keeps the
    receipt the only green surface. */
 .category-button {
   align-items: stretch;
   justify-content: flex-start;
+  padding-block: 10px;
   border-color: var(--line-soft);
   background: color-mix(in srgb, var(--ink) 4%, var(--surface));
   box-shadow: none;
@@ -775,7 +777,7 @@ textarea::placeholder {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  min-height: 36px;
+  min-height: 32px;
 }
 .category-chevron {
   margin-left: auto;
@@ -811,13 +813,34 @@ textarea::placeholder {
 .amount-form {
   display: grid;
   grid-template-columns: minmax(150px, 1fr) minmax(110px, 1.2fr) minmax(160px, 0.9fr);
-  grid-template-areas: "amount note submit";
+  grid-template-areas: "title title title" "amount note submit";
   align-items: end;
   gap: 12px;
   margin-bottom: 12px;
 }
-.amount-form .amount-field { grid-area: amount; gap: 8px; min-width: 0; }
-.amount-form .note-field { grid-area: note; gap: 8px; min-width: 0; }
+/* Titled and ruled off from the item buttons, so its description is not read
+   as applying to the next item tap. */
+.amount-form-title {
+  display: flex;
+  grid-area: title;
+  align-items: center;
+  gap: 12px;
+  /* With the grid gap this leaves 8 px to the field labels. */
+  margin: 0 0 -4px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  line-height: 16px;
+  text-transform: uppercase;
+}
+.amount-form-title::after {
+  content: "";
+  flex: 1;
+  border-top: 1px solid var(--line-soft);
+}
+.amount-form .amount-field { grid-area: amount; gap: 4px; min-width: 0; }
+.amount-form .note-field { grid-area: note; gap: 4px; min-width: 0; }
 .amount-submit {
   display: flex;
   grid-area: submit;
@@ -863,7 +886,7 @@ textarea::placeholder {
 }
 .note-line.empty {
   min-height: 0;
-  margin: -4px 0 8px;
+  margin: -12px 0 0;
   padding: 0;
   border: 0;
 }
@@ -921,24 +944,26 @@ textarea::placeholder {
 .history-title { margin: 0 0 4px; }
 .entry {
   display: grid;
-  grid-template-columns: 1fr auto 84px;
+  grid-template-columns: minmax(0, 1fr) auto 84px;
   align-items: center;
   gap: 16px;
-  min-height: 60px;
-  padding: 8px 0;
+  min-height: 56px;
+  padding: 6px 0;
   border-bottom: 1px solid var(--line-soft);
 }
-.entry > button { justify-self: end; }
+.entry > button { justify-self: stretch; }
 .entry:last-child { border-bottom: 0; }
 .entry-label {
   font-size: 15px;
   font-weight: 500;
+  line-height: 1.4;
 }
 .entry-note,
 .entry-date {
   margin-top: 2px;
   color: var(--muted);
   font-size: 14px;
+  line-height: 1.4;
 }
 .entry-note { overflow-wrap: anywhere; }
 .entry-amount {
@@ -953,12 +978,6 @@ textarea::placeholder {
   text-decoration: line-through;
 }
 .entry.reversed .entry-amount { color: var(--muted); }
-.quiet-undo {
-  color: var(--muted);
-  font-weight: 400;
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
 .empty-history {
   padding: 24px 0;
   color: var(--muted);
@@ -1114,10 +1133,10 @@ textarea::placeholder {
 }
 .settings-tabs [role="tablist"] {
   flex: none;
-  /* Tab padding supplies the rest, so labels line up with the title. */
-  padding: 0 12px;
+  /* Unpadded tabs, so the first label and its underline start at the title's inset. */
+  padding: 0 28px;
   border-color: var(--line-soft);
-  gap: 4px;
+  gap: 24px;
   overflow-x: auto;
   scrollbar-width: none;
 }
@@ -1158,8 +1177,7 @@ textarea::placeholder {
 .settings-tabs [role="tab"] {
   flex: none;
   min-height: 44px;
-  padding: 0 16px;
-  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  padding: 0;
   color: var(--muted);
   font-size: 15px;
   font-weight: 500;
@@ -1169,13 +1187,11 @@ textarea::placeholder {
 }
 @media (hover: hover) {
   .modal .settings-tabs [role="tab"]:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--brand) 4%, transparent);
+    background: transparent;
     color: var(--ink);
   }
 }
-.settings-tabs [role="tab"][aria-selected="true"],
-.modal .settings-tabs [role="tab"][aria-selected="true"]:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--brand) 6%, transparent);
+.settings-tabs [role="tab"][aria-selected="true"] {
   color: var(--ink);
   font-weight: 600;
   --indicator-color: var(--indicator);
@@ -1185,8 +1201,8 @@ textarea::placeholder {
 }
 /* Phone width: all four tabs stay visible instead of scrolling off the rail. */
 @media (max-width: 480px) {
-  .settings-tabs [role="tablist"] { padding: 0 8px; gap: 0; }
-  .settings-tabs [role="tab"] { flex: 1 1 auto; justify-content: center; padding: 0 6px; font-size: 14px; }
+  .settings-tabs [role="tablist"] { padding: 0 20px; gap: 16px; }
+  .settings-tabs [role="tab"] { font-size: 14px; }
   .modal .settings-title { padding: 24px 20px 12px; }
   .settings-scroll { padding: 20px 20px 28px; }
   .settings-shell .modal-footer { padding: 16px 20px; }
@@ -1635,12 +1651,9 @@ input:focus-visible + .image-picker-button {
 .stat-tiles {
   --tile-gap: 12px;
   --group-gap: 24px;
-  --group-pad: 12px;
   display: grid;
-  /* Sized so a balance tile, inside its padded group, is exactly as wide as an event tile. */
-  grid-template-columns:
-    minmax(0, 1fr)
-    calc((100% - 2 * var(--tile-gap) - var(--group-gap) - 2 * var(--group-pad)) / 4 + 2 * var(--group-pad));
+  /* Sized so a balance tile is exactly as wide as an event tile. */
+  grid-template-columns: minmax(0, 1fr) calc((100% - 2 * var(--tile-gap) - var(--group-gap)) / 4);
   column-gap: var(--group-gap);
   row-gap: var(--tile-gap);
 }
@@ -1652,13 +1665,6 @@ input:focus-visible + .image-picker-button {
   column-gap: var(--tile-gap);
 }
 .stat-group-event { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-/* The group's bottom padding deepens the last shared row; these tiles keep their own height. */
-.stat-group-event > .stat-tile:nth-of-type(n + 4) { align-self: start; }
-.stat-group-balances {
-  padding: var(--group-pad);
-  border-radius: calc(var(--radius-lg) + var(--group-pad));
-  background: color-mix(in srgb, var(--ink) 4%, var(--accent));
-}
 .stat-scope { grid-column: 1 / -1; align-self: end; margin-bottom: -2px; }
 .stat-tile {
   padding: 16px 20px;
@@ -1670,7 +1676,7 @@ input:focus-visible + .image-picker-button {
 .stat-label { color: var(--muted); font-size: 13px; font-weight: 500; }
 .stat-value {
   margin-top: 4px;
-  font-size: 28px;
+  font-size: 24px;
   font-weight: 600;
   letter-spacing: -0.5px;
   font-variant-numeric: tabular-nums;
@@ -1681,6 +1687,7 @@ input:focus-visible + .image-picker-button {
 }
 .stat-tile-lead .stat-label { color: var(--ink); font-weight: 600; }
 .stat-tile-lead .stat-value { margin-top: 2px; font-size: 40px; letter-spacing: -1.2px; line-height: 1.1; }
+.stat-tile-total .stat-value { font-size: 32px; letter-spacing: -0.8px; }
 .stat-note-line { color: var(--muted); font-size: 13px; }
 /* Cards keep their own height; a short card must not stretch to its neighbour. */
 .stat-panels {
@@ -1920,7 +1927,8 @@ input:focus-visible + .image-picker-button {
 @media (min-width: 1000px) {
   .customers,
   .account {
-    max-height: calc(100vh - 110px);
+    /* Masthead height plus the bottom gutter, so the panel reaches the gutter. */
+    max-height: calc(100vh - 80px - var(--gutter));
   }
   .account {
     overflow: auto;
@@ -1950,10 +1958,8 @@ input:focus-visible + .image-picker-button {
     white-space: nowrap;
   }
   .customer-row[data-selected="true"] .customer-meta { color: var(--on-brand); }
-  .account-summary { margin-bottom: 12px; padding: 16px 24px 12px; }
   .account-name { font-size: 20px; letter-spacing: -0.2px; }
   .balance { font-size: 32px; letter-spacing: -0.8px; }
-  .product-grid { gap: 8px; }
   .search-row { flex-wrap: wrap; }
   .search-row input { flex-basis: 100%; }
   .search-row button { flex: 1; }
@@ -1963,7 +1969,7 @@ input:focus-visible + .image-picker-button {
 @container (max-width: 440px) {
   .amount-form {
     grid-template-columns: minmax(120px, 1fr) minmax(150px, auto);
-    grid-template-areas: "amount submit" "note note";
+    grid-template-areas: "title title" "amount submit" "note note";
   }
 }
 @media (max-width: 800px) {
@@ -2003,7 +2009,7 @@ input:focus-visible + .image-picker-button {
   .customer-scroll { max-height: 340px; }
   .amount-form {
     grid-template-columns: minmax(120px, 1fr) minmax(150px, auto);
-    grid-template-areas: "amount submit" "note note";
+    grid-template-areas: "title title" "amount submit" "note note";
   }
   .amount-form:not(.describing) .note-field,
   .amount-form.describing .note-toggle { display: none; }
@@ -2066,6 +2072,18 @@ input:focus-visible + .image-picker-button {
   .selected-bar-balance strong.negative-balance { color: var(--charge); }
   .selected-bar-edit { padding: 0 12px; }
   .selected-bar-edit svg { width: 14px; height: 14px; color: var(--muted); }
+  /* Switching person is routine and logging out ends the session, so the two
+     must not look alike. */
+  .selected-bar-switch {
+    border-color: color-mix(in srgb, var(--brand) 55%, var(--line));
+    background: color-mix(in srgb, var(--brand) 10%, var(--surface));
+    font-weight: 600;
+  }
+  .masthead-actions .logout {
+    padding: 0 8px;
+    border-color: transparent;
+    background: transparent;
+  }
   /* The bar already shows name and balance and holds the edit control, so the
      panel starts straight with the mode switch. */
   .customers.collapsed ~ .account { padding-top: 12px; }
@@ -2094,9 +2112,9 @@ input:focus-visible + .image-picker-button {
   .stats { padding-bottom: 32px; }
   .stat-tiles { grid-template-columns: minmax(0, 1fr); }
   .stat-group { grid-row: auto; grid-template-rows: none; grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: var(--tile-gap); }
-  .stat-group-event > .stat-tile:nth-of-type(n + 4) { align-self: stretch; }
   .stat-group-balances { margin-top: 12px; }
   .stat-value { font-size: 24px; }
+  .stat-tile-total .stat-value { font-size: 28px; letter-spacing: -0.5px; }
   .stat-tile-lead .stat-value { font-size: 32px; letter-spacing: -0.8px; }
   .ranking { grid-template-columns: minmax(0, 1.4fr) minmax(40px, 1fr) max-content; column-gap: 12px; }
   .ranking li { padding: 4px 0; }
@@ -2125,9 +2143,18 @@ input:focus-visible + .image-picker-button {
   }
   .selected-bar-balance strong { margin-top: 0; }
   .selected-bar-switch { grid-area: switch; justify-self: end; }
+  /* Date and operator also take the width under the amount, so a name never
+     wraps onto a line of its own. */
+  .entry { align-content: center; gap: 2px 12px; }
+  .entry > div:first-child { display: contents; }
+  .entry-label { grid-area: 1 / 1; }
+  .entry-amount { grid-area: 1 / 2; }
+  .entry > :last-child { grid-area: 1 / 3 / span 2; }
+  .entry-note,
+  .entry-date { grid-column: 1 / 3; margin-top: 0; }
+  .entry-date { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .compatibility-page { padding-top: 24px; }
   .compatibility-content { margin-top: 64px; }
-  .account-summary { flex-direction: column; gap: 8px; }
-  .customers.collapsed ~ .account > .account-summary { flex-direction: row; }
-  .balance-block { align-items: flex-start; }
+  .account-summary { grid-template-columns: minmax(0, 1fr); grid-template-areas: "name" "meta" "balance"; }
+  .balance-block { align-items: flex-start; margin-top: 4px; }
 }

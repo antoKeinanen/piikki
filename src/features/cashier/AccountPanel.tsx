@@ -217,35 +217,33 @@ export function AccountPanel({
       {customer ? (
         <>
           <div className="account-summary">
-            <div className="account-identity">
-              <div className="account-name-row">
-                <Text className="account-name" title={customer.name}>
-                  {customer.name}
-                </Text>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="edit-customer secondary"
-                  aria-label={`Muokkaa henkilöä ${customer.name}`}
-                  disabled={busy}
-                  onClick={() => {
-                    setError("");
-                    onEdit();
-                  }}
-                >
-                  <svg className="edit-customer-icon" viewBox="0 0 16 16" aria-hidden="true">
-                    <path
-                      d="M10.5 2.5l3 3L6 13H3v-3z"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                  Muokkaa henkilöä
-                </Button>
-              </div>
+            <Text className="account-name" title={customer.name}>
+              {customer.name}
+            </Text>
+            <div className="account-meta">
               {customer.osakunta && <Text className="account-osakunta">{customer.osakunta}</Text>}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="edit-customer secondary"
+                aria-label={`Muokkaa henkilöä ${customer.name}`}
+                disabled={busy}
+                onClick={() => {
+                  setError("");
+                  onEdit();
+                }}
+              >
+                <svg className="edit-customer-icon" viewBox="0 0 16 16" aria-hidden="true">
+                  <path
+                    d="M10.5 2.5l3 3L6 13H3v-3z"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                Muokkaa
+              </Button>
             </div>
             <div className="balance-block">
               <span className="balance-label" aria-hidden="true">Saldo</span>
@@ -335,11 +333,15 @@ export function AccountPanel({
           )}
           <form
             className={`amount-form ${describing || note ? "describing" : ""}`}
+            aria-labelledby="amount-form-title"
             onSubmit={(e) => {
               e.preventDefault();
               post(action);
             }}
           >
+            <p className="amount-form-title" id="amount-form-title">
+              {action === "deposit" ? "Lisää saldoa" : showPicker ? "Muu veloitus" : "Veloitus"}
+            </p>
             <FormField
               className="amount-field"
               label={action === "charge" ? "Veloitettava summa" : "Lisättävä summa"}
@@ -440,8 +442,7 @@ export function AccountPanel({
                   <Button
                     variant="ghost"
                     size="sm"
-                    // An opening balance is rarely undone, so its control sits back.
-                    className={entry.opening ? "quiet quiet-undo" : "secondary"}
+                    className="secondary"
                     disabled={busy}
                     onClick={() => {
                       setError("");
