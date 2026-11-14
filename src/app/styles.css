@@ -127,23 +127,25 @@ select:focus-visible {
 .masthead-actions {
   display: flex;
   align-items: center;
-  gap: 4px;
-  /* The last ghost button's label lines up with the card edge below, not its padding. */
-  margin-right: -14px;
+  gap: 8px;
 }
-.masthead-actions button {
+/* One outlined treatment for every secondary action in the shell and the person list. */
+.app .outline-action {
   height: 44px;
   padding: 0 14px;
+  border: 1px solid var(--line) !important;
   border-radius: var(--radius);
+  background: var(--surface) !important;
+  color: var(--ink) !important;
   font-size: 14px;
   font-weight: 500;
-  color: var(--ink);
+  transition: border-color 120ms, background-color 120ms;
 }
-.operator-switch {
-  border: 1px solid var(--line-soft) !important;
-  background: var(--surface) !important;
-  margin-right: 8px;
+.app .outline-action:hover:not(:disabled) {
+  border-color: var(--ink) !important;
+  background: var(--tint) !important;
 }
+.operator-switch { margin-right: 8px; }
 .operator-label { color: var(--muted); margin-right: 2px; font-weight: 400; }
 .organization-logo {
   width: 36px;
@@ -188,17 +190,6 @@ select:focus-visible {
   padding: 0 14px 0 40px !important;
   background: var(--accent) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' fill='none' stroke='%23777' stroke-width='2' stroke-linecap='round' viewBox='0 0 24 24'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.5-3.5'/%3E%3C/svg%3E") no-repeat 14px center !important;
   font-size: 15px;
-}
-.search-row button {
-  height: 44px;
-  padding: 0 14px;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--ink);
-  border-radius: var(--radius);
-}
-.add-person {
-  border: 1px solid var(--line-soft) !important;
 }
 .sort-row {
   display: flex;
@@ -338,9 +329,9 @@ select:focus-visible {
 }
 .customer-select {
   display: grid;
-  grid-template-columns: 22px minmax(0, 1fr);
+  grid-template-columns: 16px minmax(0, 1fr);
   align-items: center;
-  column-gap: 10px;
+  column-gap: 8px;
   text-align: left;
   min-height: 52px;
   width: 100%;
@@ -354,15 +345,17 @@ select:focus-visible {
 .customer-check {
   display: grid;
   place-items: center;
-  width: 22px;
-  height: 22px;
+  width: 16px;
+  height: 16px;
   border-radius: 999px;
   background: var(--on-brand);
   color: var(--brand);
   visibility: hidden;
 }
 .customer-row[data-selected="true"] .customer-check { visibility: visible; }
-.customers thead th:first-child { padding-left: 44px; }
+/* Heading and names share one text edge: 8px cell padding + 16px check + 8px gap. */
+.customers tbody td:first-child { padding-left: 8px; }
+.customers thead th:first-child { padding-left: 32px; }
 .customer-select:hover:not(:disabled) {
   background: transparent !important;
   color: inherit !important;
@@ -1681,30 +1674,33 @@ input:focus-visible + .image-picker-button {
   color: var(--ink);
 }
 .stat-tiles {
+  --tile-gap: 12px;
+  --group-gap: 24px;
+  --group-pad: 12px;
   display: grid;
-  /* The empty track plus two gaps makes a 24px gutter before the balances while all tiles stay equal width. */
-  grid-template-columns: repeat(3, minmax(0, 1fr)) 0 minmax(0, 1fr);
-  gap: 12px;
+  /* Sized so a balance tile, inside its padded group, is exactly as wide as an event tile. */
+  grid-template-columns:
+    minmax(0, 1fr)
+    calc((100% - 2 * var(--tile-gap) - var(--group-gap) - 2 * var(--group-pad)) / 4 + 2 * var(--group-pad));
+  column-gap: var(--group-gap);
+  row-gap: var(--tile-gap);
 }
 .stat-group {
   display: grid;
-  grid-template-columns: subgrid;
   /* Shared rows keep the balance tiles level with the taller lead tile row. */
   grid-row: span 3;
   grid-template-rows: subgrid;
-  align-content: start;
-  gap: 12px;
+  column-gap: var(--tile-gap);
 }
-.stat-group-event { grid-column: 1 / span 3; }
-.stat-group-balances { grid-column: 5 / span 1; position: relative; }
-.stat-group-balances::before {
-  content: "";
-  position: absolute;
-  inset: 0 auto 0 -12.5px;
-  width: 1px;
-  background: var(--line-soft);
+.stat-group-event { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+/* The group's bottom padding deepens the last shared row; these tiles keep their own height. */
+.stat-group-event > .stat-tile:nth-of-type(n + 4) { align-self: start; }
+.stat-group-balances {
+  padding: var(--group-pad);
+  border-radius: calc(var(--radius-lg) + var(--group-pad));
+  background: color-mix(in srgb, var(--ink) 4%, var(--accent));
 }
-.stat-scope { grid-column: 1 / -1; margin-bottom: -2px; }
+.stat-scope { grid-column: 1 / -1; align-self: end; margin-bottom: -2px; }
 .stat-tile {
   padding: 16px 18px;
   background: var(--surface);
@@ -1720,8 +1716,12 @@ input:focus-visible + .image-picker-button {
   letter-spacing: -0.5px;
   font-variant-numeric: tabular-nums;
 }
+.stat-tile-lead {
+  background: color-mix(in srgb, var(--brand) 7%, var(--surface));
+  border-color: color-mix(in srgb, var(--brand) 18%, var(--line-soft));
+}
 .stat-tile-lead .stat-label { color: var(--ink); font-weight: 600; }
-.stat-tile-lead .stat-value { font-size: 34px; font-weight: 700; letter-spacing: -0.8px; }
+.stat-tile-lead .stat-value { margin-top: 2px; font-size: 38px; font-weight: 700; letter-spacing: -1px; line-height: 1.15; }
 .stat-note-line { color: var(--muted); font-size: 13px; }
 .stat-panels {
   display: grid;
@@ -1740,11 +1740,10 @@ input:focus-visible + .image-picker-button {
   box-shadow: var(--shadow-card);
 }
 .stat-wide { grid-column: 1 / -1; }
-.stat-fit { align-self: start; }
 .stat-hint { margin: 4px 0 14px; color: var(--muted); font-size: 14px; }
 .stat-panels > .empty-history { grid-column: 1 / -1; }
-.stat-section .recharts-cartesian-axis-tick-value { fill: var(--muted); font-size: 13px; }
-.size-axis { color: var(--muted); font-size: 13px; line-height: 1.3; }
+.stat-section .recharts-cartesian-axis-tick-value { fill: var(--muted); font-size: 14px; }
+.size-axis { color: var(--muted); font-size: 14px; line-height: 1.3; }
 .size-ticks {
   display: grid;
   grid-auto-flow: column;
@@ -1784,6 +1783,7 @@ input:focus-visible + .image-picker-button {
   min-width: 0;
 }
 .ranking-name {
+  font-weight: 500;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1792,6 +1792,7 @@ input:focus-visible + .image-picker-button {
   flex-shrink: 0;
   color: var(--muted);
   font-size: 13px;
+  font-weight: 400;
   font-variant-numeric: tabular-nums;
 }
 .ranking-track {
@@ -1838,8 +1839,8 @@ input:focus-visible + .image-picker-button {
 .series-key-large .series-name { color: var(--ink); }
 .series-key-large .series-value { margin-left: auto; font-size: 22px; }
 .chart-table { margin-top: 16px; font-size: 14px; }
-/* The last key row keeps its bottom padding, so this leaves about 20px under the values. */
-.series-key-large + .chart-table { margin-top: 8px; }
+/* The card stretches to its neighbour's height, so the table toggle sits at the bottom. */
+.series-key-large + .chart-table { margin-top: auto; padding-top: 8px; }
 .chart-table summary { cursor: pointer; font-weight: 500; }
 .chart-table table,
 .chart-table-plain {
@@ -1868,10 +1869,11 @@ input:focus-visible + .image-picker-button {
 .chart-table-plain tr[aria-current="true"] td { font-weight: 600; }
 .stats-note { margin-top: 24px; color: var(--muted); font-size: 14px; }
 @media (max-width: 800px) {
-  .stat-group { grid-column: 1 / -1; grid-row: auto; grid-template-rows: none; }
+  .stat-tiles { grid-template-columns: minmax(0, 1fr); }
+  .stat-group { grid-row: auto; grid-template-rows: none; grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: var(--tile-gap); }
+  .stat-group-event > .stat-tile:nth-of-type(n + 4) { align-self: stretch; }
   .stat-group-balances { margin-top: 12px; }
-  .stat-group-balances::before { display: none; }
-  .stat-tile-lead .stat-value { font-size: 28px; }
+  .stat-tile-lead .stat-value { font-size: 32px; }
   .ranking { grid-template-columns: minmax(0, 1.4fr) minmax(40px, 1fr) max-content; column-gap: 12px; }
   .ranking li { padding: 6px 0; }
   .ranking-label { flex-direction: column; align-items: stretch; gap: 0; }
@@ -2007,8 +2009,8 @@ input:focus-visible + .image-picker-button {
   .organization-name, .wordmark { font-size: 17px; letter-spacing: -0.3px; }
   .masthead-divider { font-size: 15px; }
   .event-name { margin-left: 2px; padding: 3px 9px; font-size: 12px; }
-  .masthead-actions { width: calc(100% + 12px); gap: 4px; margin-right: -12px; }
-  .masthead-actions button { height: 44px; padding: 0 12px; flex-shrink: 0; }
+  .masthead-actions { width: 100%; gap: 8px; }
+  .masthead-actions button { padding: 0 12px; flex-shrink: 0; }
   .masthead-actions .view-switch { margin-left: auto; }
   .operator-switch {
     flex-shrink: 1 !important;
@@ -2083,16 +2085,7 @@ input:focus-visible + .image-picker-button {
   .selected-bar-balance strong.negative-balance { color: var(--charge); }
   .selected-bar-switch {
     flex-shrink: 0;
-    min-height: 44px;
-    padding: 4px 12px;
     white-space: nowrap;
-    border: 1px solid var(--line-soft);
-    border-radius: var(--radius);
-    background: var(--accent);
-    color: var(--ink);
-    font-size: 13px;
-    font-weight: 500;
-    line-height: 1.15;
   }
   /* The bar already shows name and balance, so the panel header keeps only the
      edit control, at the right under the bar, and the mode switch comes next. */
@@ -2133,7 +2126,6 @@ input:focus-visible + .image-picker-button {
   .category-button > span:last-child small { margin: 0 0 0 auto; }
   .category-button .category-chevron { order: 2; margin-left: 0; }
   .stats { padding: 4px 12px 32px; }
-  .stat-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .stat-value { font-size: 24px; }
 }
 @media (max-width: 480px) {
