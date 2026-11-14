@@ -458,7 +458,9 @@ function CashierApp() {
                       ? "Lisää henkilö"
                       : modal?.kind === "edit-customer"
                         ? "Muokkaa henkilöä"
-                        : "Peru tapahtuma"
+                        : modal?.kind === "reverse" && modal.entry.cents > 0
+                          ? "Kumoa saldon lisäys?"
+                          : "Kumoa veloitus?"
               }
             >
               <Dialog.Body>
