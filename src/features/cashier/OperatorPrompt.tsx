@@ -27,7 +27,7 @@ export function OperatorPrompt({
             </Text>
             <div className="operator-recent" role="group" aria-labelledby="operator-recent-label">
               {others.map((value) => (
-                <Button key={value} variant="outline" onClick={() => choose(value)}>
+                <Button key={value} variant="outline" className="secondary" onClick={() => choose(value)}>
                   {value}
                 </Button>
               ))}

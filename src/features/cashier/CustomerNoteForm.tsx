@@ -34,7 +34,7 @@ export function CustomerNoteForm({
         <Button
           variant="outline"
           size="sm"
-          className="compact-action"
+          className="secondary"
           disabled={busy}
           onClick={() => {
             setNote(customer.note);
@@ -67,10 +67,10 @@ export function CustomerNoteForm({
         />
       </Field.Root>
       <div className="note-actions">
-        <Button type="button" variant="ghost" disabled={busy} onClick={() => setEditing(false)}>
+        <Button type="button" variant="ghost" className="quiet" disabled={busy} onClick={() => setEditing(false)}>
           Peruuta
         </Button>
-        <Button type="submit" className="note-save" disabled={busy || note === customer.note}>
+        <Button type="submit" className="note-save secondary" disabled={busy || note === customer.note}>
           Tallenna muistiinpano
         </Button>
       </div>

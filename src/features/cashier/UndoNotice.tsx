@@ -24,12 +24,13 @@ export function UndoNotice({
       <Button
         variant="outline"
         size="sm"
+        className="secondary"
         disabled={busy}
         onClick={() => void undo.run().then(dismiss, () => {})}
       >
         {undo.action}
       </Button>
-      <Button variant="ghost" size="sm" aria-label="Sulje ilmoitus" disabled={busy} onClick={dismiss}>
+      <Button variant="ghost" size="sm" className="quiet undo-dismiss" aria-label="Sulje ilmoitus" disabled={busy} onClick={dismiss}>
         ×
       </Button>
     </div>
