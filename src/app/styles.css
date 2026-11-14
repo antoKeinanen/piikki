@@ -94,7 +94,7 @@ select:focus-visible {
   gap: 12px 24px;
   max-width: 1376px;
   margin: 0 auto;
-  padding: 20px 28px 18px;
+  padding: 17px 28px 15px;
   line-height: 1.2;
 }
 .masthead-brand {
@@ -130,7 +130,7 @@ select:focus-visible {
   gap: 4px;
 }
 .masthead-actions button {
-  height: 38px;
+  height: 44px;
   padding: 0 14px;
   border-radius: var(--radius);
   font-size: 14px;
@@ -217,11 +217,11 @@ select:focus-visible {
 .sort-row button {
   border: 0;
   background: transparent;
-  height: 30px;
+  height: 36px;
   padding: 0 12px;
   border-radius: 7px;
   color: var(--muted);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
   white-space: nowrap;
 }
@@ -262,11 +262,22 @@ select:focus-visible {
 }
 .customer-meta { display: none; }
 .customer-scroll {
+  --fade: 28px;
   min-height: 0;
   flex: 1;
   overflow: auto;
   margin: 0 -8px;
-  padding: 0 8px 8px;
+  /* Room for the fade, so the last row is fully readable at the end of the list. */
+  padding: 0 8px var(--fade);
+  background: none;
+  /* The row cut by the card edge fades out instead of being sliced through.
+     The right strip stays unmasked so the scrollbar keeps full contrast. */
+  -webkit-mask:
+    linear-gradient(#000 0 0) right / 12px 100% no-repeat,
+    linear-gradient(#000 calc(100% - var(--fade)), transparent) left / calc(100% - 12px) 100% no-repeat;
+  mask:
+    linear-gradient(#000 0 0) right / 12px 100% no-repeat,
+    linear-gradient(#000 calc(100% - var(--fade)), transparent) left / calc(100% - 12px) 100% no-repeat;
 }
 .customers table {
   width: 100%;
@@ -1748,26 +1759,42 @@ input:focus-visible + .image-picker-button {
   .amount-form button { grid-column: 1 / -1; }
 }
 @media (max-width: 800px) {
-  .masthead { padding: 14px 16px; gap: 10px; }
-  .masthead-actions { width: 100%; flex-wrap: wrap; gap: 4px; }
+  /* A classic scrollbar must not change the layout width when the page stops scrolling. */
+  html { scrollbar-gutter: stable; }
+  .masthead { padding: 10px 16px 12px; gap: 8px; }
+  .masthead-brand { gap: 4px 6px; }
+  .organization-logo { width: 28px; height: 28px; }
+  .organization-name, .wordmark { font-size: 17px; letter-spacing: -0.3px; }
+  .masthead-divider { font-size: 15px; }
+  .event-name { margin-left: 2px; padding: 3px 9px; font-size: 12px; }
+  .masthead-actions { width: 100%; gap: 4px; }
   .masthead-actions button { height: 44px; padding: 0 12px; flex-shrink: 0; }
-  .operator-switch { margin-right: 4px; }
-  .organization-name, .wordmark { font-size: 22px; }
-  .event-name { margin-left: 0; }
+  .masthead-actions .view-switch { margin-left: auto; }
+  .operator-switch {
+    flex-shrink: 1 !important;
+    min-width: 0;
+    margin-right: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
   .workspace {
     grid-template-columns: 1fr;
     padding: 0 12px 16px;
     gap: 12px;
   }
   .customers { padding: 14px 12px 12px; }
-  .account { padding: 18px 16px 8px; scroll-margin-top: 84px; }
+  .account { padding: 18px 16px 8px; scroll-margin-top: 80px; }
   /* The selected-person bar stays on top instead, so this one scrolls away. */
   .account-summary { position: static; margin: -18px -16px 0; padding: 18px 16px 12px; }
   .customer-scroll { max-height: 340px; }
+  .sort-row { flex-wrap: wrap; gap: 4px 8px; }
+  .sort-options { flex: 1 1 100%; }
+  .sort-row button { flex: 1; padding: 0 8px; }
   .selected-bar {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 14px;
     margin-bottom: 12px;
   }
   .customers.collapsed {
@@ -1779,10 +1806,6 @@ input:focus-visible + .image-picker-button {
   }
   .customers.collapsed > :not(.selected-bar) { display: none; }
   .customers.collapsed .selected-bar { margin-bottom: 0; }
-  .customers.collapsed ~ .account .balance-block,
-  .customers.collapsed ~ .account .account-name,
-  .customers.collapsed ~ .account .account-osakunta { display: none; }
-  .customers.collapsed ~ .account .account-summary { padding-bottom: 4px; }
   .selected-bar-identity {
     display: flex;
     flex-direction: column;
@@ -1790,32 +1813,73 @@ input:focus-visible + .image-picker-button {
     min-width: 0;
   }
   .selected-bar-name,
-  .selected-bar-meta {
+  .selected-bar-osakunta {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-  .selected-bar-name { font-size: 17px; font-weight: 600; line-height: 1.3; }
-  .selected-bar-meta { font-size: 13px; color: var(--muted); }
-  .selected-bar-meta strong {
-    color: var(--ink);
-    font-size: 15px;
-    font-weight: 600;
+  .selected-bar-name { font-size: 17px; font-weight: 600; line-height: 1.25; }
+  .selected-bar-osakunta { font-size: 13px; line-height: 1.3; color: var(--muted); }
+  .selected-bar-balance {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    flex-shrink: 0;
+    line-height: 1;
+  }
+  .selected-bar-balance-label {
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    color: var(--muted);
+  }
+  .selected-bar-balance strong {
+    margin-top: 2px;
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -0.6px;
     font-variant-numeric: tabular-nums;
   }
-  .selected-bar-meta strong.negative-balance { color: var(--charge); }
+  .selected-bar-balance strong.negative-balance { color: var(--charge); }
+  /* Two short lines leave the name room on a 360 px screen. */
   .selected-bar-switch {
     flex-shrink: 0;
     min-height: 44px;
-    padding: 0 14px;
+    max-width: 84px;
+    padding: 4px 10px;
     border: 1px solid var(--line-soft);
     border-radius: var(--radius);
     background: var(--accent);
     color: var(--ink);
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 500;
-    white-space: nowrap;
+    line-height: 1.15;
   }
+  /* The bar already shows name and balance, so the panel goes straight to its
+     two edit chips on one row and then the charge controls. */
+  .customers.collapsed ~ .account {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    column-gap: 8px;
+    padding-top: 6px;
+  }
+  .customers.collapsed ~ .account > * { grid-column: 1 / -1; }
+  .customers.collapsed ~ .account > .account-summary {
+    grid-column: 1;
+    margin: 0 0 4px;
+    padding: 0;
+    background: none;
+  }
+  .customers.collapsed ~ .account > .note-line {
+    grid-column: 2;
+    margin: 0 0 4px;
+  }
+  .customers.collapsed ~ .account > .note-line.empty { justify-self: start; }
+  .customers.collapsed ~ .account .edit-customer { margin: 0; }
+  .customers.collapsed ~ .account .balance-block,
+  .customers.collapsed ~ .account .account-name,
+  .customers.collapsed ~ .account .account-osakunta { display: none; }
   .search-row { flex-wrap: wrap; margin-bottom: 10px; }
   .search-row input { flex-basis: 100%; }
   .search-row button { flex: 1; }
