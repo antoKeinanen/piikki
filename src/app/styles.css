@@ -128,6 +128,8 @@ select:focus-visible {
   display: flex;
   align-items: center;
   gap: 4px;
+  /* The last ghost button's label lines up with the card edge below, not its padding. */
+  margin-right: -14px;
 }
 .masthead-actions button {
   height: 44px;
@@ -335,7 +337,10 @@ select:focus-visible {
   font-weight: 500;
 }
 .customer-select {
-  display: block;
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  align-items: center;
+  column-gap: 10px;
   text-align: left;
   min-height: 52px;
   width: 100%;
@@ -344,6 +349,20 @@ select:focus-visible {
   background: transparent;
   color: inherit;
 }
+.customer-text { min-width: 0; }
+/* Selection must read without color too; the slot is kept on every row so names never shift. */
+.customer-check {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--on-brand);
+  color: var(--brand);
+  visibility: hidden;
+}
+.customer-row[data-selected="true"] .customer-check { visibility: visible; }
+.customers thead th:first-child { padding-left: 44px; }
 .customer-select:hover:not(:disabled) {
   background: transparent !important;
   color: inherit !important;
@@ -1767,7 +1786,8 @@ input:focus-visible + .image-picker-button {
   }
   .account {
     overflow: auto;
-    padding-bottom: 16px;
+    /* Clears the bottom scroll fade so the last history row ends fully readable. */
+    padding-bottom: 24px;
   }
 }
 @media (max-width: 1100px) {
@@ -1808,13 +1828,13 @@ input:focus-visible + .image-picker-button {
 @media (max-width: 800px) {
   /* A classic scrollbar must not change the layout width when the page stops scrolling. */
   html { scrollbar-gutter: stable; }
-  .masthead { padding: 10px 16px 12px; gap: 8px; }
+  .masthead { padding: 10px 12px 12px; gap: 8px; }
   .masthead-brand { gap: 4px 6px; }
   .organization-logo { width: 28px; height: 28px; }
   .organization-name, .wordmark { font-size: 17px; letter-spacing: -0.3px; }
   .masthead-divider { font-size: 15px; }
   .event-name { margin-left: 2px; padding: 3px 9px; font-size: 12px; }
-  .masthead-actions { width: 100%; gap: 4px; }
+  .masthead-actions { width: calc(100% + 12px); gap: 4px; margin-right: -12px; }
   .masthead-actions button { height: 44px; padding: 0 12px; flex-shrink: 0; }
   .masthead-actions .view-switch { margin-left: auto; }
   .operator-switch {
@@ -1888,12 +1908,11 @@ input:focus-visible + .image-picker-button {
     font-variant-numeric: tabular-nums;
   }
   .selected-bar-balance strong.negative-balance { color: var(--charge); }
-  /* Two short lines leave the name room on a 360 px screen. */
   .selected-bar-switch {
     flex-shrink: 0;
     min-height: 44px;
-    max-width: 84px;
-    padding: 4px 10px;
+    padding: 4px 12px;
+    white-space: nowrap;
     border: 1px solid var(--line-soft);
     border-radius: var(--radius);
     background: var(--accent);
@@ -1936,6 +1955,25 @@ input:focus-visible + .image-picker-button {
   .stat-value { font-size: 24px; }
 }
 @media (max-width: 480px) {
+  /* Name and balance share the top row so the button label fits on one line. */
+  .selected-bar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "name balance" "osakunta switch";
+    align-items: center;
+    gap: 2px 12px;
+  }
+  .selected-bar-identity { display: contents; }
+  .selected-bar-name { grid-area: name; }
+  .selected-bar-osakunta { grid-area: osakunta; align-self: start; }
+  .selected-bar-balance {
+    grid-area: balance;
+    flex-direction: row;
+    align-items: baseline;
+    gap: 6px;
+  }
+  .selected-bar-balance strong { margin-top: 0; }
+  .selected-bar-switch { grid-area: switch; justify-self: end; }
   .compatibility-page { padding-top: 24px; }
   .compatibility-content { margin-top: 64px; }
   .account-summary { flex-direction: column; gap: 8px; }

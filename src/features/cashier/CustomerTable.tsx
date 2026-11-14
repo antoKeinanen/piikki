@@ -177,10 +177,24 @@ export function CustomerTable({
                     aria-pressed={row.original.id === selected}
                     onClick={() => pick(row.original.id)}
                   >
-                    <span className="customer-name">{row.original.name}</span>
-                    {row.original.osakunta && (
-                      <span className="customer-meta">{row.original.osakunta}</span>
-                    )}
+                    <span className="customer-check" aria-hidden="true">
+                      <svg viewBox="0 0 16 16" width="14" height="14">
+                        <path
+                          d="m3.5 8.5 3 3 6-7"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2.25"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </span>
+                    <span className="customer-text">
+                      <span className="customer-name">{row.original.name}</span>
+                      {row.original.osakunta && (
+                        <span className="customer-meta">{row.original.osakunta}</span>
+                      )}
+                    </span>
                   </button>
                 </Table.Cell>
                 <Table.Cell className="osakunta-cell" title={row.original.osakunta || undefined}>
