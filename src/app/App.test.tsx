@@ -838,7 +838,7 @@ it("opens product categories before their products", async () => {
   fireEvent.click(screen.getByRole("button", { name: "Kategoria Tölkki" }));
   expect(screen.getByRole("button", { name: "Veloita Olut 3,00" })).toBeTruthy();
   expect(screen.queryByRole("button", { name: "Veloita Kahvi 2,50" })).toBeNull();
-  fireEvent.click(screen.getByRole("button", { name: /Takaisin/ }));
+  fireEvent.click(screen.getByRole("button", { name: "Kaikki kategoriat" }));
   fireEvent.change(screen.getByLabelText("Hae nimikettä"), { target: { value: "lonk" } });
   expect(screen.getByRole("button", { name: "Veloita Lonkero 3,50" })).toBeTruthy();
 });

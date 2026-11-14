@@ -28,8 +28,10 @@ export function ReversalConfirmation({
   const action = entry.cents > 0 ? "Kumoa saldon lisäys" : "Kumoa veloitus";
   return (
     <div className="settings-form">
-      <Dialog.Title>{action}?</Dialog.Title>
-      <Text className="reversal-name">{customerName}</Text>
+      <div className="reversal-head">
+        <Dialog.Title>{action}?</Dialog.Title>
+        <Text className="reversal-name">{customerName}</Text>
+      </div>
       <div className="reversal-entry">
         <div>
           <Text className="reversal-title">{title}</Text>

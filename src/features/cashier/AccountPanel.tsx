@@ -131,6 +131,54 @@ export function AccountPanel({
     setJustPosted(false);
   }
   const validAmount = amount && /^\d+([.,]\d{1,2})?$/.test(amount.trim());
+  const showPicker = action === "charge" && products.length > 0;
+  // One fixed-height slot holds either the instruction or the receipt, so the
+  // item tiles below never move when a charge is recorded.
+  const feedback = customer && (
+    <div className="recorded-slot">
+      <div role="status">
+        {recorded && (
+          <div className={`recorded ${recorded.cents > 0 ? "positive" : "negative"}`}>
+            <span className="recorded-check" aria-hidden="true">✓</span>
+            <span className="recorded-body">
+              <span className="recorded-line">
+                <strong>{entryTitle(recorded)} kirjattu</strong> · {customer.name}
+              </span>
+              <span className="recorded-line recorded-change">
+                <span className="recorded-amount">
+                  {recorded.cents > 0 ? "+" : "−"}
+                  {formatAmount(Math.abs(recorded.cents))}
+                </span>
+                {" · Saldo "}
+                {formatAmount(customer.balance - recorded.cents)} →{" "}
+                <strong>{formatAmount(customer.balance)}</strong>
+              </span>
+            </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={busy}
+              onClick={() => {
+                setError("");
+                onReverse(recorded);
+              }}
+            >
+              Kumoa
+            </Button>
+          </div>
+        )}
+      </div>
+      {!recorded && (
+        <Text className="product-hint">
+          {action === "deposit"
+            ? "Kirjoita lisättävä summa."
+            : products.length
+              ? "Nimike veloitetaan heti, kun napautat sitä."
+              : "Kirjoita veloitettava summa."}
+        </Text>
+      )}
+    </div>
+  );
   return (
     <section
       className={`account ${customer ? `mode-${action}` : ""}`}
@@ -141,23 +189,25 @@ export function AccountPanel({
         <>
           <div className="account-summary">
             <div className="account-identity">
-              <Text className="account-name" title={customer.name}>
-                {customer.name}
-              </Text>
+              <div className="account-name-row">
+                <Text className="account-name" title={customer.name}>
+                  {customer.name}
+                </Text>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="edit-customer"
+                  aria-label={`Muokkaa henkilöä ${customer.name}`}
+                  disabled={busy}
+                  onClick={() => {
+                    setError("");
+                    onEdit();
+                  }}
+                >
+                  Muokkaa
+                </Button>
+              </div>
               {customer.osakunta && <Text className="account-osakunta">{customer.osakunta}</Text>}
-              <Button
-                variant="ghost"
-                size="sm"
-                className="edit-customer"
-                aria-label={`Muokkaa henkilöä ${customer.name}`}
-                disabled={busy}
-                onClick={() => {
-                  setError("");
-                  onEdit();
-                }}
-              >
-                Muokkaa
-              </Button>
             </div>
             <div className="balance-block">
               <span className="balance-label" aria-hidden="true">Saldo</span>
@@ -192,58 +242,28 @@ export function AccountPanel({
               <span aria-hidden="true" className="mode-sign">+</span>Lisää saldoa
             </Button>
           </Flex>
-          <div className="recorded-slot">
-            <div role="status">
-            {recorded && (
-              <div className={`recorded ${recorded.cents > 0 ? "positive" : "negative"}`}>
-                <span className="recorded-check" aria-hidden="true">✓</span>
-                <span className="recorded-text">
-                  Kirjattu <strong>{entryTitle(recorded)}</strong>
-                </span>
-                <span className="recorded-amount">
-                  {recorded.cents > 0 ? "+" : "−"}
-                  {formatAmount(Math.abs(recorded.cents))}
-                </span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  disabled={busy}
-                  onClick={() => {
-                    setError("");
-                    onReverse(recorded);
-                  }}
-                >
-                  Kumoa
-                </Button>
-              </div>
-            )}
-            </div>
-            {!recorded && (
-              <Text className="product-hint">
-                {action === "deposit"
-                  ? "Kirjoita lisättävä summa."
-                  : products.length
-                    ? "Nimike veloitetaan heti, kun napautat sitä."
-                    : "Kirjoita veloitettava summa."}
-              </Text>
-            )}
-          </div>
-          {action === "charge" && !!products.length && (
+          {!showPicker && feedback}
+          {showPicker && (
             <div className="product-picker">
               <Input aria-label="Hae nimikettä" placeholder="Hae nimikettä" value={search}
                 onChange={(e) => setSearch(e.target.value)} />
-              <div className="product-grid">
-                {openCategory !== undefined && (
+              {openCategory !== undefined && (
+                <div className="category-crumbs">
                   <Button
-                    variant="outline"
-                    className="product-charge category-back"
+                    variant="ghost"
+                    className="category-crumb"
                     disabled={busy}
                     onClick={() => setCategory(undefined)}
                   >
-                    <span className="category-chevron" aria-hidden="true">‹</span>
-                    <span>Takaisin<small>{openCategory}</small></span>
+                    <span className="category-crumb-chevron" aria-hidden="true">‹</span>
+                    Kaikki kategoriat
                   </Button>
-                )}
+                  <span className="category-crumb-separator" aria-hidden="true">/</span>
+                  <span className="category-crumb-current" aria-current="location">{openCategory}</span>
+                </div>
+              )}
+              {feedback}
+              <div className="product-grid">
                 {shownCategories.map((name) => (
                   <Button
                     key={`category:${name}`}
@@ -253,12 +273,14 @@ export function AccountPanel({
                     disabled={busy}
                     onClick={() => setCategory(name)}
                   >
-                    {categoryImages.has(name) && <img className="product-thumbnail" src={categoryImages.get(name)} alt="" />}
+                    <span className="category-top">
+                      {categoryImages.has(name) && <img className="product-thumbnail" src={categoryImages.get(name)} alt="" />}
+                      <span className="category-chevron" aria-hidden="true">›</span>
+                    </span>
                     <span>
                       {name}
                       <small>{products.filter((p) => p.category === name).length} nimikettä</small>
                     </span>
-                    <span className="category-chevron" aria-hidden="true">›</span>
                   </Button>
                 ))}
                 {visibleProducts.map((p) => (
@@ -310,12 +332,15 @@ export function AccountPanel({
             <Button
               className="primary mode-submit"
               type="submit"
-              disabled={!amount || busy}
+              disabled={!amount.trim() || busy}
             >
-              {action === "charge" ? "Veloita" : "Lisää saldoa"}
-              {validAmount
-                ? ` ${formatAmount(Math.round(Number(amount.trim().replace(",", ".")) * 100))}`
-                : ""}
+              {!amount.trim()
+                ? "Kirjoita summa"
+                : `${action === "charge" ? "Veloita" : "Lisää saldoa"}${
+                    validAmount
+                      ? ` ${formatAmount(Math.round(Number(amount.trim().replace(",", ".")) * 100))}`
+                      : ""
+                  }`}
             </Button>
           </form>
           {error && (
