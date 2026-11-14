@@ -263,14 +263,6 @@ function CashierApp() {
   const brandStyle = brandingStyle(data?.branding ?? NEUTRAL_BRANDING);
   const modalStyle =
     modal?.kind === "event" ? brandingStyle(modal.next.ledger.snapshot().branding) : brandStyle;
-  const fileControls = (
-    <FileControls
-      busy={busy}
-      error={error}
-      onOpen={() => void chooseDatabase()}
-      onBackup={() => void download()}
-    />
-  );
   const osakunnat = data
     ? [...data.customers, ...data.removedCustomers].map((c) => c.osakunta).concat(branding.organization)
     : [];
@@ -437,8 +429,7 @@ function CashierApp() {
             setError("");
           }
         }}
-        // Top-anchored so the tab strip stays put while the height follows each tab.
-        placement={modal?.kind === "settings" ? "top" : "center"}
+        placement="center"
       >
         <Portal>
           <Dialog.Backdrop />
@@ -554,14 +545,19 @@ function CashierApp() {
                     }
                     restoreCustomer={restoreCustomer}
                     files={
-                      <>
-                        {fileControls}
-                        <Text className="file-saving-help" role="status">
-                          {protection?.encrypted()
-                            ? "Tiedosto on salattu. Ilman sovelluksen salasanaa sitä ei voi lukea, myös uloskirjautumisen jälkeen."
-                            : "Tiedostoa ei salata, koska sovellukselle ei ole asetettu salasanaa."}
-                        </Text>
-                      </>
+                      <FileControls
+                        busy={busy}
+                        error={error}
+                        onOpen={() => void chooseDatabase()}
+                        onBackup={() => void download()}
+                        note={
+                          <Text className="file-saving-help" role="status">
+                            {protection?.encrypted()
+                              ? "Tiedosto on salattu. Ilman sovelluksen salasanaa sitä ei voi lukea, myös uloskirjautumisen jälkeen."
+                              : "Tiedostoa ei salata, koska sovellukselle ei ole asetettu salasanaa."}
+                          </Text>
+                        }
+                      />
                     }
                   />
                 )}

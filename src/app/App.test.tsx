@@ -452,7 +452,7 @@ it("shows the previous event name and creates a named event that keeps the previ
   mount();
   fireEvent.click(screen.getByRole("button", { name: "Avaa osakunnan tietokanta" }));
   const dialog = await screen.findByRole("dialog", { name: "Valitse tapahtuma" });
-  expect(within(dialog).getByText(`Edellinen tapahtuma: ${previous.event.name}`)).toBeTruthy();
+  expect(within(dialog).getByRole("button", { name: `Jatka tapahtumaa ${previous.event.name}` })).toBeTruthy();
   expect(screen.queryByLabelText("Saldo")).toBeNull();
   const create = within(dialog).getByRole("button", { name: "Luo uusi tapahtuma" });
   fireEvent.change(screen.getByLabelText("Tapahtuman nimi"), { target: { value: "   " } });

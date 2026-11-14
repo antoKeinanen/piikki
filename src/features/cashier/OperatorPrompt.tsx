@@ -55,7 +55,7 @@ export function OperatorPrompt({
               onChange={(event) => setName(event.target.value)}
             />
           </Field.Root>
-          <Button className="primary" type="submit" disabled={!name.trim()}>
+          <Button className="primary operator-submit" type="submit" disabled={!name.trim()}>
             Aloita vuoro
           </Button>
         </Stack>
