@@ -94,7 +94,7 @@ export function CustomerTable({
           </span>
           <button
             type="button"
-            className="selected-bar-switch outline-action"
+            className="selected-bar-switch secondary"
             aria-expanded={browsing}
             onClick={() => setBrowsing(!browsing)}
           >
@@ -102,17 +102,17 @@ export function CustomerTable({
           </button>
         </div>
       )}
-      <Flex gap="3" className="search-row">
+      <Flex className="search-row">
         <Input
           aria-label="Hae henkilöä"
           placeholder="Hae henkilöä"
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
         />
-        <Button variant="ghost" className="outline-action" disabled={disabled} onClick={add}>
+        <Button variant="ghost" className="secondary" disabled={disabled} onClick={add}>
           Lisää henkilö
         </Button>
-        <Button variant="ghost" className="outline-action" disabled={disabled} onClick={settings}>
+        <Button variant="ghost" className="secondary" disabled={disabled} onClick={settings}>
           Asetukset
         </Button>
       </Flex>

@@ -37,11 +37,11 @@ function ImagePicker({
               e.currentTarget.value = "";
             }}
           />
-          <label htmlFor={id} className="image-picker-button" data-disabled={disabled || undefined}>
+          <label htmlFor={id} className="image-picker-button secondary" data-disabled={disabled || undefined}>
             {pickLabel}
           </label>
           {image && (
-            <Button variant="ghost" className="image-picker-clear" disabled={disabled} onClick={onClear}>
+            <Button variant="ghost" className="image-picker-clear quiet" disabled={disabled} onClick={onClear}>
               {clearLabel}
             </Button>
           )}

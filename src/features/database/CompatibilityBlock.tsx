@@ -52,7 +52,7 @@ export function CompatibilityBlock({ problem }: { problem: string }) {
               </a>
             </Button>
           )}
-          <Button variant="ghost" onClick={() => window.location.reload()}>
+          <Button variant="ghost" className="quiet" onClick={() => window.location.reload()}>
             Tarkista uudelleen
           </Button>
         </div>

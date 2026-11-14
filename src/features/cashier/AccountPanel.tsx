@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { Button, Field, Flex, Input, Text } from "@chakra-ui/react";
+import { Button, Field, Input, Text } from "@chakra-ui/react";
 import { CustomerNoteForm } from "./CustomerNoteForm";
 import bustedImage from "./busted.jpg";
 import {
@@ -161,6 +161,7 @@ export function AccountPanel({
             <Button
               variant="ghost"
               size="sm"
+              className="secondary"
               disabled={busy}
               onClick={() => {
                 setError("");
@@ -207,7 +208,7 @@ export function AccountPanel({
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="edit-customer"
+                  className="edit-customer secondary"
                   aria-label={`Muokkaa henkilöä ${customer.name}`}
                   disabled={busy}
                   onClick={() => {
@@ -236,7 +237,7 @@ export function AccountPanel({
               </Text>
             </div>
           </div>
-          <Flex className="mode" role="group" aria-label="Tapahtuman tyyppi">
+          <div className="mode" role="group" aria-label="Tapahtuman tyyppi">
             <Button
               variant="plain"
               className={`mode-charge-tab ${action === "charge" ? "mode-active" : ""}`}
@@ -255,7 +256,7 @@ export function AccountPanel({
             >
               <span aria-hidden="true" className="mode-sign">+</span>Lisää saldoa
             </Button>
-          </Flex>
+          </div>
           {!showPicker && feedback}
           {showPicker && (
             <div className="product-picker">
@@ -265,7 +266,7 @@ export function AccountPanel({
                 <div className="category-crumbs">
                   <Button
                     variant="ghost"
-                    className="category-crumb"
+                    className="category-crumb secondary"
                     disabled={busy}
                     onClick={() => setCategory(undefined)}
                   >
@@ -406,6 +407,7 @@ export function AccountPanel({
                   <Button
                     variant="ghost"
                     size="sm"
+                    className="secondary"
                     disabled={busy}
                     onClick={() => {
                       setError("");

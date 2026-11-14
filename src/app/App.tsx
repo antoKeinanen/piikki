@@ -331,7 +331,7 @@ function CashierApp() {
             {operator && (
               <Button
                 variant="ghost"
-                className="operator-switch outline-action"
+                className="operator-switch secondary"
                 aria-label={`Vuorossa ${operator}, vaihda`}
                 disabled={busy}
                 onClick={() => setModal({ kind: "operator" })}
@@ -341,13 +341,13 @@ function CashierApp() {
             )}
             <Button
               variant="ghost"
-              className="view-switch outline-action"
+              className="view-switch secondary"
               disabled={busy}
               onClick={() => setView(view === "stats" ? "cashier" : "stats")}
             >
               {view === "stats" ? "Tilit" : "Tilastot"}
             </Button>
-            <Button variant="ghost" className="logout outline-action" disabled={busy} onClick={logout}>
+            <Button variant="ghost" className="logout secondary" disabled={busy} onClick={logout}>
               Kirjaudu ulos
             </Button>
           </nav>
@@ -586,7 +586,7 @@ function CashierApp() {
                 <Dialog.Footer className="modal-footer">
                   <Button
                     variant="ghost"
-                    className="close-modal"
+                    className="close-modal secondary"
                     disabled={busy}
                     onClick={() => {
                       setModal(undefined);

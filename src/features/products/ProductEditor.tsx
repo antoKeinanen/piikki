@@ -37,11 +37,11 @@ function ImagePicker({
               e.currentTarget.value = "";
             }}
           />
-          <label htmlFor={id} className="image-picker-button" data-disabled={disabled || undefined}>
+          <label htmlFor={id} className="image-picker-button secondary" data-disabled={disabled || undefined}>
             {pickLabel}
           </label>
           {image && (
-            <Button variant="ghost" className="image-picker-clear" disabled={disabled} onClick={onClear}>
+            <Button variant="ghost" className="image-picker-clear quiet" disabled={disabled} onClick={onClear}>
               {clearLabel}
             </Button>
           )}
@@ -191,7 +191,7 @@ export function ProductEditor({
         <div className="product-row-actions">
           {editing === p.id
             ? <span className="product-editing-badge" aria-live="polite">Muokataan</span>
-            : <Button variant="outline" disabled={disabled} onClick={() => {
+            : <Button variant="outline" className="secondary" disabled={disabled} onClick={() => {
                 setEditing(p.id);
                 setEditDraft({ name: p.name, description: p.description, image: p.image, amount: (p.cents / 100).toFixed(2), category: p.category });
               }}>Muokkaa</Button>}
@@ -208,7 +208,7 @@ export function ProductEditor({
     <div key="removed" className="product-row product-removed" role="status">
       <span>{removed.product.name}<small>Poistettu</small></span>
       <div className="product-row-actions">
-        <Button variant="outline" disabled={disabled} onClick={() => void apply(
+        <Button variant="outline" className="secondary" disabled={disabled} onClick={() => void apply(
           () => save(removed.product), () => setRemoved(undefined),
         )}>Palauta {removed.product.name}</Button>
       </div>

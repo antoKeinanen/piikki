@@ -19,10 +19,10 @@ export function FileControls({
         <Text className="file-status-title">Muutokset tallentuvat automaattisesti.</Text>
         {note}
       </div>
-      <Button variant="outline" disabled={busy} onClick={onOpen}>
+      <Button variant="outline" className="secondary" disabled={busy} onClick={onOpen}>
         Avaa tietokanta
       </Button>
-      <Button variant="outline" disabled={busy} onClick={onBackup}>
+      <Button variant="outline" className="secondary" disabled={busy} onClick={onBackup}>
         Lataa varmuuskopio
       </Button>
       {error && (
