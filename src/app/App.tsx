@@ -10,14 +10,26 @@ import {
   type OpenedDatabase,
 } from "../persistence/database-file";
 import { Ledger } from "../ledger";
-import { type Customer, type Entry, type Branding, defaultBranding } from "../ledger";
+import {
+  type Customer,
+  type Entry,
+  type Branding,
+  defaultBranding,
+} from "../ledger";
 import { brandingStyle } from "../features/branding/theme";
 import { CompatibilityBlock } from "../features/database/CompatibilityBlock";
 import { BrandingForm } from "../features/branding/BrandingForm";
 import { Settings } from "./Settings";
 import { PeopleList } from "../features/cashier/PeopleList";
-import { AccountPanel, entryTitle, signedAmount } from "../features/cashier/AccountPanel";
-import { CustomerForm, type CustomerValues } from "../features/cashier/CustomerForm";
+import {
+  AccountPanel,
+  entryTitle,
+  signedAmount,
+} from "../features/cashier/AccountPanel";
+import {
+  CustomerForm,
+  type CustomerValues,
+} from "../features/cashier/CustomerForm";
 import { EditCustomer } from "../features/cashier/EditCustomer";
 import { Toast } from "../features/cashier/Toast";
 import { ReversalConfirmation } from "../features/cashier/ReversalConfirmation";
@@ -32,7 +44,13 @@ const EventStats = lazy(() =>
 );
 /** With no input for this long, the selected person is cleared so nobody gets charged by mistake. */
 export const IDLE_TIMEOUT_MS = 2 * 60 * 1000;
-const ACTIVITY_EVENTS = ["pointerdown", "keydown", "wheel", "touchstart", "input"] as const;
+const ACTIVITY_EVENTS = [
+  "pointerdown",
+  "keydown",
+  "wheel",
+  "touchstart",
+  "input",
+] as const;
 type View = "cashier" | "stats" | "settings";
 const VIEWS: { id: View; label: string }[] = [
   { id: "cashier", label: "Tilit" },
@@ -58,7 +76,13 @@ const MODAL_TITLES: Record<Modal["kind"], string> = {
 };
 /** The latest change, shown at the bottom with a way to undo it. */
 type Notice =
-  | { kind: "entry"; entryId: string; customerName: string; cents: number; label: string }
+  | {
+      kind: "entry";
+      entryId: string;
+      customerName: string;
+      cents: number;
+      label: string;
+    }
   | {
       kind: "undo";
       message: string;
@@ -115,7 +139,9 @@ function CashierApp() {
       setSelected(undefined);
       setNotice(undefined);
       setModal((current) =>
-        current?.kind === "reverse" || current?.kind === "edit-customer" ? undefined : current,
+        current?.kind === "reverse" || current?.kind === "edit-customer"
+          ? undefined
+          : current,
       );
     };
     let timer = setTimeout(expire, IDLE_TIMEOUT_MS);
@@ -123,10 +149,12 @@ function CashierApp() {
       clearTimeout(timer);
       timer = setTimeout(expire, IDLE_TIMEOUT_MS);
     };
-    for (const name of ACTIVITY_EVENTS) window.addEventListener(name, reset, true);
+    for (const name of ACTIVITY_EVENTS)
+      window.addEventListener(name, reset, true);
     return () => {
       clearTimeout(timer);
-      for (const name of ACTIVITY_EVENTS) window.removeEventListener(name, reset, true);
+      for (const name of ACTIVITY_EVENTS)
+        window.removeEventListener(name, reset, true);
     };
   }, [selected]);
 
@@ -141,7 +169,12 @@ function CashierApp() {
   const choosing = modal?.kind === "event" || modal?.kind === "create-event";
   async function chooseDatabase() {
     if (busy || choosing || !supportsDirectFiles()) return;
-    if (dirty && !window.confirm("Avataanko toinen tietokanta? Tämän tiedoston muutokset eivät ole tallessa."))
+    if (
+      dirty &&
+      !window.confirm(
+        "Avataanko toinen tietokanta? Tämän tiedoston muutokset eivät ole tallessa.",
+      )
+    )
       return;
     setFileBusy(true);
     try {
@@ -157,11 +190,18 @@ function CashierApp() {
   }
   async function open(file: File) {
     if (busy || choosing) return;
-    if (dirty && !window.confirm("Avataanko toinen tietokanta? Tämän tiedoston muutokset eivät ole tallessa."))
+    if (
+      dirty &&
+      !window.confirm(
+        "Avataanko toinen tietokanta? Tämän tiedoston muutokset eivät ole tallessa.",
+      )
+    )
       return;
     setFileBusy(true);
     try {
-      const { plain, fileKey } = await unlockBytes(new Uint8Array(await file.arrayBuffer()));
+      const { plain, fileKey } = await unlockBytes(
+        new Uint8Array(await file.arrayBuffer()),
+      );
       const imported = await Ledger.open(plain);
       const next = await saveDatabase(imported, file.name, fileKey);
       setModal({ kind: "event", next });
@@ -182,7 +222,13 @@ function CashierApp() {
   }
   function logout() {
     if (busy) return;
-    if (dirty && !window.confirm("Kirjaudutaanko ulos? Tämän tiedoston muutokset eivät ole tallessa.")) return;
+    if (
+      dirty &&
+      !window.confirm(
+        "Kirjaudutaanko ulos? Tämän tiedoston muutokset eivät ole tallessa.",
+      )
+    )
+      return;
     closeSession();
     setOperator("");
     setSelected(undefined);
@@ -227,10 +273,12 @@ function CashierApp() {
   }
   async function editCustomer(before: Customer, values: CustomerValues) {
     if (!ledger) return;
-    const details = values.name !== before.name || values.osakunta !== before.osakunta;
+    const details =
+      values.name !== before.name || values.osakunta !== before.osakunta;
     await mutation.mutateAsync(async () => {
       if (details) await ledger.updateCustomer(before.id, values);
-      if (values.note !== before.note) await ledger.saveCustomerNote(before.id, values.note);
+      if (values.note !== before.note)
+        await ledger.saveCustomerNote(before.id, values.note);
     });
     setModal(undefined);
     setNotice({
@@ -240,8 +288,12 @@ function CashierApp() {
       run: () =>
         mutation.mutateAsync(async () => {
           if (details)
-            await ledger.updateCustomer(before.id, { name: before.name, osakunta: before.osakunta });
-          if (values.note !== before.note) await ledger.saveCustomerNote(before.id, before.note);
+            await ledger.updateCustomer(before.id, {
+              name: before.name,
+              osakunta: before.osakunta,
+            });
+          if (values.note !== before.note)
+            await ledger.saveCustomerNote(before.id, before.note);
         }),
     });
   }
@@ -262,15 +314,22 @@ function CashierApp() {
     if (!ledger) return;
     await mutation.mutateAsync(() => ledger.restoreCustomer(id));
     if (select) choose(id);
-    setNotice((current) => (current?.kind === "undo" && current.restores === id ? undefined : current));
+    setNotice((current) =>
+      current?.kind === "undo" && current.restores === id ? undefined : current,
+    );
   }
   const branding = data?.branding ?? defaultBranding;
   const brandStyle = brandingStyle(branding);
   const osakunnat = data
-    ? [...data.customers, ...data.removedCustomers].map((c) => c.osakunta).concat(branding.organization)
+    ? [...data.customers, ...data.removedCustomers]
+        .map((c) => c.osakunta)
+        .concat(branding.organization)
     : [];
   const people = data
-    ? [...data.customers, ...data.removedCustomers.map((c) => ({ ...c, removed: true }))]
+    ? [
+        ...data.customers,
+        ...data.removedCustomers.map((c) => ({ ...c, removed: true })),
+      ]
     : [];
   function choose(id: string) {
     setSelected(id);
@@ -289,8 +348,13 @@ function CashierApp() {
   }
   // An entry notice disappears once its entry has been undone.
   const noticeEntry =
-    notice?.kind === "entry" ? data?.entries.find((e) => e.id === notice.entryId) : undefined;
-  const shownNotice = notice?.kind === "entry" && (!noticeEntry || noticeEntry.reversed) ? undefined : notice;
+    notice?.kind === "entry"
+      ? data?.entries.find((e) => e.id === notice.entryId)
+      : undefined;
+  const shownNotice =
+    notice?.kind === "entry" && (!noticeEntry || noticeEntry.reversed)
+      ? undefined
+      : notice;
   const mustChooseOperator = modal?.kind === "operator" && !operator;
   return (
     <div
@@ -301,7 +365,11 @@ function CashierApp() {
         setDragging(true);
       }}
       onDragLeave={(e) => {
-        if (!e.currentTarget.contains(e.relatedTarget instanceof Node ? e.relatedTarget : null))
+        if (
+          !e.currentTarget.contains(
+            e.relatedTarget instanceof Node ? e.relatedTarget : null,
+          )
+        )
           setDragging(false);
       }}
       onDrop={(e) => {
@@ -315,7 +383,11 @@ function CashierApp() {
         <header className="topbar" aria-label={branding.organization}>
           <div className="brand">
             {branding.logo && (
-              <img className="brand-logo" src={branding.logo} alt={`${branding.organization} logo`} />
+              <img
+                className="brand-logo"
+                src={branding.logo}
+                alt={`${branding.organization} logo`}
+              />
             )}
             <div className="brand-text">
               <span className="brand-name">{branding.organization}</span>
@@ -351,7 +423,12 @@ function CashierApp() {
                 <span className="operator-name">{operator}</span>
               </button>
             )}
-            <button type="button" className="btn btn-ghost" disabled={busy} onClick={logout}>
+            <button
+              type="button"
+              className="btn btn-ghost"
+              disabled={busy}
+              onClick={logout}
+            >
               Kirjaudu ulos
             </button>
           </div>
@@ -369,15 +446,24 @@ function CashierApp() {
         />
       ) : !data ? null : view === "stats" ? (
         <Suspense fallback={null}>
-          <EventStats ledger={ledger} revision={active.kind === "active" ? active.revision : 0} />
+          <EventStats
+            ledger={ledger}
+            revision={active.kind === "active" ? active.revision : 0}
+          />
         </Suspense>
       ) : view === "settings" ? (
         <Settings
           snapshot={data}
           busy={busy}
-          saveBranding={(value) => mutation.mutateAsync(() => ledger.saveBranding(value))}
-          saveProduct={(value) => mutation.mutateAsync(() => ledger.saveProduct(value))}
-          removeProduct={(id) => mutation.mutateAsync(() => ledger.removeProduct(id))}
+          saveBranding={(value) =>
+            mutation.mutateAsync(() => ledger.saveBranding(value))
+          }
+          saveProduct={(value) =>
+            mutation.mutateAsync(() => ledger.saveProduct(value))
+          }
+          removeProduct={(id) =>
+            mutation.mutateAsync(() => ledger.removeProduct(id))
+          }
           restoreCustomer={restoreCustomer}
           files={
             <>
@@ -436,30 +522,40 @@ function CashierApp() {
           />
         </main>
       )}
-      {shownNotice && view === "cashier" && (
-        <Toast
-          busy={busy}
-          action={shownNotice.kind === "entry" ? "Peru" : shownNotice.action}
-          actionLabel={shownNotice.kind === "undo" ? shownNotice.actionLabel : undefined}
-          dismiss={() => setNotice(undefined)}
-          onAction={() => {
-            if (shownNotice.kind === "undo")
-              void shownNotice.run().then(() => setNotice(undefined), () => {});
-            else if (noticeEntry) openReversal(noticeEntry);
-          }}
-        >
-          {shownNotice.kind === "entry" ? (
-            <>
-              <strong className={shownNotice.cents > 0 ? "positive" : "negative"}>
-                {signedAmount(shownNotice.cents)}
-              </strong>{" "}
-              {noticeEntry ? entryTitle(noticeEntry) : ""} · {shownNotice.customerName}
-            </>
-          ) : (
-            shownNotice.message
-          )}
-        </Toast>
-      )}
+      <div role="status" aria-label="Ilmoitus" className="notice-region">
+        {shownNotice && view === "cashier" && (
+          <Toast
+            busy={busy}
+            action={shownNotice.kind === "entry" ? "Peru" : shownNotice.action}
+            actionLabel={
+              shownNotice.kind === "undo" ? shownNotice.actionLabel : undefined
+            }
+            dismiss={() => setNotice(undefined)}
+            onAction={() => {
+              if (shownNotice.kind === "undo")
+                void shownNotice.run().then(
+                  () => setNotice(undefined),
+                  () => {},
+                );
+              else if (noticeEntry) openReversal(noticeEntry);
+            }}
+          >
+            {shownNotice.kind === "entry" ? (
+              <>
+                <strong
+                  className={shownNotice.cents > 0 ? "positive" : "negative"}
+                >
+                  {signedAmount(shownNotice.cents)}
+                </strong>{" "}
+                {noticeEntry ? entryTitle(noticeEntry) : ""} ·{" "}
+                {shownNotice.customerName}
+              </>
+            ) : (
+              shownNotice.message
+            )}
+          </Toast>
+        )}
+      </div>
       <Dialog.Root
         lazyMount
         unmountOnExit
@@ -479,7 +575,11 @@ function CashierApp() {
               aria-label={modal ? MODAL_TITLES[modal.kind] : undefined}
             >
               <Dialog.Body className="modal-body">
-                {modal && <Dialog.Title className="modal-title">{MODAL_TITLES[modal.kind]}</Dialog.Title>}
+                {modal && (
+                  <Dialog.Title className="modal-title">
+                    {MODAL_TITLES[modal.kind]}
+                  </Dialog.Title>
+                )}
                 {modal?.kind === "operator" && (
                   <OperatorPrompt
                     current={operator}
@@ -491,9 +591,14 @@ function CashierApp() {
                     }}
                   />
                 )}
-                {(modal?.kind === "event" || modal?.kind === "create-event") && (
+                {(modal?.kind === "event" ||
+                  modal?.kind === "create-event") && (
                   <EventChoice
-                    previousName={modal.kind === "event" ? modal.next.ledger.latestEvent().name : undefined}
+                    previousName={
+                      modal.kind === "event"
+                        ? modal.next.ledger.latestEvent().name
+                        : undefined
+                    }
                     busy={busy}
                     cancel={closeModal}
                     onContinue={() => {
@@ -534,7 +639,10 @@ function CashierApp() {
                       if (!ledger) return;
                       let id = "";
                       await mutation.mutateAsync(async () => {
-                        id = await ledger.addCustomer(name, "", osakunta, { openingCents, operator });
+                        id = await ledger.addCustomer(name, "", osakunta, {
+                          openingCents,
+                          operator,
+                        });
                       });
                       setModal(undefined);
                       choose(id);
@@ -559,7 +667,9 @@ function CashierApp() {
                     busy={busy}
                     cancel={closeModal}
                     confirm={async () => {
-                      await mutation.mutateAsync(() => ledger?.reverse(modal.entry.id, operator));
+                      await mutation.mutateAsync(() =>
+                        ledger?.reverse(modal.entry.id, operator),
+                      );
                       setModal(undefined);
                     }}
                   />

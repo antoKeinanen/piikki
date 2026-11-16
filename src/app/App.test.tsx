@@ -673,12 +673,12 @@ it("edits a person with undo, deletes with undo, and restores from settings", as
   await within(account).findByRole("heading", { name: "Aino K" });
   expect(within(account).getByText("PO")).toBeTruthy();
   expect(aino()).toMatchObject({ name: "Aino K", osakunta: "PO" });
-  const toast = () => screen.queryByRole("status");
+  const toast = () => screen.queryByRole("status", { name: "Ilmoitus" });
   expect(toast()?.textContent).toContain("Aino K: tiedot tallennettu.");
-  fireEvent.click(within(screen.getByRole("status")).getByRole("button", { name: "Peru" }));
+  fireEvent.click(within(screen.getByRole("status", { name: "Ilmoitus" })).getByRole("button", { name: "Peru" }));
   await within(account).findByRole("heading", { name: "Aino Korhonen" });
   expect(aino()).toMatchObject({ name: "Aino Korhonen", osakunta: "" });
-  expect(screen.queryByRole("status")).toBeNull();
+  expect(screen.getByRole("status", { name: "Ilmoitus" }).textContent).toBe("");
 
   fireEvent.click(screen.getByRole("button", { name: "Muokkaa henkilöä Aino Korhonen" }));
   dialog = await screen.findByRole("dialog", { name: "Muokkaa henkilöä" });
@@ -755,14 +755,14 @@ it("offers to undo the latest charge from the notice", async () => {
   const ledger = await openExample();
   await continueEvent("Aino Korhonen");
   fireEvent.click(screen.getByRole("button", { name: "Veloita Lounas 8,50" }));
-  const notice = await screen.findByRole("status");
+  const notice = await screen.findByRole("status", { name: "Ilmoitus" });
   await waitFor(() => expect(notice.textContent).toContain("−8,50 Lounas · Aino Korhonen"));
   fireEvent.click(within(notice).getByRole("button", { name: "Peru" }));
   const dialog = await screen.findByRole("dialog", { name: "Perutaanko kirjaus?" });
   expect(within(dialog).getByText("Saldoon kirjataan +8,50. Alkuperäinen kirjaus jää näkyviin perutuksi.")).toBeTruthy();
   fireEvent.click(within(dialog).getByRole("button", { name: "Peru kirjaus" }));
   await waitFor(() => expect(screen.getByLabelText("Saldo").textContent).toBe("42,50"));
-  expect(screen.queryByRole("status")).toBeNull();
+  expect(screen.getByRole("status", { name: "Ilmoitus" }).textContent).toBe("");
   expect(ledger.snapshot().entries[0].reversal_of).toBeTruthy();
 });
 
@@ -773,6 +773,12 @@ it("finds people with Enter and offers to add a missing name", async () => {
   fireEvent.change(search, { target: { value: "emma" } });
   fireEvent.keyDown(search, { key: "Enter" });
   await waitFor(() => expect(screen.getByLabelText("Saldo").textContent).toBe("32,00"));
+  // A name starting with the search wins over a more recent substring match.
+  // "o": Väinö Salonen is the most recent match, but Onni starts with it.
+  fireEvent.change(search, { target: { value: "o" } });
+  expect(document.querySelector(".person .person-name")?.textContent).toBe("Väinö Salonen");
+  fireEvent.keyDown(search, { key: "Enter" });
+  await waitFor(() => expect(screen.getByRole("heading", { name: "Onni Järvinen" })).toBeTruthy());
   fireEvent.change(search, { target: { value: "Matti Meikäläinen" } });
   fireEvent.click(screen.getByRole("button", { name: "Lisää Matti Meikäläinen" }));
   const dialog = await screen.findByRole("dialog", { name: "Lisää henkilö" });

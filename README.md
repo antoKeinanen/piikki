@@ -17,7 +17,7 @@ The top bar has three views: **Tilit**, **Tilastot** and **Asetukset**. Each sta
 
 In **Tilit**, the people list is on the left. Type in the search field and press Enter to select the top match. If nobody matches, the list offers to add the typed name. The selected person's name, balance and note are at the top of the right side, followed by the amount field, the item buttons and the history. The amount field and the **Veloita** and **Lisää saldoa** buttons stay in the same place for every person. Enter in the amount field does nothing, so a typed amount is only applied by pressing one of the two buttons.
 
-After each change, a notice at the bottom shows what happened and offers **Peru**. Undoing always asks for confirmation. Person IDs and the active filename stay hidden.
+After each change, a notice at the bottom shows what happened and offers **Peru**. Undoing a charge or a balance addition asks for confirmation. Person IDs and the active filename stay hidden.
 
 **Asetukset** holds items, colours and logo, deleted people, and the database file controls. Branding colours are saved inside the SQLite file.
 

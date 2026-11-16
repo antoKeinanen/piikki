@@ -23,9 +23,14 @@ export function ReversalConfirmation({
         <dt>Kirjaus</dt>
         <dd>{entryTitle(entry)}</dd>
         <dt>Summa</dt>
-        <dd className={entry.cents > 0 ? "positive" : "negative"}>{signedAmount(entry.cents)}</dd>
+        <dd className={entry.cents > 0 ? "positive" : "negative"}>
+          {signedAmount(entry.cents)}
+        </dd>
       </dl>
-      <p className="dialog-text">Saldoon kirjataan {signedAmount(-entry.cents)}. Alkuperäinen kirjaus jää näkyviin perutuksi.</p>
+      <p className="dialog-text">
+        Saldoon kirjataan {signedAmount(-entry.cents)}. Alkuperäinen kirjaus jää
+        näkyviin perutuksi.
+      </p>
       <DialogActions onCancel={cancel} busy={busy}>
         <button
           type="button"

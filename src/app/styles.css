@@ -514,7 +514,7 @@ ul {
   background: transparent;
   text-align: left;
 }
-.person:hover:not(:disabled) {
+.person:hover:not(:disabled):not([aria-pressed="true"]) {
   background: var(--hover);
   color: var(--on-hover);
 }
@@ -524,6 +524,9 @@ ul {
 }
 .person:disabled {
   cursor: progress;
+}
+.person.single {
+  grid-template-areas: "name balance";
 }
 .person-name {
   grid-area: name;
@@ -552,6 +555,9 @@ ul {
 }
 .person[aria-pressed="true"] :is(.person-osakunta, .person-balance) {
   color: inherit;
+}
+.people-list:empty {
+  display: none;
 }
 .people-empty {
   display: grid;

@@ -1,6 +1,9 @@
 import type { ReactNode } from "react";
 
-/** The latest change, with a way to undo it. Stays until replaced or closed. */
+/**
+ * The latest change, with a way to undo it. Stays until replaced or closed.
+ * Render it inside a live region that is always mounted, so the first notice is announced.
+ */
 export function Toast({
   children,
   action,
@@ -17,7 +20,7 @@ export function Toast({
   dismiss(): void;
 }) {
   return (
-    <div className="toast" role="status">
+    <div className="toast">
       <p className="toast-text">{children}</p>
       <button
         type="button"
@@ -28,7 +31,12 @@ export function Toast({
       >
         {action}
       </button>
-      <button type="button" className="btn btn-ghost btn-sm toast-close" aria-label="Sulje ilmoitus" onClick={dismiss}>
+      <button
+        type="button"
+        className="btn btn-ghost btn-sm toast-close"
+        aria-label="Sulje ilmoitus"
+        onClick={dismiss}
+      >
         ×
       </button>
     </div>

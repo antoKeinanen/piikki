@@ -1,8 +1,24 @@
 import { useEffect, useRef, useState } from "react";
-import { formatAmount, parseAmount, LogoSchema, type Product } from "../../ledger";
-import { Field, IMAGE_ERROR, IMAGE_READ_ERROR, IMAGE_TYPES } from "../../ui/Field";
+import {
+  formatAmount,
+  parseAmount,
+  LogoSchema,
+  type Product,
+} from "../../ledger";
+import {
+  Field,
+  IMAGE_ERROR,
+  IMAGE_READ_ERROR,
+  IMAGE_TYPES,
+} from "../../ui/Field";
 
-const EMPTY = { name: "", description: "", image: "", amount: "", category: "" };
+const EMPTY = {
+  name: "",
+  description: "",
+  image: "",
+  amount: "",
+  category: "",
+};
 
 export function ProductEditor({
   products,
@@ -26,14 +42,18 @@ export function ProductEditor({
   const nameInput = useRef<HTMLInputElement>(null);
   useEffect(() => {
     if (!editing) return;
-    nameInput.current?.scrollIntoView?.({ block: "nearest", behavior: "smooth" });
+    nameInput.current?.scrollIntoView?.({
+      block: "nearest",
+      behavior: "smooth",
+    });
     nameInput.current?.focus({ preventScroll: true });
   }, [editing]);
   const disabled = busy || reading;
-  const categories = [...new Set(products.map((p) => p.category).filter(Boolean))].sort((a, b) =>
-    a.localeCompare(b, "fi"),
-  );
+  const categories = [
+    ...new Set(products.map((p) => p.category).filter(Boolean)),
+  ].sort((a, b) => a.localeCompare(b, "fi"));
   const editedName = products.find((p) => p.id === editing)?.name;
+  const withImages = products.some((p) => p.image);
   function reset() {
     if (editing) setEditDraft(EMPTY);
     else setNewDraft(EMPTY);
@@ -58,7 +78,8 @@ export function ProductEditor({
     const reader = new FileReader();
     reader.onload = () => {
       const image = LogoSchema.safeParse(reader.result);
-      if (image.success) setDraft((current) => ({ ...current, image: image.data }));
+      if (image.success)
+        setDraft((current) => ({ ...current, image: image.data }));
       else setError(IMAGE_READ_ERROR);
     };
     reader.onerror = () => setError(IMAGE_READ_ERROR);
@@ -68,11 +89,19 @@ export function ProductEditor({
   return (
     <div className="editor">
       <div className="editor-list">
-        {!products.length && <p className="empty-text">Ei vielä nimikkeitä. Lisää ensimmäinen lomakkeella.</p>}
+        {!products.length && (
+          <p className="empty-text">
+            Ei vielä nimikkeitä. Lisää ensimmäinen lomakkeella.
+          </p>
+        )}
         <ul className="rows">
           {products.map((p) => (
             <li key={p.id} className={editing === p.id ? "row editing" : "row"}>
-              {p.image ? <img className="row-image" src={p.image} alt="" /> : <span className="row-image" />}
+              {p.image ? (
+                <img className="row-image" src={p.image} alt="" />
+              ) : (
+                withImages && <span className="row-image" />
+              )}
               <span className="row-main">
                 <span className="row-title">{p.name}</span>
                 <span className="row-detail">
@@ -132,7 +161,12 @@ export function ProductEditor({
               type="button"
               className="btn btn-secondary btn-sm"
               disabled={disabled}
-              onClick={() => void apply(() => save(removed), () => setRemoved(undefined))}
+              onClick={() =>
+                void apply(
+                  () => save(removed),
+                  () => setRemoved(undefined),
+                )
+              }
             >
               Palauta {removed.name}
             </button>
@@ -157,7 +191,9 @@ export function ProductEditor({
           }, reset);
         }}
       >
-        <h3 className="section-title">{editing ? `Muokkaa: ${editedName}` : "Uusi nimike"}</h3>
+        <h3 className="section-title">
+          {editing ? `Muokkaa: ${editedName}` : "Uusi nimike"}
+        </h3>
         <Field label="Nimi">
           {(control) => (
             <input
@@ -202,7 +238,9 @@ export function ProductEditor({
                 autoComplete="off"
                 disabled={disabled}
                 value={draft.category}
-                onChange={(e) => setDraft({ ...draft, category: e.target.value })}
+                onChange={(e) =>
+                  setDraft({ ...draft, category: e.target.value })
+                }
               />
               <datalist id="product-categories">
                 {categories.map((category) => (
@@ -210,7 +248,11 @@ export function ProductEditor({
                 ))}
               </datalist>
               {categories.length > 0 && (
-                <div className="chips" role="group" aria-label="Aiemmat kategoriat">
+                <div
+                  className="chips"
+                  role="group"
+                  aria-label="Aiemmat kategoriat"
+                >
                   {categories.map((category) => {
                     const selected = draft.category === category;
                     return (
@@ -220,7 +262,12 @@ export function ProductEditor({
                         className="chip"
                         aria-pressed={selected}
                         disabled={disabled}
-                        onClick={() => setDraft({ ...draft, category: selected ? "" : category })}
+                        onClick={() =>
+                          setDraft({
+                            ...draft,
+                            category: selected ? "" : category,
+                          })
+                        }
                       >
                         {category}
                       </button>
@@ -231,7 +278,10 @@ export function ProductEditor({
             </>
           )}
         </Field>
-        <Field label="Kuvaus (valinnainen)" hint="Haku löytää nimikkeen myös kuvauksen sanoilla.">
+        <Field
+          label="Kuvaus (valinnainen)"
+          hint="Haku löytää nimikkeen myös kuvauksen sanoilla."
+        >
           {(control) => (
             <textarea
               {...control}
@@ -240,14 +290,22 @@ export function ProductEditor({
               maxLength={2000}
               disabled={disabled}
               value={draft.description}
-              onChange={(e) => setDraft({ ...draft, description: e.target.value })}
+              onChange={(e) =>
+                setDraft({ ...draft, description: e.target.value })
+              }
             />
           )}
         </Field>
         <Field label="Kuva (valinnainen)">
           {(control) => (
             <div className="image-picker">
-              {draft.image && <img className="image-preview" src={draft.image} alt="Kuvan esikatselu" />}
+              {draft.image && (
+                <img
+                  className="image-preview"
+                  src={draft.image}
+                  alt="Kuvan esikatselu"
+                />
+              )}
               <input
                 {...control}
                 type="file"
@@ -280,7 +338,12 @@ export function ProductEditor({
         )}
         <div className="dialog-actions">
           {editing && (
-            <button type="button" className="btn btn-ghost" disabled={disabled} onClick={reset}>
+            <button
+              type="button"
+              className="btn btn-ghost"
+              disabled={disabled}
+              onClick={reset}
+            >
               Peruuta
             </button>
           )}

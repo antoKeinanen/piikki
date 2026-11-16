@@ -1,5 +1,9 @@
 import { formatAmount, type Customer } from "../../ledger";
-import { CustomerForm, type CustomerValues, type KnownPerson } from "./CustomerForm";
+import {
+  CustomerForm,
+  type CustomerValues,
+  type KnownPerson,
+} from "./CustomerForm";
 
 export function EditCustomer({
   customer,
@@ -34,7 +38,9 @@ export function EditCustomer({
         <div>
           <p className="danger-title">Poista henkilö</p>
           <p className="field-hint">
-            {customer.balance ? `Saldo ${formatAmount(customer.balance)} ja tapahtumat säilyvät.` : "Tapahtumat säilyvät."}{" "}
+            {customer.balance
+              ? `Saldo ${formatAmount(customer.balance)} ja kirjaukset säilyvät.`
+              : "Kirjaukset säilyvät."}{" "}
             Voit palauttaa henkilön asetuksista.
           </p>
         </div>

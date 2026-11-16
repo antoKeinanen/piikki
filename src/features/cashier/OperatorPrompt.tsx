@@ -20,11 +20,18 @@ export function OperatorPrompt({
   const others = recent.filter((value) => value !== current);
   return (
     <div className="dialog-form">
-      <p className="dialog-text">Nimesi tallentuu jokaiseen kirjaukseen, jonka teet.</p>
+      <p className="dialog-text">
+        Nimesi tallentuu jokaiseen kirjaukseen, jonka teet.
+      </p>
       {!!others.length && (
         <div className="choice-list" role="group" aria-label="Aiemmin vuorossa">
           {others.map((value) => (
-            <button type="button" key={value} className="btn btn-secondary btn-lg" onClick={() => choose(value)}>
+            <button
+              type="button"
+              key={value}
+              className="btn btn-secondary btn-lg"
+              onClick={() => choose(value)}
+            >
               {value}
             </button>
           ))}
@@ -52,7 +59,11 @@ export function OperatorPrompt({
           )}
         </Field>
         <DialogActions onCancel={cancel}>
-          <button className="btn btn-primary" type="submit" disabled={!name.trim()}>
+          <button
+            className="btn btn-primary"
+            type="submit"
+            disabled={!name.trim()}
+          >
             Aloita vuoro
           </button>
         </DialogActions>

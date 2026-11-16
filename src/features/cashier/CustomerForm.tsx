@@ -1,14 +1,27 @@
 import { useState, type ReactNode } from "react";
-import { OSAKUNTA_MAX, formatAmount, parseSignedAmount, type Customer } from "../../ledger";
+import {
+  OSAKUNTA_MAX,
+  formatAmount,
+  parseSignedAmount,
+  type Customer,
+} from "../../ledger";
 import { Field } from "../../ui/Field";
 import { DialogActions } from "../../ui/DialogActions";
 
 const OTHER = "\u0000other";
 /** Hints start after this many typed characters. */
 const HINT_FROM = 2;
-export type CustomerValues = { name: string; osakunta: string; openingCents: number; note: string };
+export type CustomerValues = {
+  name: string;
+  osakunta: string;
+  openingCents: number;
+  note: string;
+};
 /** Existing person, possibly deleted, shown as a duplicate hint. */
-export type KnownPerson = Pick<Customer, "id" | "name" | "osakunta" | "balance"> & { removed?: boolean };
+export type KnownPerson = Pick<
+  Customer,
+  "id" | "name" | "osakunta" | "balance"
+> & { removed?: boolean };
 
 /** Adds a person, or edits one when initial values are given. */
 export function CustomerForm({
@@ -43,9 +56,9 @@ export function CustomerForm({
   /** Shown between the fields and the buttons. */
   children?: ReactNode;
 }) {
-  const choices = [...new Set([...osakunnat, initial.osakunta].filter(Boolean))].sort((a, b) =>
-    a.localeCompare(b, "fi"),
-  );
+  const choices = [
+    ...new Set([...osakunnat, initial.osakunta].filter(Boolean)),
+  ].sort((a, b) => a.localeCompare(b, "fi"));
   const [name, setName] = useState(initial.name);
   const [choice, setChoice] = useState(initial.osakunta);
   const [custom, setCustom] = useState("");
@@ -65,21 +78,29 @@ export function CustomerForm({
   const matches =
     query.length >= HINT_FROM
       ? people.filter(
-          (person) => person.id !== selfId && person.name.toLocaleLowerCase("fi").includes(query),
+          (person) =>
+            person.id !== selfId &&
+            person.name.toLocaleLowerCase("fi").includes(query),
         )
       : [];
-  const exact = matches.some((person) => person.name.toLocaleLowerCase("fi") === query);
+  const exact = matches.some(
+    (person) => person.name.toLocaleLowerCase("fi") === query,
+  );
   // Only an edit can be unchanged. A new person may start from a searched name.
   const unchanged =
     selfId !== undefined &&
-    name.trim() === initial.name && osakunta === initial.osakunta && note === initial.note;
+    name.trim() === initial.name &&
+    osakunta === initial.osakunta &&
+    note === initial.note;
   return (
     <form
       className="dialog-form"
       onSubmit={(e) => {
         e.preventDefault();
         if (openingError) return;
-        void save({ name: name.trim(), osakunta, openingCents, note }).catch(() => {});
+        void save({ name: name.trim(), osakunta, openingCents, note }).catch(
+          () => {},
+        );
       }}
     >
       <Field label="Nimi">
@@ -97,9 +118,15 @@ export function CustomerForm({
         )}
       </Field>
       {!!matches.length && (
-        <div className="name-hints" role="status" aria-label="Samankaltaiset nimet">
+        <div
+          className="name-hints"
+          role="status"
+          aria-label="Samankaltaiset nimet"
+        >
           <p className={exact ? "name-hint-warning" : "name-hint-title"}>
-            {exact ? "Tämä nimi on jo listalla." : "Listalla on jo samankaltaisia nimiä:"}
+            {exact
+              ? "Tämä nimi on jo listalla."
+              : "Listalla on jo samankaltaisia nimiä:"}
           </p>
           {matches.slice(0, 5).map((person) =>
             person.removed || !onPick ? (
@@ -108,7 +135,11 @@ export function CustomerForm({
                   {person.name}
                   {person.osakunta && ` · ${person.osakunta}`}
                 </span>
-                {person.removed && <span className="name-hint-detail">Poistettu. Palauta asetuksista.</span>}
+                {person.removed && (
+                  <span className="name-hint-detail">
+                    Poistettu. Palauta asetuksista.
+                  </span>
+                )}
               </p>
             ) : (
               <button
@@ -122,11 +153,15 @@ export function CustomerForm({
                   {person.name}
                   {person.osakunta && ` · ${person.osakunta}`}
                 </span>
-                <span className="name-hint-detail">{formatAmount(person.balance)} · Valitse</span>
+                <span className="name-hint-detail">
+                  {formatAmount(person.balance)} · Valitse
+                </span>
               </button>
             ),
           )}
-          {matches.length > 5 && <p className="name-hint-title">ja {matches.length - 5} muuta</p>}
+          {matches.length > 5 && (
+            <p className="name-hint-title">ja {matches.length - 5} muuta</p>
+          )}
         </div>
       )}
       <Field label="Osakunta (valinnainen)">
@@ -164,7 +199,10 @@ export function CustomerForm({
         </Field>
       )}
       {withOpening && (
-        <Field label="Alkusaldo (valinnainen)" hint="Miinussaldo miinusmerkillä, esim. -5,00.">
+        <Field
+          label="Alkusaldo (valinnainen)"
+          hint="Miinussaldo miinusmerkillä, esim. -5,00."
+        >
           {(control) => (
             <input
               {...control}

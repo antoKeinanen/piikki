@@ -11,6 +11,7 @@ export function RemovedCustomers({
   restore(id: string): Promise<void>;
 }) {
   const [restored, setRestored] = useState("");
+  const [error, setError] = useState("");
   return (
     <>
       {restored && (
@@ -18,21 +19,37 @@ export function RemovedCustomers({
           {restored} palautettu listalle.
         </p>
       )}
-      {!customers.length && <p className="empty-text">Ei poistettuja henkilöitä.</p>}
+      {error && (
+        <p role="alert" className="error">
+          {error}
+        </p>
+      )}
+      {!customers.length && (
+        <p className="empty-text">Ei poistettuja henkilöitä.</p>
+      )}
       <ul className="rows">
         {customers.map((customer) => (
           <li className="row" key={customer.id}>
             <span className="row-main">
               <span className="row-title">{customer.name}</span>
               <span className="row-detail">
-                {customer.osakunta && `${customer.osakunta} · `}Saldo {formatAmount(customer.balance)}
+                {customer.osakunta && `${customer.osakunta} · `}Saldo{" "}
+                {formatAmount(customer.balance)}
               </span>
             </span>
             <button
               type="button"
               className="btn btn-secondary btn-sm"
               disabled={busy}
-              onClick={() => void restore(customer.id).then(() => setRestored(customer.name), () => {})}
+              onClick={() => {
+                setError("");
+                setRestored("");
+                void restore(customer.id).then(
+                  () => setRestored(customer.name),
+                  (e: unknown) =>
+                    setError(e instanceof Error ? e.message : String(e)),
+                );
+              }}
             >
               Palauta {customer.name}
             </button>

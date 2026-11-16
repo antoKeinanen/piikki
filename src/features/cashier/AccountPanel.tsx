@@ -1,7 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import bustedImage from "./busted.jpg";
 import { Field } from "../../ui/Field";
-import { formatAmount, parseAmount, type Customer, type Entry, type Product, type Ledger } from "../../ledger";
+import {
+  formatAmount,
+  parseAmount,
+  type Customer,
+  type Entry,
+  type Product,
+  type Ledger,
+} from "../../ledger";
 
 type PostInput = Omit<Parameters<Ledger["post"]>[0], "operator">;
 /** Labels stored for charges made without an item. */
@@ -65,11 +72,15 @@ export function AccountPanel({
   }, [customer?.id, selectionRevision]);
 
   const query = search.trim().toLocaleLowerCase("fi");
-  const categories = [...new Set(products.map((p) => p.category).filter(Boolean))];
+  const categories = [
+    ...new Set(products.map((p) => p.category).filter(Boolean)),
+  ];
   // A search looks through every item. Otherwise categories come first.
   const browsing = !query && categories.length > 0;
   const openCategory =
-    browsing && category !== undefined && categories.includes(category) ? category : undefined;
+    browsing && category !== undefined && categories.includes(category)
+      ? category
+      : undefined;
   const visibleProducts = products.filter((product) =>
     query
       ? `${product.name} ${product.description} ${product.category}`
@@ -77,7 +88,8 @@ export function AccountPanel({
           .includes(query)
       : !browsing || product.category === (openCategory ?? ""),
   );
-  const shownCategories = browsing && openCategory === undefined ? categories : [];
+  const shownCategories =
+    browsing && openCategory === undefined ? categories : [];
 
   function post(kind: "charge" | "deposit", product?: Product) {
     if (!customer || busy) return;
@@ -88,7 +100,8 @@ export function AccountPanel({
         customerId: customer.id,
         cents,
         kind,
-        label: product?.name ?? (kind === "charge" ? "Veloita" : "Lisää saldoa"),
+        label:
+          product?.name ?? (kind === "charge" ? "Veloita" : "Lisää saldoa"),
         note,
       }).then(
         () => {
@@ -120,7 +133,9 @@ export function AccountPanel({
     );
 
   const valid = AMOUNT.test(amount.trim());
-  const typed = valid ? ` ${formatAmount(Math.round(Number(amount.trim().replace(",", ".")) * 100))}` : "";
+  const typed = valid
+    ? ` ${formatAmount(Math.round(Number(amount.trim().replace(",", ".")) * 100))}`
+    : "";
   return (
     <section ref={panel} className="account" aria-label="Valittu henkilö">
       <header className="account-head">
@@ -144,7 +159,10 @@ export function AccountPanel({
             </button>
           </p>
           {/* Always rendered, so a note never moves the controls below. */}
-          <p className={`account-note ${customer.note ? "" : "empty"}`} title={customer.note || undefined}>
+          <p
+            className={`account-note ${customer.note ? "" : "empty"}`}
+            title={customer.note || undefined}
+          >
             {customer.note}
           </p>
         </div>
@@ -152,7 +170,10 @@ export function AccountPanel({
           <span className="balance-caption" aria-hidden="true">
             Saldo
           </span>
-          <span className={`balance ${customer.balance < 0 ? "negative" : ""}`} aria-label="Saldo">
+          <span
+            className={`balance ${customer.balance < 0 ? "negative" : ""}`}
+            aria-label="Saldo"
+          >
             <span key={customer.balance} className="balance-value">
               {formatAmount(customer.balance)}
             </span>
@@ -219,7 +240,9 @@ export function AccountPanel({
       {!!products.length && (
         <section className="products" aria-label="Nimikkeet">
           <div className="section-head">
-            <h3 className="section-title">{openCategory ?? (query ? "Hakutulokset" : "Veloita nimike")}</h3>
+            <h3 className="section-title">
+              {openCategory ?? (query ? "Hakutulokset" : "Veloita nimike")}
+            </h3>
             <input
               type="search"
               className="input input-sm product-search"
@@ -242,7 +265,9 @@ export function AccountPanel({
               </button>
             )}
             {shownCategories.map((name) => {
-              const image = products.find((p) => p.category === name && p.image)?.image;
+              const image = products.find(
+                (p) => p.category === name && p.image,
+              )?.image;
               const count = products.filter((p) => p.category === name).length;
               return (
                 <button
@@ -255,7 +280,9 @@ export function AccountPanel({
                 >
                   {image && <img className="tile-image" src={image} alt="" />}
                   <span className="tile-name">{name} ›</span>
-                  <span className="tile-detail">{count === 1 ? "1 nimike" : `${count} nimikettä`}</span>
+                  <span className="tile-detail">
+                    {count === 1 ? "1 nimike" : `${count} nimikettä`}
+                  </span>
                 </button>
               );
             })}
@@ -275,17 +302,22 @@ export function AccountPanel({
             ))}
           </div>
           {!visibleProducts.length && !shownCategories.length && (
-            <p className="empty-text">Ei nimikkeitä haulla "{search.trim()}".</p>
+            <p className="empty-text">
+              Ei nimikkeitä haulla "{search.trim()}".
+            </p>
           )}
         </section>
       )}
 
-      <section className="history" aria-label="Tapahtumat">
-        <h3 className="section-title">Tapahtumat</h3>
-        {!entries.length && <p className="empty-text">Ei vielä tapahtumia.</p>}
+      <section className="history" aria-label="Kirjaukset">
+        <h3 className="section-title">Kirjaukset</h3>
+        {!entries.length && <p className="empty-text">Ei vielä kirjauksia.</p>}
         <ol className="entries">
           {entries.map((entry) => (
-            <li key={entry.id} className={`entry ${entry.reversed ? "reversed" : ""}`}>
+            <li
+              key={entry.id}
+              className={`entry ${entry.reversed ? "reversed" : ""}`}
+            >
               <div className="entry-main">
                 <span className="entry-label">{entryTitle(entry)}</span>
                 {entry.note && <span className="entry-note">{entry.note}</span>}
@@ -295,7 +327,9 @@ export function AccountPanel({
                   {entry.reversed ? " · Peruttu" : ""}
                 </span>
               </div>
-              <span className={`entry-amount ${entry.cents > 0 ? "positive" : "negative"}`}>
+              <span
+                className={`entry-amount ${entry.cents > 0 ? "positive" : "negative"}`}
+              >
                 {signedAmount(entry.cents)}
               </span>
               {!entry.reversal_of && !entry.reversed ? (

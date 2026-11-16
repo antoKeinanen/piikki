@@ -42,7 +42,11 @@ export function Settings({
         </Tabs.Content>
         <Tabs.Content value="branding">
           <div className="narrow">
-            <BrandingForm initial={snapshot.branding} busy={busy} save={saveBranding} />
+            <BrandingForm
+              initial={snapshot.branding}
+              busy={busy}
+              save={saveBranding}
+            />
           </div>
         </Tabs.Content>
         <Tabs.Content value="removed">
