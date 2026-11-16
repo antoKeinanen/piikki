@@ -11,10 +11,11 @@ function mix(background: string, foreground: string, weight: number) {
   ).join("");
 }
 
-function contrastingTone(background: string, foreground: string, minimum: number) {
+/** The lightest mix of background toward foreground that reaches `minimum` on every given surface. */
+function contrastingTone(background: string, foreground: string, minimum: number, surfaces = [background]) {
   for (let percent = 0; percent <= 100; percent++) {
     const candidate = mix(background, foreground, percent / 100);
-    if (contrastRatio(candidate, background) >= minimum) return candidate;
+    if (surfaces.every((surface) => contrastRatio(candidate, surface) >= minimum)) return candidate;
   }
   return foreground;
 }
@@ -31,16 +32,24 @@ export const DEPOSIT = "#1b6e35";
 export function brandingStyle(branding: Branding): CSSProperties & Record<`--${string}`, string> {
   const ink = readableText(branding.secondary);
   const hover = mix(branding.secondary, ink, 0.07);
+  // A soft fill: a hint of the text colour, or for mid-tone backgrounds where
+  // that would cost text contrast, a hint of the opposite end instead.
+  const toward = mix(branding.secondary, ink, 0.035);
+  const surface =
+    contrastRatio(ink, toward) >= 5
+      ? toward
+      : mix(branding.secondary, ink === "#ffffff" ? "#000000" : "#ffffff", 0.06);
   return {
     "--brand": branding.primary,
     "--accent": branding.secondary,
     "--on-brand": readableText(branding.primary),
     "--on-accent": ink,
     "--ink": ink,
-    "--muted": contrastingTone(branding.secondary, ink, 4.5),
+    // Muted text also sits on the soft --surface fills, so it is measured there.
+    "--muted": contrastingTone(branding.secondary, ink, 4.5, [branding.secondary, surface]),
     "--line": contrastingTone(branding.secondary, ink, 3),
     "--hairline": mix(branding.secondary, ink, 0.14),
-    "--surface": mix(branding.secondary, ink, 0.035),
+    "--surface": surface,
     "--focus": ink,
     "--indicator": contrastRatio(branding.primary, branding.secondary) >= 3
       ? branding.primary : ink,

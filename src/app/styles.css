@@ -219,18 +219,11 @@ ul {
   width: 100%;
   min-height: 48px;
   padding: 0 14px;
-  border: 1px solid transparent;
+  border: 1px solid var(--line);
   border-radius: var(--radius);
-  background: var(--surface);
+  background: var(--accent);
   color: var(--ink);
   font-size: 16px;
-}
-.input:hover:not(:disabled) {
-  border-color: var(--hairline);
-}
-.input:focus {
-  border-color: var(--line);
-  background: var(--accent);
 }
 .input::placeholder {
   color: var(--muted);
@@ -322,7 +315,6 @@ ul {
 }
 .chip[aria-pressed="true"] {
   background: var(--brand);
-  border-color: var(--indicator);
   color: var(--on-brand);
   font-weight: 400;
 }
@@ -478,14 +470,12 @@ ul {
 .people,
 .account {
   min-width: 0;
-  gap: 28px;
-  padding: 28px 40px 112px;
 }
 .people {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding: 24px;
+  gap: 12px;
+  padding: 20px;
   border-right: 1px solid var(--hairline);
   background: transparent;
 }
@@ -497,10 +487,10 @@ ul {
   display: grid;
   grid-auto-flow: column;
   grid-auto-columns: 1fr;
-  gap: 4px;
-  padding: 0;
+  gap: 2px;
+  padding: 3px;
   border-radius: var(--radius);
-  border: 0;
+  border: 1px solid transparent;
   background: transparent;
 }
 .segmented button {
@@ -515,6 +505,8 @@ ul {
 .segmented button[aria-pressed="true"] {
   background: var(--surface);
   color: var(--ink);
+  font-weight: 500;
+  box-shadow: inset 0 -2px 0 var(--indicator);
 }
 .people-list {
   display: flex;
@@ -532,7 +524,7 @@ ul {
   align-items: center;
   column-gap: 12px;
   width: 100%;
-  min-height: 52px;
+  min-height: 56px;
   padding: 8px 12px;
   border: 0;
   border-radius: var(--radius);
@@ -617,8 +609,8 @@ ul {
   align-items: start;
   gap: 16px;
   /* The note line is always present, so the controls below sit at the same height for everyone. */
-  padding-bottom: 0;
-  border-bottom: 0;
+  padding-bottom: 16px;
+  border-bottom: 1px solid transparent;
 }
 .account-name {
   font-size: 26px;
@@ -688,10 +680,9 @@ ul {
 }
 .amount-row {
   display: grid;
-  grid-template-columns: minmax(96px, 0.8fr) minmax(120px, 1.2fr) minmax(
-      140px,
-      1fr
-    ) minmax(140px, 1fr);
+  grid-template-columns:
+    minmax(96px, 0.8fr) minmax(120px, 1.2fr) minmax(140px, 1fr)
+    minmax(140px, 1fr);
   align-items: end;
   gap: 12px;
 }
@@ -732,7 +723,6 @@ ul {
   text-align: left;
 }
 .tile:hover:not(:disabled) {
-  border-color: transparent;
   background: var(--hover);
   color: var(--on-hover);
 }
@@ -884,8 +874,8 @@ ul {
 .modal-body {
   display: flex;
   flex-direction: column;
-  gap: 24px;
-  padding: 28px !important;
+  gap: 20px;
+  padding: 24px !important;
 }
 .modal-title {
   font-size: 20px !important;
