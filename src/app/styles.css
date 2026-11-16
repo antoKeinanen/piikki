@@ -755,10 +755,8 @@ ul {
 .tile:hover:not(:disabled) .tile-detail {
   color: inherit;
 }
-.tile-category {
-  background: transparent;
-  border: 1px solid var(--line);
-}
+/* Categories and the way back open or leave a group, so they are outlines, not filled like items. */
+.tile-category,
 .tile-back {
   background: transparent;
   border: 1px solid var(--line);
@@ -954,7 +952,7 @@ ul {
   min-height: 40px;
   align-items: center;
   padding: 6px 12px;
-  border: 0;
+  border: 1px solid transparent;
   border-radius: var(--radius-sm);
   background: var(--surface);
   text-align: left;
