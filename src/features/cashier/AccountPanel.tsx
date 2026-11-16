@@ -133,10 +133,10 @@ export function AccountPanel({
       </section>
     );
 
-  const valid = AMOUNT.test(amount.trim());
-  const typed = valid
-    ? ` ${formatAmount(Math.round(Number(amount.trim().replace(",", ".")) * 100))}`
-    : "";
+  const typedCents = AMOUNT.test(amount.trim())
+    ? Math.round(Number(amount.trim().replace(",", ".")) * 100)
+    : 0;
+  const typed = typedCents > 0 ? ` ${formatAmount(typedCents)}` : "";
   return (
     <section ref={panel} className="account" aria-label="Valittu henkilö">
       <header className="account-head">

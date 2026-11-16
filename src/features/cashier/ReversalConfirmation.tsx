@@ -31,7 +31,7 @@ export function ReversalConfirmation({
         Saldoon kirjataan {signedAmount(-entry.cents)}. Alkuperäinen kirjaus jää
         näkyviin perutuksi.
       </p>
-      <DialogActions onCancel={cancel} busy={busy}>
+      <DialogActions onCancel={cancel} cancelLabel="Älä peru" busy={busy}>
         <button
           type="button"
           className="btn btn-primary"
