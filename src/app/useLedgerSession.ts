@@ -31,7 +31,9 @@ export function useLedgerSession({ onSaved }: { onSaved(): void }) {
       active.kind === "active" ? () => active.ledger.snapshot() : skipToken,
   });
   const mutation = useMutation({
-    mutationFn: async (operation: () => void | Promise<void>) => operation(),
+    mutationFn: async (operation: () => unknown) => {
+      await operation();
+    },
     onSuccess: async () => {
       onSaved();
       setError("");

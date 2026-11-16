@@ -16,7 +16,7 @@ export function EventComparison({ rows, eventId }: { rows: Row[]; eventId: strin
       wide
       id="event-comparison"
       title="Tapahtumien vertailu"
-      hint="Valittu tapahtuma näkyy tummempana."
+      hint="Valittu tapahtuma on tummempi."
     >
       <Chart.Root h={`${Math.max(data.length * 44 + 40, 120)}px`} aspectRatio="auto" chart={chart}>
         <BarChart data={chart.data} layout="vertical" responsive>

@@ -19,9 +19,18 @@ function contrastingTone(background: string, foreground: string, minimum: number
   return foreground;
 }
 
+/** A fixed signal colour as text, or the ink colour when the background makes it unreadable. */
+function signal(color: string, background: string, ink: string) {
+  return contrastRatio(color, background) >= 4.5 ? color : ink;
+}
+
+/** Charges are red and deposits green everywhere, independent of branding. */
+export const CHARGE = "#b3261e";
+export const DEPOSIT = "#1b6e35";
+
 export function brandingStyle(branding: Branding): CSSProperties & Record<`--${string}`, string> {
   const ink = readableText(branding.secondary);
-  const hover = mix(branding.secondary, ink, 0.1);
+  const hover = mix(branding.secondary, ink, 0.07);
   return {
     "--brand": branding.primary,
     "--accent": branding.secondary,
@@ -30,11 +39,15 @@ export function brandingStyle(branding: Branding): CSSProperties & Record<`--${s
     "--ink": ink,
     "--muted": contrastingTone(branding.secondary, ink, 4.5),
     "--line": contrastingTone(branding.secondary, ink, 3),
+    "--hairline": mix(branding.secondary, ink, 0.14),
+    "--surface": mix(branding.secondary, ink, 0.035),
     "--focus": ink,
     "--indicator": contrastRatio(branding.primary, branding.secondary) >= 3
       ? branding.primary : ink,
     "--hover": hover,
     "--on-hover": readableText(hover),
-    "--error": contrastRatio("#a33328", branding.secondary) >= 4.5 ? "#a33328" : ink,
+    "--error": signal("#a33328", branding.secondary, ink),
+    "--charge": signal(CHARGE, branding.secondary, ink),
+    "--deposit": signal(DEPOSIT, branding.secondary, ink),
   };
 }

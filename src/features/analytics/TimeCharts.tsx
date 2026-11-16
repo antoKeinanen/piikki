@@ -47,7 +47,7 @@ export function ChargesOverTime({ summary }: { summary: EventSummary }) {
       wide
       id="charged-over-time"
       title={summary.unit === "hour" ? "Veloitukset tunneittain" : "Veloitukset päivittäin"}
-      hint="Saldon lisäykset näkyvät kertyvissä summissa ja taulukossa."
+      hint="Saldon lisäykset ovat kertyvissä summissa ja taulukossa."
     >
       <Chart.Root h="260px" aspectRatio="auto" chart={chart}>
         <BarChart data={chart.data} responsive>
@@ -104,7 +104,7 @@ export function CumulativeTotals({ summary }: { summary: EventSummary }) {
     <Section
       id="cumulative"
       title="Kertyvät summat"
-      hint="Viivojen väli on käyttämättä jäänyt saldo."
+      hint="Viivojen väli on saldo, jota ei ole vielä käytetty."
     >
       <Chart.Root h="240px" aspectRatio="auto" chart={chart}>
         <LineChart data={chart.data} responsive>

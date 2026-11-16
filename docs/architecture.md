@@ -1,6 +1,6 @@
 # Balance ledger
 
-The app runs entirely in the browser. SQL.js opens and exports actual SQLite bytes. React and Chakra own the controls. TanStack Query owns refreshed snapshots and TanStack Table owns person filtering.
+The app runs entirely in the browser. SQL.js opens and exports actual SQLite bytes. React owns the controls, styled by one stylesheet in `src/app/styles.css`. Chakra provides dialogs, tabs and charts. TanStack Query owns refreshed snapshots.
 
 ## Usage contract
 
@@ -22,15 +22,16 @@ src/persistence/database-file.ts owns browser file handles. It opens the native 
 
 The UI keeps file selection separate from database commands. Supported file-picker sessions autosave. Dropped and new databases must attach a verified destination before activation. Recovery and sample startup controls are not exposed. Unsupported browsers are blocked. File handles are session-local and are not remembered across reloads.
 
-Amounts are integer credits in the smallest denomination. Balances and charge controls display two decimal places without currency units or item names; the existing reversal confirmation still includes a euro symbol. Existing database label fields remain compatible but are hidden. Reversals append the exact opposite entry and cannot themselves be reversed. Balances are signed integers derived from entries. Charges and deposit reversals can take a balance below zero. Amount inputs remain positive. Negative balances need no schema migration because balances are not stored separately. The database must have schema version 1 and the tables defined in src/ledger/ledger.ts. Import checks SQLite integrity, foreign keys, row shapes, balances, and reversal consistency.
+Amounts are integer credits in the smallest denomination. Balances and charge controls display two decimal places without currency units. Existing database label fields remain compatible but are hidden. Reversals append the exact opposite entry and cannot themselves be reversed. Balances are signed integers derived from entries. Charges and deposit reversals can take a balance below zero. Amount inputs remain positive. Negative balances need no schema migration because balances are not stored separately. The database must have schema version 1 and the tables defined in src/ledger/ledger.ts. Import checks SQLite integrity, foreign keys, row shapes, balances, and reversal consistency.
 
 ## Module map
 
 - `src/main.tsx` mounts providers and imports the global stylesheet once.
 - `src/app/App.tsx` composes screens, dialogs and file workflows. `useLedgerSession.ts` owns the active ledger/name/revision union, Query snapshots, mutation pending state and errors. Activating a database changes the query key and resets the account draft.
-- `src/app/Settings.tsx` composes branding, preset and file tabs using specific command callbacks.
+- `src/app/Settings.tsx` is the settings view. It composes item, branding, deleted-people and file tabs using specific command callbacks.
+- `src/ui/` holds the shared field and dialog-button components. It knows nothing about the ledger, and every feature may use it.
 - `src/features/analytics/` owns the per-event statistics view. It draws charts with Chakra UI Charts (Recharts) and loads lazily, so the main view's first load stays small. `summary.ts` is a pure function from a snapshot to totals, balances, debt, charge-size bands, item and person rankings, and a cumulative timeline. The timeline is hourly, or daily for events longer than 48 hours. `compareEvents` adds cross-event totals and returning people. The summary excludes undone charges and their reversals. Entries do not reference items, so the summary groups charges by entry label and shows charges without an item button as "Muu summa". Charts take their colors from the branding CSS variables. `src/app/EventStats.tsx` owns the query and the event choice. `Ledger.events()` lists events, and `Ledger.snapshot(eventId)` returns any past event.
-- `src/features/cashier/` owns person filtering, account drafts/history, add-person input and reversal confirmation.
+- `src/features/cashier/` owns the people list, account drafts/history, the change notice, person forms and reversal confirmation.
 - `src/features/branding/` owns the shared onboarding/settings form, contrast calculations and React CSS variables.
 - `src/features/presets/` owns preset editing and last-deletion restore state.
 - `src/features/database/` owns welcome, file controls and compatibility UI.

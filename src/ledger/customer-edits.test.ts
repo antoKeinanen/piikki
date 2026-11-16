@@ -22,9 +22,9 @@ it("renames and changes osakunta, and the previous values can be saved back", as
   });
   await ledger.updateCustomer(id, { name: "Aino", osakunta: "KyO" });
   expect(ledger.snapshot().customers[0]).toMatchObject({ name: "Aino", osakunta: "KyO" });
-  await expect(ledger.updateCustomer(id, { name: " ", osakunta: "" })).rejects.toThrow("name");
+  await expect(ledger.updateCustomer(id, { name: " ", osakunta: "" })).rejects.toThrow("Anna nimi");
   await expect(ledger.updateCustomer(id, { name: "A", osakunta: "x".repeat(61) })).rejects.toThrow("60");
-  await expect(ledger.updateCustomer("missing", { name: "A", osakunta: "" })).rejects.toThrow("no longer exists");
+  await expect(ledger.updateCustomer("missing", { name: "A", osakunta: "" })).rejects.toThrow("ei enää ole");
 });
 
 it("deletes a person without losing history and restores the same balance", async () => {
@@ -36,13 +36,13 @@ it("deletes a person without losing history and restores the same balance", asyn
   expect(removed.customers).toEqual([]);
   expect(removed.removedCustomers[0]).toMatchObject({ id, name: "Aino", balance: 380 });
   expect(removed.entries).toHaveLength(2);
-  await expect(ledger.post({ customerId: id, cents: 100, kind: "charge", label: "" })).rejects.toThrow("no longer exists");
-  await expect(ledger.removeCustomer(id)).rejects.toThrow("no longer exists");
+  await expect(ledger.post({ customerId: id, cents: 100, kind: "charge", label: "" })).rejects.toThrow("ei enää ole");
+  await expect(ledger.removeCustomer(id)).rejects.toThrow("ei enää ole");
   await ledger.restoreCustomer(id);
   const restored = (await Ledger.open(saved())).snapshot();
   expect(restored.customers[0]).toMatchObject({ id, balance: 380, osakunta: "KyO" });
   expect(restored.removedCustomers).toEqual([]);
-  await expect(ledger.restoreCustomer(id)).rejects.toThrow("not deleted");
+  await expect(ledger.restoreCustomer(id)).rejects.toThrow("ei ole poistettu");
 });
 
 it("keeps deleted people out of new events but carries their balance on restore", async () => {

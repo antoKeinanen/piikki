@@ -1,35 +1,42 @@
 import { useEffect, useRef, useState } from "react";
-import { Button, Field, Input, Textarea } from "@chakra-ui/react";
 import { formatAmount, parseAmount, LogoSchema, type Product } from "../../ledger";
+import { Field, IMAGE_ERROR, IMAGE_READ_ERROR, IMAGE_TYPES } from "../../ui/Field";
+
+const EMPTY = { name: "", description: "", image: "", amount: "", category: "" };
 
 export function ProductEditor({
-  products, busy, save, remove, setError,
+  products,
+  busy,
+  save,
+  remove,
 }: {
   products: Product[];
   busy: boolean;
   save(product: Product): Promise<void>;
   remove(id: string): Promise<void>;
-  setError(message: string): void;
 }) {
-  const empty = { name: "", description: "", image: "", amount: "", category: "" };
-  const [newDraft, setNewDraft] = useState(empty);
-  const [editDraft, setEditDraft] = useState(empty);
+  const [newDraft, setNewDraft] = useState(EMPTY);
+  const [editDraft, setEditDraft] = useState(EMPTY);
   const [editing, setEditing] = useState<string>();
-  const draft = editing ? editDraft : newDraft;
-  const setDraft = editing ? setEditDraft : setNewDraft;
-  const editPanel = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!editing) return;
-    editPanel.current?.scrollIntoView?.({ block: "nearest", behavior: "smooth" });
-    editPanel.current?.querySelector("input")?.focus({ preventScroll: true });
-  }, [editing]);
   const [removed, setRemoved] = useState<Product>();
   const [reading, setReading] = useState(false);
+  const [error, setError] = useState("");
+  const draft = editing ? editDraft : newDraft;
+  const setDraft = editing ? setEditDraft : setNewDraft;
+  const nameInput = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (!editing) return;
+    nameInput.current?.scrollIntoView?.({ block: "nearest", behavior: "smooth" });
+    nameInput.current?.focus({ preventScroll: true });
+  }, [editing]);
   const disabled = busy || reading;
-  const categories = [...new Set(products.map((p) => p.category).filter(Boolean))].sort((a, b) => a.localeCompare(b, "fi"));
+  const categories = [...new Set(products.map((p) => p.category).filter(Boolean))].sort((a, b) =>
+    a.localeCompare(b, "fi"),
+  );
+  const editedName = products.find((p) => p.id === editing)?.name;
   function reset() {
-    if (editing) setEditDraft(empty);
-    else setNewDraft(empty);
+    if (editing) setEditDraft(EMPTY);
+    else setNewDraft(EMPTY);
     setEditing(undefined);
   }
   async function apply(operation: () => Promise<void>, done: () => void) {
@@ -43,8 +50,8 @@ export function ProductEditor({
   }
   function upload(file: File) {
     setError("");
-    if (file.size > 1_048_576 || !["image/png", "image/jpeg", "image/webp", "image/svg+xml"].includes(file.type)) {
-      setError("Valitse PNG-, JPG-, WebP- tai SVG-kuva (enintään 1 Mt).");
+    if (file.size > 1_048_576 || !IMAGE_TYPES.includes(file.type)) {
+      setError(IMAGE_ERROR);
       return;
     }
     setReading(true);
@@ -52,114 +59,240 @@ export function ProductEditor({
     reader.onload = () => {
       const image = LogoSchema.safeParse(reader.result);
       if (image.success) setDraft((current) => ({ ...current, image: image.data }));
-      else setError("Kuvan lukeminen epäonnistui.");
+      else setError(IMAGE_READ_ERROR);
     };
-    reader.onerror = () => setError("Kuvan lukeminen epäonnistui.");
+    reader.onerror = () => setError(IMAGE_READ_ERROR);
     reader.onloadend = () => setReading(false);
     reader.readAsDataURL(file);
   }
-  const form = (
-    <form className="settings-form" onSubmit={(e) => {
-      e.preventDefault();
-      if (disabled) return;
-      void apply(async () => {
-        await save({
-          id: editing ?? crypto.randomUUID(),
-          name: draft.name,
-          cents: parseAmount(draft.amount),
-          description: draft.description,
-          image: draft.image,
-          category: draft.category,
-        });
-      }, reset);
-    }}>
-      <Field.Root>
-        <Field.Label>Nimikkeen nimi</Field.Label>
-        <Input required maxLength={120} disabled={disabled} value={draft.name}
-          onChange={(e) => setDraft({ ...draft, name: e.target.value })} />
-      </Field.Root>
-      <Field.Root>
-        <Field.Label>Nimikkeen summa</Field.Label>
-        <Input required inputMode="decimal" placeholder="0,00" disabled={disabled} value={draft.amount}
-          onChange={(e) => setDraft({ ...draft, amount: e.target.value })} />
-      </Field.Root>
-      <Field.Root>
-        <Field.Label>Kategoria (valinnainen)</Field.Label>
-        <Input maxLength={60} list="product-categories" placeholder="esim. Tölkki tai Vahva" disabled={disabled}
-          value={draft.category} onChange={(e) => setDraft({ ...draft, category: e.target.value })} />
-        <datalist id="product-categories">
-          {categories.map((category) => <option key={category} value={category} />)}
-        </datalist>
-        {categories.length > 0 && (
-          <div className="category-chips" role="group" aria-label="Aiemmat kategoriat">
-            {categories.map((category) => {
-              const selected = draft.category === category;
-              return (
-                <button type="button" key={category} className={selected ? "category-chip selected" : "category-chip"}
-                  aria-pressed={selected} disabled={disabled}
-                  onClick={() => setDraft({ ...draft, category: selected ? "" : category })}>
-                  {category}
+  return (
+    <div className="editor">
+      <div className="editor-list">
+        {!products.length && <p className="empty-text">Ei vielä nimikkeitä. Lisää ensimmäinen lomakkeella.</p>}
+        <ul className="rows">
+          {products.map((p) => (
+            <li key={p.id} className={editing === p.id ? "row editing" : "row"}>
+              {p.image ? <img className="row-image" src={p.image} alt="" /> : <span className="row-image" />}
+              <span className="row-main">
+                <span className="row-title">{p.name}</span>
+                <span className="row-detail">
+                  {p.category ? `${p.category} · ` : ""}
+                  {formatAmount(p.cents)}
+                </span>
+              </span>
+              {editing === p.id ? (
+                <span className="badge" aria-live="polite">
+                  Muokataan
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm"
+                  aria-label={`Muokkaa ${p.name}`}
+                  disabled={disabled}
+                  onClick={() => {
+                    setError("");
+                    setEditing(p.id);
+                    setEditDraft({
+                      name: p.name,
+                      description: p.description,
+                      image: p.image,
+                      amount: (p.cents / 100).toFixed(2).replace(".", ","),
+                      category: p.category,
+                    });
+                  }}
+                >
+                  Muokkaa
                 </button>
-              );
-            })}
+              )}
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm"
+                aria-label={`Poista ${p.name}`}
+                disabled={disabled}
+                onClick={() =>
+                  void apply(
+                    () => remove(p.id),
+                    () => {
+                      setRemoved(p);
+                      if (editing === p.id) reset();
+                    },
+                  )
+                }
+              >
+                Poista
+              </button>
+            </li>
+          ))}
+        </ul>
+        {removed && (
+          <div className="inline-notice" role="status">
+            <span>{removed.name} poistettu.</span>
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              disabled={disabled}
+              onClick={() => void apply(() => save(removed), () => setRemoved(undefined))}
+            >
+              Palauta {removed.name}
+            </button>
           </div>
         )}
-        <Field.HelperText>Saman kategorian nimikkeet näytetään kassalla yhden painikkeen takana.</Field.HelperText>
-      </Field.Root>
-      <Field.Root>
-        <Field.Label>Kuvaus</Field.Label>
-        <Textarea maxLength={2000} disabled={disabled} value={draft.description}
-          onChange={(e) => setDraft({ ...draft, description: e.target.value })} />
-      </Field.Root>
-      <Field.Root>
-        <Field.Label htmlFor="product-image">Nimikkeen kuva</Field.Label>
-        <input id="product-image" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml"
-          disabled={disabled} onChange={(e) => {
-            const file = e.currentTarget.files?.[0];
-            if (file) upload(file);
-            e.currentTarget.value = "";
-          }} />
-        {draft.image && <>
-          <img className="logo-preview" src={draft.image} alt="Nimikkeen kuvan esikatselu" />
-          <Button variant="ghost" disabled={disabled} onClick={() => setDraft({ ...draft, image: "" })}>Poista kuva</Button>
-        </>}
-      </Field.Root>
-      <Button type="submit" className="primary" disabled={disabled || !draft.name.trim() || !draft.amount}>
-        {editing ? "Tallenna nimike" : "Lisää nimike"}
-      </Button>
-      {editing && <Button variant="ghost" disabled={disabled} onClick={reset}>Peruuta muokkaus</Button>}
-    </form>
-  );
-  return (
-    <div className="settings-form">
-      <div className="product-list">
-        {products.map((p) => (
-          <div key={p.id} className={editing === p.id ? "product-item editing" : "product-item"}>
-            <div className="product-row">
-              {p.image && <img className="product-thumbnail" src={p.image} alt="" />}
-              <span>{p.name}<small>{p.category ? `${p.category} · ` : ""}{formatAmount(p.cents)}</small></span>
-              {editing === p.id
-                ? <span className="product-editing-badge" aria-live="polite">Muokataan</span>
-                : <Button variant="ghost" size="sm" disabled={disabled} onClick={() => {
-                    setEditing(p.id);
-                    setEditDraft({ name: p.name, description: p.description, image: p.image, amount: (p.cents / 100).toFixed(2), category: p.category });
-                  }}>Muokkaa</Button>}
-              <Button variant="ghost" size="sm" disabled={disabled} onClick={() => void apply(
-                () => remove(p.id),
-                () => { setRemoved(p); if (editing === p.id) reset(); },
-              )}>Poista</Button>
-            </div>
-            {editing === p.id && <div className="product-edit-panel" ref={editPanel}>{form}</div>}
-          </div>
-        ))}
       </div>
-      {removed && <Button variant="outline" disabled={disabled} onClick={() => void apply(
-        () => save(removed), () => setRemoved(undefined),
-      )}>Palauta {removed.name}</Button>}
-      {!editing && <section className="product-new">
-        <h2 className="product-section-title">Lisää uusi nimike</h2>
-        {form}
-      </section>}
+      <form
+        className="editor-form dialog-form"
+        aria-label={editing ? `Muokkaa nimikettä ${editedName}` : "Uusi nimike"}
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (disabled) return;
+          void apply(async () => {
+            await save({
+              id: editing ?? crypto.randomUUID(),
+              name: draft.name,
+              cents: parseAmount(draft.amount),
+              description: draft.description,
+              image: draft.image,
+              category: draft.category,
+            });
+          }, reset);
+        }}
+      >
+        <h3 className="section-title">{editing ? `Muokkaa: ${editedName}` : "Uusi nimike"}</h3>
+        <Field label="Nimi">
+          {(id) => (
+            <input
+              id={id}
+              ref={nameInput}
+              className="input"
+              required
+              maxLength={120}
+              autoComplete="off"
+              disabled={disabled}
+              value={draft.name}
+              onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+            />
+          )}
+        </Field>
+        <Field label="Summa">
+          {(id) => (
+            <input
+              id={id}
+              className="input"
+              required
+              inputMode="decimal"
+              autoComplete="off"
+              placeholder="0,00"
+              disabled={disabled}
+              value={draft.amount}
+              onChange={(e) => setDraft({ ...draft, amount: e.target.value })}
+            />
+          )}
+        </Field>
+        <Field
+          label="Kategoria (valinnainen)"
+          hint="Saman kategorian nimikkeet ovat kassalla yhden painikkeen takana."
+        >
+          {(id) => (
+            <>
+              <input
+                id={id}
+                className="input"
+                maxLength={60}
+                list="product-categories"
+                autoComplete="off"
+                disabled={disabled}
+                value={draft.category}
+                onChange={(e) => setDraft({ ...draft, category: e.target.value })}
+              />
+              <datalist id="product-categories">
+                {categories.map((category) => (
+                  <option key={category} value={category} />
+                ))}
+              </datalist>
+              {categories.length > 0 && (
+                <div className="chips" role="group" aria-label="Aiemmat kategoriat">
+                  {categories.map((category) => {
+                    const selected = draft.category === category;
+                    return (
+                      <button
+                        type="button"
+                        key={category}
+                        className="chip"
+                        aria-pressed={selected}
+                        disabled={disabled}
+                        onClick={() => setDraft({ ...draft, category: selected ? "" : category })}
+                      >
+                        {category}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </>
+          )}
+        </Field>
+        <Field label="Kuvaus (valinnainen)" hint="Haku löytää nimikkeen myös kuvauksen sanoilla.">
+          {(id) => (
+            <textarea
+              id={id}
+              className="input textarea"
+              rows={2}
+              maxLength={2000}
+              disabled={disabled}
+              value={draft.description}
+              onChange={(e) => setDraft({ ...draft, description: e.target.value })}
+            />
+          )}
+        </Field>
+        <Field label="Kuva (valinnainen)">
+          {(id) => (
+            <div className="image-picker">
+              {draft.image && <img className="image-preview" src={draft.image} alt="Kuvan esikatselu" />}
+              <input
+                id={id}
+                type="file"
+                className="file-input"
+                accept={IMAGE_TYPES.join(",")}
+                disabled={disabled}
+                onChange={(e) => {
+                  const file = e.currentTarget.files?.[0];
+                  if (file) upload(file);
+                  e.currentTarget.value = "";
+                }}
+              />
+              {draft.image && (
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm"
+                  disabled={disabled}
+                  onClick={() => setDraft({ ...draft, image: "" })}
+                >
+                  Poista kuva
+                </button>
+              )}
+            </div>
+          )}
+        </Field>
+        {error && (
+          <p role="alert" className="error">
+            {error}
+          </p>
+        )}
+        <div className="dialog-actions">
+          {editing && (
+            <button type="button" className="btn btn-ghost" disabled={disabled} onClick={reset}>
+              Peruuta
+            </button>
+          )}
+          <button
+            type="submit"
+            className="btn btn-primary"
+            disabled={disabled || !draft.name.trim() || !draft.amount}
+          >
+            {editing ? "Tallenna nimike" : "Lisää nimike"}
+          </button>
+        </div>
+      </form>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { Tabs } from "@chakra-ui/react";
 import type { Branding, Product, Snapshot } from "../ledger";
 import { BrandingForm } from "../features/branding/BrandingForm";
@@ -22,46 +22,42 @@ export function Settings({
   removeProduct(id: string): Promise<void>;
   restoreCustomer(id: string): Promise<void>;
 }) {
-  const [error, setError] = useState("");
   return (
-    <Tabs.Root defaultValue="branding" variant="line" className="settings-tabs">
-      <Tabs.List>
-        <Tabs.Trigger value="branding">Ulkoasu</Tabs.Trigger>
-        <Tabs.Trigger value="charges">Nimikkeet</Tabs.Trigger>
-        <Tabs.Trigger value="removed">Poistetut</Tabs.Trigger>
-        <Tabs.Trigger value="files">Tietokanta</Tabs.Trigger>
-      </Tabs.List>
-      <Tabs.Content value="branding">
-        <BrandingForm
-          initial={snapshot.branding}
-          busy={busy}
-          save={saveBranding}
-        />
-      </Tabs.Content>
-      <Tabs.Content value="charges">
-        <ProductEditor
-          products={snapshot.products}
-          busy={busy}
-          save={saveProduct}
-          remove={removeProduct}
-          setError={setError}
-        />
-      </Tabs.Content>
-      <Tabs.Content value="removed">
-        <RemovedCustomers
-          customers={snapshot.removedCustomers}
-          busy={busy}
-          restore={restoreCustomer}
-        />
-      </Tabs.Content>
-      <Tabs.Content value="files">
-        <div className="settings-files">{files}</div>
-      </Tabs.Content>
-      {error && (
-        <p role="alert" className="error">
-          {error}
-        </p>
-      )}
-    </Tabs.Root>
+    <main className="page">
+      <h1 className="page-title">Asetukset</h1>
+      <Tabs.Root defaultValue="products" className="settings-tabs" lazyMount>
+        <Tabs.List>
+          <Tabs.Trigger value="products">Nimikkeet</Tabs.Trigger>
+          <Tabs.Trigger value="branding">Ulkoasu</Tabs.Trigger>
+          <Tabs.Trigger value="removed">Poistetut henkilöt</Tabs.Trigger>
+          <Tabs.Trigger value="files">Tiedosto</Tabs.Trigger>
+        </Tabs.List>
+        <Tabs.Content value="products">
+          <ProductEditor
+            products={snapshot.products}
+            busy={busy}
+            save={saveProduct}
+            remove={removeProduct}
+          />
+        </Tabs.Content>
+        <Tabs.Content value="branding">
+          <div className="narrow">
+            <BrandingForm initial={snapshot.branding} busy={busy} save={saveBranding} />
+          </div>
+        </Tabs.Content>
+        <Tabs.Content value="removed">
+          <div className="narrow">
+            <RemovedCustomers
+              customers={snapshot.removedCustomers}
+              busy={busy}
+              restore={restoreCustomer}
+            />
+          </div>
+        </Tabs.Content>
+        <Tabs.Content value="files">
+          <div className="narrow">{files}</div>
+        </Tabs.Content>
+      </Tabs.Root>
+    </main>
   );
 }

@@ -9,9 +9,17 @@ npm ci
 npm run dev
 ```
 
-Open http://localhost:5173. Select **Try example** for sample accounts, or **Create database** for an empty database. Drop an existing Piikki database anywhere in the app to open it.
+Open http://localhost:5173. Select **Luo tietokanta** for an empty database, or **Avaa tietokanta** for an existing one. You can also drop a Piikki database onto the start screen.
 
-Settings holds the two branding colors, quick-charge amounts, and database controls. Quick-charge buttons apply immediately. Undo is attached to the original transaction and asks for confirmation. Person IDs and the active filename stay hidden. Branding colors are saved inside the SQLite file.
+## Using the app
+
+The top bar has three views: **Kassa**, **Tilastot** and **Asetukset**. Each stays in the same place on every screen.
+
+In **Kassa**, the people list is on the left. Type in the search field and press Enter to select the top match. If nobody matches, the list offers to add the typed name. The selected person's name, balance and note are at the top of the right side, followed by the amount field, the item buttons and the history. The amount field and the **Veloita** and **Lisää saldoa** buttons stay in the same place for every person. Enter in the amount field does nothing, so a typed amount is only applied by pressing one of the two buttons.
+
+After each change, a notice at the bottom shows what happened and offers **Peru**. Undoing always asks for confirmation. Person IDs and the active filename stay hidden.
+
+**Asetukset** holds items, colours and logo, deleted people, and the database file controls. Branding colours are saved inside the SQLite file.
 
 ## Save your work
 
@@ -25,7 +33,7 @@ Use one app instance per file. The app rejects a save if the file changed extern
 
 ## Shifts, safety and logout
 
-After a database opens, the app asks who is at the till (isäntä or apuisäntä). Their name is stored on every balance change, charges, deposits, undos and opening balances, and shown in each person's history. Switch the name from **Vuorossa** at the top right.
+After a database opens, the app asks who is at the till (isäntä or apuisäntä). Their name is stored on every balance change, charges, deposits, undos and opening balances, and shown in each person's history. Switch the name from **Vuorossa** in the top bar.
 
 Nobody is selected after opening, and the selected person is cleared after two minutes without input, so nobody gets charged by accident. **Kirjaudu ulos** closes the database, frees it from memory and forgets the operator.
 
@@ -48,7 +56,7 @@ npm run build
 
 The tests run real SQLite imports, transactions, reversals, and exports. No backend is required. The production build includes the SQLite WASM asset.
 
-See [architecture](docs/architecture.md) for module ownership and [the schema](src/ledger/ledger.ts) for the version 1 database contract. Amounts are whole-number credits in the smallest denomination. The UI shows two decimal places without currency symbols, units, or item names.
+See [architecture](docs/architecture.md) for module ownership and [the schema](src/ledger/ledger.ts) for the version 1 database contract. Amounts are whole-number credits in the smallest denomination. The UI shows two decimal places without currency symbols or units.
 
 ## Deploy to Vercel
 

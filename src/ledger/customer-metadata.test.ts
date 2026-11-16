@@ -74,7 +74,7 @@ it("rolls metadata back after a failed durable save and supports retry", async (
   fails = false;
   await ledger.saveCustomerNote("legacy", "Saved");
   expect((await Ledger.open(saved)).snapshot().customers[0].note).toBe("Saved");
-  await expect(ledger.saveCustomerNote("missing", "No orphan")).rejects.toThrow("no longer exists");
+  await expect(ledger.saveCustomerNote("missing", "No orphan")).rejects.toThrow("ei enää ole");
 });
 
 it("lifts the old five-character osakunta limit from existing databases", async () => {

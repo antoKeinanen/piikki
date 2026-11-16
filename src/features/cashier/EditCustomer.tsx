@@ -1,48 +1,52 @@
-import { Button, Text } from "@chakra-ui/react";
 import { formatAmount, type Customer } from "../../ledger";
-import { CustomerForm, type KnownPerson } from "./CustomerForm";
+import { CustomerForm, type CustomerValues, type KnownPerson } from "./CustomerForm";
 
 export function EditCustomer({
   customer,
   busy,
   save,
   remove,
+  cancel,
   osakunnat,
   people,
 }: {
   customer: Customer;
   busy: boolean;
-  save(name: string, osakunta: string): Promise<void>;
+  save(values: CustomerValues): Promise<void>;
   remove(): Promise<void>;
+  cancel(): void;
   osakunnat: string[];
   people: KnownPerson[];
 }) {
   return (
-    <div className="settings-form">
-      <CustomerForm
-        busy={busy}
-        initial={customer}
-        submitLabel="Tallenna muutokset"
-        osakunnat={osakunnat}
-        people={people}
-        selfId={customer.id}
-        save={({ name, osakunta }) => save(name, osakunta)}
-      />
-      <div className="delete-customer">
-        <Text className="delete-customer-note">
-          {customer.balance
-            ? `Saldo ${formatAmount(customer.balance)} ja tapahtumat säilyvät. `
-            : "Tapahtumat säilyvät. "}
-          Poistetun henkilön voi palauttaa asetuksista.
-        </Text>
-        <Button
-          variant="outline"
+    <CustomerForm
+      busy={busy}
+      initial={customer}
+      submitLabel="Tallenna"
+      osakunnat={osakunnat}
+      people={people}
+      selfId={customer.id}
+      withNote
+      save={save}
+      cancel={cancel}
+    >
+      <div className="danger-zone">
+        <div>
+          <p className="danger-title">Poista henkilö</p>
+          <p className="field-hint">
+            {customer.balance ? `Saldo ${formatAmount(customer.balance)} ja tapahtumat säilyvät.` : "Tapahtumat säilyvät."}{" "}
+            Voit palauttaa henkilön asetuksista.
+          </p>
+        </div>
+        <button
+          type="button"
+          className="btn btn-danger btn-sm"
           disabled={busy}
           onClick={() => void remove().catch(() => {})}
         >
-          Poista henkilö
-        </Button>
+          Poista
+        </button>
       </div>
-    </div>
+    </CustomerForm>
   );
 }

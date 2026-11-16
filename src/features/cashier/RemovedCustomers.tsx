@@ -1,4 +1,3 @@
-import { Button, Text } from "@chakra-ui/react";
 import { formatAmount, type Customer } from "../../ledger";
 
 export function RemovedCustomers({
@@ -10,27 +9,27 @@ export function RemovedCustomers({
   busy: boolean;
   restore(id: string): Promise<void>;
 }) {
-  if (!customers.length)
-    return <Text className="empty-history">Ei poistettuja henkilöitä.</Text>;
+  if (!customers.length) return <p className="empty-text">Ei poistettuja henkilöitä.</p>;
   return (
-    <div className="product-list">
+    <ul className="rows">
       {customers.map((customer) => (
-        <div className="product-row" key={customer.id}>
-          <span>
-            {customer.name}
-            {customer.osakunta && ` • ${customer.osakunta}`}
-            <small>{formatAmount(customer.balance)}</small>
+        <li className="row" key={customer.id}>
+          <span className="row-main">
+            <span className="row-title">{customer.name}</span>
+            <span className="row-detail">
+              {customer.osakunta && `${customer.osakunta} · `}Saldo {formatAmount(customer.balance)}
+            </span>
           </span>
-          <Button
-            variant="ghost"
-            size="sm"
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm"
             disabled={busy}
             onClick={() => void restore(customer.id).catch(() => {})}
           >
             Palauta {customer.name}
-          </Button>
-        </div>
+          </button>
+        </li>
       ))}
-    </div>
+    </ul>
   );
 }

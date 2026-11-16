@@ -1,68 +1,96 @@
-import { useState } from "react";
-import { Button, Field, Flex, Input } from "@chakra-ui/react";
+import { useState, type ReactNode } from "react";
 import { BrandingSchema, LogoSchema, type Branding } from "../../ledger";
+import { Field, IMAGE_ERROR, IMAGE_READ_ERROR, IMAGE_TYPES } from "../../ui/Field";
 
 export function BrandingForm({
-  initial, busy, save, submitLabel = "Tallenna",
+  initial,
+  busy,
+  save,
+  submitLabel = "Tallenna",
+  actions,
 }: {
   initial: Branding;
   busy: boolean;
   save: (branding: Branding) => Promise<void>;
   submitLabel?: string;
+  /** Wraps the submit button, so a dialog can add its cancel button. */
+  actions?: (submit: ReactNode) => ReactNode;
 }) {
-  const [colors, setColors] = useState(initial);
+  const [values, setValues] = useState(initial);
   const [error, setError] = useState("");
   const [readingLogo, setReadingLogo] = useState(false);
   function uploadLogo(file: File) {
     setError("");
-    if (file.size > 1_048_576 || !["image/png", "image/jpeg", "image/webp", "image/svg+xml"].includes(file.type)) {
-      setError("Valitse PNG-, JPG-, WebP- tai SVG-kuva (enintään 1 Mt).");
+    if (file.size > 1_048_576 || !IMAGE_TYPES.includes(file.type)) {
+      setError(IMAGE_ERROR);
       return;
     }
     setReadingLogo(true);
     const reader = new FileReader();
     reader.onload = () => {
       const logo = LogoSchema.safeParse(reader.result);
-      if (logo.success) setColors((current) => ({ ...current, logo: logo.data }));
-      else setError("Kuvan lukeminen epäonnistui.");
+      if (logo.success) setValues((current) => ({ ...current, logo: logo.data }));
+      else setError(IMAGE_READ_ERROR);
     };
-    reader.onerror = () => setError("Kuvan lukeminen epäonnistui.");
+    reader.onerror = () => setError(IMAGE_READ_ERROR);
     reader.onloadend = () => setReadingLogo(false);
     reader.readAsDataURL(file);
   }
   async function submit() {
     try {
       setError("");
-      await save(BrandingSchema.parse(colors));
+      await save(BrandingSchema.parse(values));
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     }
   }
+  const submitButton = (
+    <button
+      className="btn btn-primary"
+      type="submit"
+      disabled={
+        busy ||
+        readingLogo ||
+        !values.organization.trim() ||
+        (values.logo === initial.logo &&
+          values.organization === initial.organization &&
+          values.primary === initial.primary &&
+          values.secondary === initial.secondary)
+      }
+    >
+      {submitLabel}
+    </button>
+  );
   return (
-    <>
-        <form
-          className="settings-form"
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (readingLogo || busy) return;
-            void submit();
-          }}
-        >
-          <Field.Root>
-            <Field.Label>Osakunta</Field.Label>
-            <Input
-              required
-              maxLength={60}
-              value={colors.organization}
-              onChange={(e) => setColors({ ...colors, organization: e.target.value })}
-            />
-          </Field.Root>
-          <Field.Root>
-            <Field.Label htmlFor="organization-logo">Logo</Field.Label>
+    <form
+      className="dialog-form"
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (readingLogo || busy) return;
+        void submit();
+      }}
+    >
+      <Field label="Osakunnan nimi">
+        {(id) => (
+          <input
+            id={id}
+            className="input"
+            required
+            maxLength={60}
+            value={values.organization}
+            onChange={(e) => setValues({ ...values, organization: e.target.value })}
+          />
+        )}
+      </Field>
+      <Field label="Logo" hint="PNG, JPG, WebP tai SVG, enintään 1 Mt.">
+        {(id) => (
+          <div className="image-picker">
+            {values.logo && <img className="image-preview" src={values.logo} alt="Logon esikatselu" />}
             <input
-              id="organization-logo"
+              id={id}
               type="file"
-              accept="image/png,image/jpeg,image/webp,image/svg+xml"
+              className="file-input"
+              accept={IMAGE_TYPES.join(",")}
               disabled={busy || readingLogo}
               onChange={(e) => {
                 const file = e.currentTarget.files?.[0];
@@ -70,68 +98,53 @@ export function BrandingForm({
                 e.currentTarget.value = "";
               }}
             />
-            {colors.logo && (
-              <Flex align="center" gap="3">
-                <img className="logo-preview" src={colors.logo} alt="Logon esikatselu" />
-                <Button
-                  variant="ghost"
-                  disabled={busy || readingLogo}
-                  onClick={() => setColors((current) => ({ ...current, logo: undefined }))}
-                >
-                  Poista logo
-                </Button>
-              </Flex>
+            {values.logo && (
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm"
+                disabled={busy || readingLogo}
+                onClick={() => setValues((current) => ({ ...current, logo: undefined }))}
+              >
+                Poista logo
+              </button>
             )}
-          </Field.Root>
-          <Field.Root>
-            <Field.Label>Pääväri</Field.Label>
-            <Flex gap="3" align="center">
-              <Input
+          </div>
+        )}
+      </Field>
+      <div className="color-fields">
+        <Field label="Pääväri" hint="Valittu henkilö ja päätoiminnot.">
+          {(id) => (
+            <div className="color-picker">
+              <input
+                id={id}
                 type="color"
-                aria-label="Pääväri"
-                value={colors.primary}
-                onChange={(e) =>
-                  setColors({ ...colors, primary: e.target.value })
-                }
+                value={values.primary}
+                onChange={(e) => setValues({ ...values, primary: e.target.value })}
               />
-              <span className="color-value">
-                {colors.primary.toUpperCase()}
-              </span>
-            </Flex>
-          </Field.Root>
-          <Field.Root>
-            <Field.Label>Taustaväri</Field.Label>
-            <Flex gap="3" align="center">
-              <Input
+              <span className="color-value">{values.primary.toUpperCase()}</span>
+            </div>
+          )}
+        </Field>
+        <Field label="Taustaväri">
+          {(id) => (
+            <div className="color-picker">
+              <input
+                id={id}
                 type="color"
-                aria-label="Taustaväri"
-                value={colors.secondary}
-                onChange={(e) =>
-                  setColors({ ...colors, secondary: e.target.value })
-                }
+                value={values.secondary}
+                onChange={(e) => setValues({ ...values, secondary: e.target.value })}
               />
-              <span className="color-value">
-                {colors.secondary.toUpperCase()}
-              </span>
-            </Flex>
-          </Field.Root>
-          <Button
-            className="primary"
-            type="submit"
-            disabled={
-              busy ||
-              readingLogo ||
-              !colors.organization.trim() ||
-              (colors.logo === initial.logo &&
-                colors.organization === initial.organization &&
-                colors.primary === initial.primary &&
-                colors.secondary === initial.secondary)
-            }
-          >
-            {submitLabel}
-          </Button>
-        </form>
-      {error && <p role="alert" className="error">{error}</p>}
-    </>
+              <span className="color-value">{values.secondary.toUpperCase()}</span>
+            </div>
+          )}
+        </Field>
+      </div>
+      {error && (
+        <p role="alert" className="error">
+          {error}
+        </p>
+      )}
+      {actions ? actions(submitButton) : <div className="button-row">{submitButton}</div>}
+    </form>
   );
 }

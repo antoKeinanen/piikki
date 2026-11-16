@@ -62,7 +62,7 @@ it("writes a real SQLite file and rejects external edits without losing the curr
         kind: "charge",
         label: "Charge",
       }),
-    ).rejects.toThrow("changed outside this app");
+    ).rejects.toThrow("ulkopuolella");
     expect(ledger.snapshot().customers[0].balance).toBe(-2000);
     const external = await Ledger.open(new Uint8Array(await readFile(path)));
     expect(external.snapshot().customers[0].balance).toBe(-2100);
