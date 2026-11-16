@@ -26,7 +26,6 @@ it("preserves chosen colors and keeps text and controls accessible for light, da
       expect(contrastRatio(style["--on-brand"], primary)).toBeGreaterThanOrEqual(4.5);
       expect(contrastRatio(style["--on-hover"], style["--hover"])).toBeGreaterThanOrEqual(4.5);
       expect(contrastRatio(style["--muted"], style["--surface"])).toBeGreaterThanOrEqual(4.5);
-      expect(contrastRatio(style["--line"], secondary)).toBeGreaterThanOrEqual(3);
       for (const indicator of [style["--line"], style["--focus"], style["--indicator"]]) {
         expect(contrastRatio(indicator, secondary)).toBeGreaterThanOrEqual(3);
       }

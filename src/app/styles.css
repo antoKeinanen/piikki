@@ -133,7 +133,8 @@ ul {
 }
 .btn-primary {
   background: var(--brand);
-  border-color: transparent;
+  /* The indicator colour, so the button keeps its edge when both branding colours match. */
+  border-color: var(--indicator);
   color: var(--on-brand);
 }
 .btn-primary:hover:not(:disabled) {
@@ -405,25 +406,24 @@ ul {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* Same box as PR #9, so the tabs stay where they were; only the fills are gone. */
 .nav {
   display: flex;
-  gap: 8px;
-  padding: 0;
-  border-radius: 0;
-  background: transparent;
-  border: 0;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid transparent;
 }
 .nav-item {
-  min-height: var(--topbar);
-  min-width: 0;
-  padding: 0 12px;
+  min-height: 40px;
+  min-width: 96px;
+  padding: 0 16px;
   border: 0;
-  border-radius: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: var(--radius) var(--radius) 0 0;
   background: transparent;
   color: var(--muted);
   font-size: 15px;
   font-weight: 400;
-  border-bottom: 2px solid transparent;
 }
 .nav-item:hover:not(:disabled):not([aria-current]) {
   background: var(--hover);
@@ -538,6 +538,7 @@ ul {
 .person[aria-pressed="true"] {
   background: var(--brand);
   color: var(--on-brand);
+  box-shadow: inset 0 0 0 1px var(--indicator);
 }
 .person:disabled {
   cursor: progress;
@@ -1295,7 +1296,6 @@ button.name-hint:hover:not(:disabled) {
   .nav-item {
     flex: 1;
     min-width: 0;
-    min-height: 48px;
   }
   .workspace {
     grid-template-columns: 1fr;
