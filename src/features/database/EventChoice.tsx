@@ -42,9 +42,9 @@ export function EventChoice({
           label="Uuden tapahtuman nimi"
           hint={previousName ? "Saldot siirtyvät uuteen tapahtumaan." : undefined}
         >
-          {(id) => (
+          {(control) => (
             <input
-              id={id}
+              {...control}
               className="input"
               autoFocus={!previousName}
               autoComplete="off"

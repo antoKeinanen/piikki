@@ -71,9 +71,9 @@ export function BrandingForm({
       }}
     >
       <Field label="Osakunnan nimi">
-        {(id) => (
+        {(control) => (
           <input
-            id={id}
+            {...control}
             className="input"
             required
             maxLength={60}
@@ -83,11 +83,11 @@ export function BrandingForm({
         )}
       </Field>
       <Field label="Logo" hint="PNG, JPG, WebP tai SVG, enintään 1 Mt.">
-        {(id) => (
+        {(control) => (
           <div className="image-picker">
             {values.logo && <img className="image-preview" src={values.logo} alt="Logon esikatselu" />}
             <input
-              id={id}
+              {...control}
               type="file"
               className="file-input"
               accept={IMAGE_TYPES.join(",")}
@@ -113,10 +113,10 @@ export function BrandingForm({
       </Field>
       <div className="color-fields">
         <Field label="Pääväri" hint="Valittu henkilö ja päätoiminnot.">
-          {(id) => (
+          {(control) => (
             <div className="color-picker">
               <input
-                id={id}
+                {...control}
                 type="color"
                 value={values.primary}
                 onChange={(e) => setValues({ ...values, primary: e.target.value })}
@@ -126,10 +126,10 @@ export function BrandingForm({
           )}
         </Field>
         <Field label="Taustaväri">
-          {(id) => (
+          {(control) => (
             <div className="color-picker">
               <input
-                id={id}
+                {...control}
                 type="color"
                 value={values.secondary}
                 onChange={(e) => setValues({ ...values, secondary: e.target.value })}

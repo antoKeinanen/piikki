@@ -37,6 +37,11 @@ export function PeopleList({
   const [search, setSearch] = useState("");
   const [order, setOrder] = useState<Order>("recent");
   const query = search.trim().toLocaleLowerCase("fi");
+  // Picking someone clears the search, so the next name can be typed straight away.
+  function pick(id: string) {
+    select(id);
+    setSearch("");
+  }
   const rows = sort(
     customers.filter((c) => `${c.name} ${c.osakunta}`.toLocaleLowerCase("fi").includes(query)),
     order,
@@ -54,7 +59,7 @@ export function PeopleList({
           onChange={(e) => setSearch(e.target.value)}
           onKeyDown={(e) => {
             // Enter picks the top match, Escape clears the search.
-            if (e.key === "Enter" && query && rows[0] && !disabled) select(rows[0].id);
+            if (e.key === "Enter" && query && rows[0] && !disabled) pick(rows[0].id);
             if (e.key === "Escape") setSearch("");
           }}
         />
@@ -83,7 +88,7 @@ export function PeopleList({
               aria-label={`${person.name}${person.osakunta ? `, ${person.osakunta}` : ""}, saldo ${formatAmount(person.balance)}`}
               aria-pressed={person.id === selected}
               disabled={disabled}
-              onClick={() => select(person.id)}
+              onClick={() => pick(person.id)}
             >
               <span className="person-name">{person.name}</span>
               {person.osakunta && <span className="person-osakunta">{person.osakunta}</span>}

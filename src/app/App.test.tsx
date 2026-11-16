@@ -172,7 +172,7 @@ it("charges immediately, hides IDs and filenames, and opens branding settings", 
     expect(screen.queryByRole("button", { name: "Palauta Kaakao" })).toBeNull(),
   );
 
-  fireEvent.click(screen.getByRole("button", { name: "Kassa" }));
+  fireEvent.click(screen.getByRole("button", { name: "Tilit" }));
   expect(screen.getByRole("banner", { name: "Testiosakunta" })).toBeTruthy();
   expect(screen.getByAltText("Testiosakunta logo").getAttribute("src")).toBe(
     logo,
@@ -401,10 +401,10 @@ it("preserves the active database when opening a replacement is cancelled", asyn
   );
   await waitFor(() =>
     expect(
-      screen.getByRole("button", { name: "Kassa" }).hasAttribute("disabled"),
+      screen.getByRole("button", { name: "Tilit" }).hasAttribute("disabled"),
     ).toBe(false),
   );
-  fireEvent.click(screen.getByRole("button", { name: "Kassa" }));
+  fireEvent.click(screen.getByRole("button", { name: "Tilit" }));
   await waitFor(() =>
     expect(screen.getByLabelText("Saldo").textContent).toBe("42,50"),
   );
@@ -491,7 +491,7 @@ it("keeps the current cashier session when the replacement event choice is cance
   await screen.findByRole("button", { name: "Jatka tapahtumaa Toinen juhla" });
   fireEvent.click(screen.getByRole("button", { name: "Peruuta" }));
   await waitFor(() => expect(document.querySelector('[role="dialog"][data-state="open"]')).toBeNull());
-  fireEvent.click(screen.getByRole("button", { name: "Kassa" }));
+  fireEvent.click(screen.getByRole("button", { name: "Tilit" }));
   expect(screen.getByLabelText("Saldo").textContent).toBe("42,50");
   expect(screen.getByRole("button", { name: person("Aino Korhonen") })).toBeTruthy();
   expect(first.snapshot().customers[0].balance).toBe(4250);
@@ -554,7 +554,7 @@ it("creates customer metadata and saves, updates, and clears a note across datab
     await waitFor(() => expect(openDialog()).toBeNull());
     if (value) expect(within(account).getByText(value.replace("\n", " "), { normalizer: (t) => t.replace(/\s+/g, " ") })).toBeTruthy();
   }
-  expect(account.querySelector(".account-note")).toBeNull();
+  expect(account.querySelector(".account-note")?.classList.contains("empty")).toBe(true);
 });
 
 it("keeps a product draft after a failed save and retries without duplicates", async () => {
@@ -647,7 +647,7 @@ it("shows statistics per event and switches back to the cashier", async () => {
   expect(products).not.toContain("Kahvi");
   expect(screen.getByLabelText("Eniten veloitetut henkilöt").textContent).toContain("Aino Korhonen");
   expect(screen.getByText("Näytä taulukkona")).toBeTruthy();
-  fireEvent.click(screen.getByRole("button", { name: "Kassa" }));
+  fireEvent.click(screen.getByRole("button", { name: "Tilit" }));
   expect(await screen.findByLabelText("Saldo")).toBeTruthy();
   expect(document.querySelector(".stats")).toBeNull();
 });
@@ -675,10 +675,10 @@ it("edits a person with undo, deletes with undo, and restores from settings", as
   expect(aino()).toMatchObject({ name: "Aino K", osakunta: "PO" });
   const toast = () => screen.queryByRole("status");
   expect(toast()?.textContent).toContain("Aino K: tiedot tallennettu.");
-  fireEvent.click(screen.getByRole("button", { name: "Kumoa" }));
+  fireEvent.click(within(screen.getByRole("status")).getByRole("button", { name: "Peru" }));
   await within(account).findByRole("heading", { name: "Aino Korhonen" });
   expect(aino()).toMatchObject({ name: "Aino Korhonen", osakunta: "" });
-  expect(screen.queryByRole("button", { name: "Kumoa" })).toBeNull();
+  expect(screen.queryByRole("status")).toBeNull();
 
   fireEvent.click(screen.getByRole("button", { name: "Muokkaa henkilöä Aino Korhonen" }));
   dialog = await screen.findByRole("dialog", { name: "Muokkaa henkilöä" });
@@ -699,7 +699,8 @@ it("edits a person with undo, deletes with undo, and restores from settings", as
   fireEvent.click(await screen.findByRole("button", { name: "Palauta Aino Korhonen" }));
   await waitFor(() => expect(aino()?.balance).toBe(4250));
   await screen.findByText("Ei poistettuja henkilöitä.");
-  fireEvent.click(screen.getByRole("button", { name: "Kassa" }));
+  expect(screen.getByText("Aino Korhonen palautettu listalle.")).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "Tilit" }));
   expect(screen.queryByRole("button", { name: "Palauta Aino Korhonen" })).toBeNull();
 });
 
@@ -727,8 +728,11 @@ it("asks who is at the till, records them and the description, and can switch op
 
   fireEvent.click(screen.getByRole("button", { name: "Vuorossa Eetu, vaihda" }));
   await startShift("Anto");
+  // An item charge keeps the typed description, then clears it.
+  fireEvent.change(screen.getByLabelText("Kuvaus (valinnainen)"), { target: { value: "Toiselle" } });
   fireEvent.click(screen.getByRole("button", { name: "Veloita Kahvi 2,50" }));
-  await waitFor(() => expect(ledger.snapshot().entries[0]).toMatchObject({ label: "Kahvi", operator: "Anto" }));
+  await waitFor(() => expect(ledger.snapshot().entries[0]).toMatchObject({ label: "Kahvi", operator: "Anto", note: "Toiselle" }));
+  await waitFor(() => expect(screen.getByLabelText("Kuvaus (valinnainen)").getAttribute("value")).toBe(""));
   expect(ledger.operators()).toEqual(["Anto", "Eetu"]);
 });
 

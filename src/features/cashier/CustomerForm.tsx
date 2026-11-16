@@ -83,9 +83,9 @@ export function CustomerForm({
       }}
     >
       <Field label="Nimi">
-        {(id) => (
+        {(control) => (
           <input
-            id={id}
+            {...control}
             className="input"
             autoFocus
             required
@@ -130,9 +130,9 @@ export function CustomerForm({
         </div>
       )}
       <Field label="Osakunta (valinnainen)">
-        {(id) => (
+        {(control) => (
           <select
-            id={id}
+            {...control}
             className="input select"
             value={choice}
             disabled={busy}
@@ -150,9 +150,9 @@ export function CustomerForm({
       </Field>
       {choice === OTHER && (
         <Field label="Osakunnan nimi">
-          {(id) => (
+          {(control) => (
             <input
-              id={id}
+              {...control}
               className="input"
               autoFocus
               maxLength={OSAKUNTA_MAX}
@@ -164,10 +164,10 @@ export function CustomerForm({
         </Field>
       )}
       {withOpening && (
-        <Field label="Alkusaldo (valinnainen)" hint="Velka miinusmerkillä, esim. -5,00.">
-          {(id) => (
+        <Field label="Alkusaldo (valinnainen)" hint="Miinussaldo miinusmerkillä, esim. -5,00.">
+          {(control) => (
             <input
-              id={id}
+              {...control}
               className="input"
               inputMode="decimal"
               autoComplete="off"
@@ -185,10 +185,10 @@ export function CustomerForm({
         </p>
       )}
       {withNote && (
-        <Field label="Muistiinpano" hint="Näkyy nimen alla kassanäkymässä.">
-          {(id) => (
+        <Field label="Muistiinpano" hint="Näkyy nimen alla.">
+          {(control) => (
             <textarea
-              id={id}
+              {...control}
               className="input textarea"
               rows={3}
               value={note}

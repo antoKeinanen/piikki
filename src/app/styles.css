@@ -565,6 +565,11 @@ ul {
   gap: 20px;
   padding: 20px 28px 96px;
 }
+/* The panel scrolls; its sections never shrink, so nothing moves between people. */
+.account > *,
+.people > :not(.people-list) {
+  flex-shrink: 0;
+}
 .account-empty {
   align-items: center;
   justify-content: center;
@@ -580,8 +585,7 @@ ul {
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: start;
   gap: 16px;
-  /* Fixed height, so the buttons below stay in the same place for every person. */
-  min-height: 96px;
+  /* The note line is always present, so the controls below sit at the same height for everyone. */
   padding-bottom: 16px;
   border-bottom: 1px solid var(--hairline);
 }
@@ -611,6 +615,12 @@ ul {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.account-note.empty {
+  visibility: hidden;
+}
+.account-note.empty::before {
+  content: "\00a0";
 }
 .account-balance {
   display: flex;
@@ -1215,7 +1225,9 @@ button.name-hint:hover:not(:disabled) {
 
 /* ---------- Narrow screens ---------- */
 @media (min-width: 900px) {
+  /* A fixed height, not flex growth, so the page never scrolls and only the panels do. */
   .workspace {
+    flex: none;
     height: calc(100vh - var(--topbar));
     height: calc(100dvh - var(--topbar));
   }

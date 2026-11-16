@@ -13,9 +13,9 @@ Open http://localhost:5173. Select **Luo tietokanta** for an empty database, or 
 
 ## Using the app
 
-The top bar has three views: **Kassa**, **Tilastot** and **Asetukset**. Each stays in the same place on every screen.
+The top bar has three views: **Tilit**, **Tilastot** and **Asetukset**. Each stays in the same place on every screen.
 
-In **Kassa**, the people list is on the left. Type in the search field and press Enter to select the top match. If nobody matches, the list offers to add the typed name. The selected person's name, balance and note are at the top of the right side, followed by the amount field, the item buttons and the history. The amount field and the **Veloita** and **Lisää saldoa** buttons stay in the same place for every person. Enter in the amount field does nothing, so a typed amount is only applied by pressing one of the two buttons.
+In **Tilit**, the people list is on the left. Type in the search field and press Enter to select the top match. If nobody matches, the list offers to add the typed name. The selected person's name, balance and note are at the top of the right side, followed by the amount field, the item buttons and the history. The amount field and the **Veloita** and **Lisää saldoa** buttons stay in the same place for every person. Enter in the amount field does nothing, so a typed amount is only applied by pressing one of the two buttons.
 
 After each change, a notice at the bottom shows what happened and offers **Peru**. Undoing always asks for confirmation. Person IDs and the active filename stay hidden.
 
@@ -33,7 +33,7 @@ Use one app instance per file. The app rejects a save if the file changed extern
 
 ## Shifts, safety and logout
 
-After a database opens, the app asks who is at the till (isäntä or apuisäntä). Their name is stored on every balance change, charges, deposits, undos and opening balances, and shown in each person's history. Switch the name from **Vuorossa** in the top bar.
+After a database opens, the app asks who is on shift (isäntä or apuisäntä). Their name is stored on every balance change, charges, deposits, undos and opening balances, and shown in each person's history. Switch the name from **Vuorossa** in the top bar.
 
 Nobody is selected after opening, and the selected person is cleared after two minutes without input, so nobody gets charged by accident. **Kirjaudu ulos** closes the database, frees it from memory and forgets the operator.
 

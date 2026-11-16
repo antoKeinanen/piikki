@@ -4,12 +4,14 @@ import type { ReactNode } from "react";
 export function Toast({
   children,
   action,
+  actionLabel,
   busy,
   onAction,
   dismiss,
 }: {
   children: ReactNode;
   action: string;
+  actionLabel?: string;
   busy: boolean;
   onAction(): void;
   dismiss(): void;
@@ -17,7 +19,13 @@ export function Toast({
   return (
     <div className="toast" role="status">
       <p className="toast-text">{children}</p>
-      <button type="button" className="btn btn-secondary btn-sm" disabled={busy} onClick={onAction}>
+      <button
+        type="button"
+        className="btn btn-secondary btn-sm"
+        aria-label={actionLabel}
+        disabled={busy}
+        onClick={onAction}
+      >
         {action}
       </button>
       <button type="button" className="btn btn-ghost btn-sm toast-close" aria-label="Sulje ilmoitus" onClick={dismiss}>

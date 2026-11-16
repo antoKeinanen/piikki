@@ -89,11 +89,10 @@ export function AccountPanel({
         cents,
         kind,
         label: product?.name ?? (kind === "charge" ? "Veloita" : "Lisää saldoa"),
-        note: product ? "" : note,
+        note,
       }).then(
         () => {
-          if (product) return;
-          setAmount("");
+          if (!product) setAmount("");
           setNote("");
         },
         () => {},
@@ -144,11 +143,10 @@ export function AccountPanel({
               Muokkaa
             </button>
           </p>
-          {customer.note && (
-            <p className="account-note" title={customer.note}>
-              {customer.note}
-            </p>
-          )}
+          {/* Always rendered, so a note never moves the controls below. */}
+          <p className={`account-note ${customer.note ? "" : "empty"}`} title={customer.note || undefined}>
+            {customer.note}
+          </p>
         </div>
         <div className="account-balance">
           <span className="balance-caption" aria-hidden="true">
@@ -169,9 +167,9 @@ export function AccountPanel({
         onSubmit={(e) => e.preventDefault()}
       >
         <Field label="Summa" className="amount-field">
-          {(id) => (
+          {(control) => (
             <input
-              id={id}
+              {...control}
               className="input"
               inputMode="decimal"
               autoComplete="off"
@@ -183,9 +181,9 @@ export function AccountPanel({
           )}
         </Field>
         <Field label="Kuvaus (valinnainen)" className="note-field">
-          {(id) => (
+          {(control) => (
             <input
-              id={id}
+              {...control}
               className="input"
               autoComplete="off"
               maxLength={200}

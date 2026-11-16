@@ -35,7 +35,7 @@ export const IDLE_TIMEOUT_MS = 2 * 60 * 1000;
 const ACTIVITY_EVENTS = ["pointerdown", "keydown", "wheel", "touchstart", "input"] as const;
 type View = "cashier" | "stats" | "settings";
 const VIEWS: { id: View; label: string }[] = [
-  { id: "cashier", label: "Kassa" },
+  { id: "cashier", label: "Tilit" },
   { id: "stats", label: "Tilastot" },
   { id: "settings", label: "Asetukset" },
 ];
@@ -59,7 +59,15 @@ const MODAL_TITLES: Record<Modal["kind"], string> = {
 /** The latest change, shown at the bottom with a way to undo it. */
 type Notice =
   | { kind: "entry"; entryId: string; customerName: string; cents: number; label: string }
-  | { kind: "undo"; message: string; action: string; run(): Promise<void>; restores?: string };
+  | {
+      kind: "undo";
+      message: string;
+      action: string;
+      /** Spoken name of the action when the visible word is too short. */
+      actionLabel?: string;
+      run(): Promise<void>;
+      restores?: string;
+    };
 
 export default function App() {
   const problem = fileAccessProblem();
@@ -228,7 +236,7 @@ function CashierApp() {
     setNotice({
       kind: "undo",
       message: `${values.name}: tiedot tallennettu.`,
-      action: "Kumoa",
+      action: "Peru",
       run: () =>
         mutation.mutateAsync(async () => {
           if (details)
@@ -244,15 +252,16 @@ function CashierApp() {
     setNotice({
       kind: "undo",
       message: `${person.name} poistettu.`,
-      action: `Palauta ${person.name}`,
-      run: () => restoreCustomer(person.id),
+      action: "Palauta",
+      actionLabel: `Palauta ${person.name}`,
+      run: () => restoreCustomer(person.id, { select: true }),
       restores: person.id,
     });
   }
-  async function restoreCustomer(id: string) {
+  async function restoreCustomer(id: string, { select = false } = {}) {
     if (!ledger) return;
     await mutation.mutateAsync(() => ledger.restoreCustomer(id));
-    choose(id);
+    if (select) choose(id);
     setNotice((current) => (current?.kind === "undo" && current.restores === id ? undefined : current));
   }
   const branding = data?.branding ?? defaultBranding;
@@ -431,6 +440,7 @@ function CashierApp() {
         <Toast
           busy={busy}
           action={shownNotice.kind === "entry" ? "Peru" : shownNotice.action}
+          actionLabel={shownNotice.kind === "undo" ? shownNotice.actionLabel : undefined}
           dismiss={() => setNotice(undefined)}
           onAction={() => {
             if (shownNotice.kind === "undo")

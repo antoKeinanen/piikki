@@ -159,9 +159,9 @@ export function ProductEditor({
       >
         <h3 className="section-title">{editing ? `Muokkaa: ${editedName}` : "Uusi nimike"}</h3>
         <Field label="Nimi">
-          {(id) => (
+          {(control) => (
             <input
-              id={id}
+              {...control}
               ref={nameInput}
               className="input"
               required
@@ -174,9 +174,9 @@ export function ProductEditor({
           )}
         </Field>
         <Field label="Summa">
-          {(id) => (
+          {(control) => (
             <input
-              id={id}
+              {...control}
               className="input"
               required
               inputMode="decimal"
@@ -190,12 +190,12 @@ export function ProductEditor({
         </Field>
         <Field
           label="Kategoria (valinnainen)"
-          hint="Saman kategorian nimikkeet ovat kassalla yhden painikkeen takana."
+          hint="Saman kategorian nimikkeet ovat yhden painikkeen takana."
         >
-          {(id) => (
+          {(control) => (
             <>
               <input
-                id={id}
+                {...control}
                 className="input"
                 maxLength={60}
                 list="product-categories"
@@ -232,9 +232,9 @@ export function ProductEditor({
           )}
         </Field>
         <Field label="Kuvaus (valinnainen)" hint="Haku löytää nimikkeen myös kuvauksen sanoilla.">
-          {(id) => (
+          {(control) => (
             <textarea
-              id={id}
+              {...control}
               className="input textarea"
               rows={2}
               maxLength={2000}
@@ -245,11 +245,11 @@ export function ProductEditor({
           )}
         </Field>
         <Field label="Kuva (valinnainen)">
-          {(id) => (
+          {(control) => (
             <div className="image-picker">
               {draft.image && <img className="image-preview" src={draft.image} alt="Kuvan esikatselu" />}
               <input
-                id={id}
+                {...control}
                 type="file"
                 className="file-input"
                 accept={IMAGE_TYPES.join(",")}

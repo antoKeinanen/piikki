@@ -1,6 +1,9 @@
 import { useId, type ReactNode } from "react";
 
-/** A label above one control. The control receives the generated id. */
+/** Props that tie a control to its label and hint. */
+export type ControlProps = { id: string; "aria-describedby"?: string };
+
+/** A label above one control. Spread the given props onto the control. */
 export function Field({
   label,
   hint,
@@ -9,7 +12,7 @@ export function Field({
 }: {
   label: string;
   hint?: ReactNode;
-  children(id: string): ReactNode;
+  children(control: ControlProps): ReactNode;
   className?: string;
 }) {
   const id = useId();
@@ -18,8 +21,12 @@ export function Field({
       <label className="field-label" htmlFor={id}>
         {label}
       </label>
-      {children(id)}
-      {hint && <p className="field-hint">{hint}</p>}
+      {children({ id, "aria-describedby": hint ? `${id}-hint` : undefined })}
+      {hint && (
+        <p className="field-hint" id={`${id}-hint`}>
+          {hint}
+        </p>
+      )}
     </div>
   );
 }

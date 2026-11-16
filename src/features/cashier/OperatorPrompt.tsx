@@ -3,7 +3,7 @@ import { OPERATOR_MAX } from "../../ledger";
 import { Field } from "../../ui/Field";
 import { DialogActions } from "../../ui/DialogActions";
 
-/** Asks who is at the till, so every balance change can be traced to them. */
+/** Asks who is on shift, so every balance change can be traced to them. */
 export function OperatorPrompt({
   current,
   recent,
@@ -38,9 +38,9 @@ export function OperatorPrompt({
         }}
       >
         <Field label={others.length ? "Tai kirjoita nimesi" : "Nimesi"}>
-          {(id) => (
+          {(control) => (
             <input
-              id={id}
+              {...control}
               className="input"
               autoFocus={!others.length}
               autoComplete="off"

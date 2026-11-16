@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { formatAmount, type Customer } from "../../ledger";
 
 export function RemovedCustomers({
@@ -9,8 +10,15 @@ export function RemovedCustomers({
   busy: boolean;
   restore(id: string): Promise<void>;
 }) {
-  if (!customers.length) return <p className="empty-text">Ei poistettuja henkilöitä.</p>;
+  const [restored, setRestored] = useState("");
   return (
+    <>
+      {restored && (
+        <p className="inline-notice" role="status">
+          {restored} palautettu listalle.
+        </p>
+      )}
+      {!customers.length && <p className="empty-text">Ei poistettuja henkilöitä.</p>}
     <ul className="rows">
       {customers.map((customer) => (
         <li className="row" key={customer.id}>
@@ -24,12 +32,13 @@ export function RemovedCustomers({
             type="button"
             className="btn btn-secondary btn-sm"
             disabled={busy}
-            onClick={() => void restore(customer.id).catch(() => {})}
+            onClick={() => void restore(customer.id).then(() => setRestored(customer.name), () => {})}
           >
             Palauta {customer.name}
           </button>
         </li>
       ))}
     </ul>
+    </>
   );
 }
