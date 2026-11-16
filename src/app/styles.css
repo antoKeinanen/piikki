@@ -1,16 +1,25 @@
 /*
- * One design system for the whole app.
- * Colours come from brandingStyle() as CSS variables. Sizes follow one scale:
- * controls are 40, 48 or 56 px tall, gaps are multiples of 4 px.
+ * One calm design system for the whole app.
+ * Colour comes from brandingStyle() and appears only on actions and the selected
+ * person. Everything else is white space, soft fills and hairlines, with type no
+ * heavier than medium. Controls are 40, 48 or 56 px tall, gaps multiples of 4 px.
  */
 :root {
-  font-family: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme: only light;
+  font-family:
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    "Helvetica Neue",
+    sans-serif;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   color: #111111;
   background: #ffffff;
-  --radius: 10px;
+  --radius: 12px;
   --radius-sm: 6px;
   --topbar: 64px;
 }
@@ -71,7 +80,8 @@ ul {
   --chakra-colors-color-palette-focus-ring: var(--focus);
   --chakra-colors-border-emphasized: var(--line);
 }
-:is(.app, .modal, .compatibility-page) :is(button, a, input, select, textarea, summary):focus-visible {
+:is(.app, .modal, .compatibility-page)
+  :is(button, a, input, select, textarea, summary):focus-visible {
   outline: 2px solid var(--focus);
   outline-offset: 2px;
 }
@@ -88,13 +98,15 @@ ul {
   border-radius: var(--radius);
   background: transparent;
   font-size: 15px;
-  font-weight: 600;
+  font-weight: 500;
   line-height: 1.2;
   text-align: center;
   text-decoration: none;
   white-space: nowrap;
   user-select: none;
-  transition: background-color 80ms, border-color 80ms, transform 60ms;
+  transition:
+    background-color 120ms,
+    color 120ms;
 }
 .btn:active:not(:disabled) {
   transform: translateY(1px);
@@ -122,6 +134,7 @@ ul {
 }
 .btn-primary {
   background: var(--brand);
+  /* The indicator colour, so the button keeps its edge when both branding colours match. */
   border-color: var(--indicator);
   color: var(--on-brand);
 }
@@ -129,8 +142,9 @@ ul {
   filter: brightness(0.92);
 }
 .btn-secondary {
-  border-color: var(--line);
+  border-color: transparent;
   color: var(--ink);
+  background: var(--surface);
 }
 .btn-secondary:hover:not(:disabled),
 .btn-ghost:hover:not(:disabled) {
@@ -141,8 +155,9 @@ ul {
   color: var(--ink);
 }
 .btn-danger {
-  border-color: var(--error);
+  border-color: transparent;
   color: var(--error);
+  background: var(--accent);
 }
 .btn-danger:hover:not(:disabled) {
   background: var(--error);
@@ -171,14 +186,15 @@ ul {
   padding: 4px 6px;
   margin: -4px 0;
   border-radius: var(--radius-sm);
-  color: var(--ink);
+  color: var(--muted);
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 400;
   text-decoration: underline;
   text-underline-offset: 3px;
 }
 .link-button:hover:not(:disabled) {
   background: var(--hover);
+  color: var(--on-hover);
 }
 .button-row {
   display: flex;
@@ -195,8 +211,8 @@ ul {
 }
 .field-label {
   font-size: 13px;
-  font-weight: 600;
-  color: var(--ink);
+  font-weight: 400;
+  color: var(--muted);
 }
 .field-hint {
   font-size: 13px;
@@ -235,9 +251,12 @@ ul {
 .select {
   appearance: none;
   padding-right: 40px;
-  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%),
+  background-image:
+    linear-gradient(45deg, transparent 50%, currentColor 50%),
     linear-gradient(135deg, currentColor 50%, transparent 50%);
-  background-position: calc(100% - 20px) 50%, calc(100% - 15px) 50%;
+  background-position:
+    calc(100% - 20px) 50%,
+    calc(100% - 15px) 50%;
   background-size: 5px 5px;
   background-repeat: no-repeat;
 }
@@ -259,7 +278,7 @@ ul {
   width: 64px;
   height: 48px;
   padding: 4px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--hairline);
   border-radius: var(--radius);
   background: var(--accent);
   cursor: pointer;
@@ -279,8 +298,9 @@ ul {
   width: 56px;
   height: 56px;
   object-fit: contain;
-  border: 1px solid var(--hairline);
+  border: 0;
   border-radius: var(--radius-sm);
+  background: var(--surface);
 }
 .chips {
   display: flex;
@@ -291,23 +311,23 @@ ul {
 .chip {
   min-height: 36px;
   padding: 0 14px;
-  border: 1px solid var(--line);
+  border: 1px solid transparent;
   border-radius: 999px;
-  background: transparent;
+  background: var(--surface);
   font-size: 14px;
 }
 .chip[aria-pressed="true"] {
   background: var(--brand);
-  border-color: var(--indicator);
   color: var(--on-brand);
-  font-weight: 600;
+  font-weight: 400;
+  box-shadow: inset 0 0 0 1px var(--indicator);
 }
 
 /* ---------- Shared text ---------- */
 .error {
   color: var(--error);
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 400;
 }
 .empty-text {
   color: var(--muted);
@@ -315,10 +335,8 @@ ul {
   padding: 8px 0;
 }
 .section-title {
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  font-size: 14px;
+  font-weight: 400;
   color: var(--muted);
 }
 .positive {
@@ -333,7 +351,7 @@ ul {
   background: var(--brand);
   color: var(--on-brand);
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 500;
 }
 
 /* ---------- App frame ---------- */
@@ -358,7 +376,6 @@ ul {
   height: var(--topbar);
   padding: 0 20px;
   border-bottom: 1px solid var(--hairline);
-  border-top: 4px solid var(--brand);
   background: var(--accent);
 }
 .brand {
@@ -379,8 +396,8 @@ ul {
   min-width: 0;
 }
 .brand-name {
-  font-size: 17px;
-  font-weight: 700;
+  font-size: 16px;
+  font-weight: 500;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -392,32 +409,33 @@ ul {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* Same box as PR #9, so the tabs stay where they were; only the fills are gone. */
 .nav {
   display: flex;
   gap: 4px;
   padding: 4px;
-  border-radius: calc(var(--radius) + 4px);
-  background: var(--surface);
-  border: 1px solid var(--hairline);
+  border: 1px solid transparent;
 }
 .nav-item {
   min-height: 40px;
   min-width: 96px;
   padding: 0 16px;
   border: 0;
-  border-radius: var(--radius);
+  border-bottom: 2px solid transparent;
+  border-radius: var(--radius) var(--radius) 0 0;
   background: transparent;
   color: var(--muted);
   font-size: 15px;
-  font-weight: 600;
+  font-weight: 400;
 }
 .nav-item:hover:not(:disabled):not([aria-current]) {
   background: var(--hover);
   color: var(--on-hover);
 }
 .nav-item[aria-current="page"] {
-  background: var(--brand);
-  color: var(--on-brand);
+  background: transparent;
+  color: var(--ink);
+  border-bottom-color: var(--indicator);
 }
 .session {
   display: flex;
@@ -432,10 +450,11 @@ ul {
   gap: 0;
   min-width: 0;
   padding: 0 12px;
+  font-weight: 400;
 }
 .operator-caption {
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 400;
   color: var(--muted);
 }
 .operator-name {
@@ -461,35 +480,38 @@ ul {
   gap: 12px;
   padding: 20px;
   border-right: 1px solid var(--hairline);
-  background: var(--surface);
+  background: transparent;
 }
 .people-search {
   display: grid;
   gap: 8px;
 }
+/* Sort options look like every other button: soft rounded fills. The chosen
+ * one takes the primary colour, like the selected person. Same 42px row as before. */
 .segmented {
   display: grid;
   grid-auto-flow: column;
   grid-auto-columns: 1fr;
-  gap: 2px;
-  padding: 3px;
-  border-radius: var(--radius);
-  border: 1px solid var(--hairline);
-  background: var(--accent);
+  gap: 8px;
+  padding: 1px 0;
 }
 .segmented button {
-  min-height: 34px;
+  min-height: 40px;
   border: 0;
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--muted);
-  font-size: 13px;
-  font-weight: 600;
-}
-.segmented button[aria-pressed="true"] {
+  border-radius: var(--radius);
   background: var(--surface);
   color: var(--ink);
-  box-shadow: inset 0 0 0 1px var(--line);
+  font-size: 14px;
+  font-weight: 400;
+}
+.segmented button:hover:not([aria-pressed="true"]) {
+  background: var(--hover);
+  color: var(--on-hover);
+}
+.segmented button[aria-pressed="true"] {
+  background: var(--brand);
+  color: var(--on-brand);
+  box-shadow: inset 0 0 0 1px var(--indicator);
 }
 .people-list {
   display: flex;
@@ -521,6 +543,7 @@ ul {
 .person[aria-pressed="true"] {
   background: var(--brand);
   color: var(--on-brand);
+  box-shadow: inset 0 0 0 1px var(--indicator);
 }
 .person:disabled {
   cursor: progress;
@@ -531,7 +554,7 @@ ul {
 .person-name {
   grid-area: name;
   font-size: 16px;
-  font-weight: 600;
+  font-weight: 400;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -547,7 +570,7 @@ ul {
 .person-balance {
   grid-area: balance;
   font-size: 16px;
-  font-weight: 600;
+  font-weight: 400;
   font-variant-numeric: tabular-nums;
 }
 .person-balance.negative {
@@ -583,8 +606,8 @@ ul {
   gap: 8px;
 }
 .empty-title {
-  font-size: 24px;
-  font-weight: 700;
+  font-size: 22px;
+  font-weight: 400;
 }
 .account-head {
   display: grid;
@@ -593,13 +616,12 @@ ul {
   gap: 16px;
   /* The note line is always present, so the controls below sit at the same height for everyone. */
   padding-bottom: 16px;
-  border-bottom: 1px solid var(--hairline);
+  border-bottom: 1px solid transparent;
 }
 .account-name {
-  font-size: 28px;
-  font-weight: 700;
+  font-size: 26px;
+  font-weight: 500;
   line-height: 1.15;
-  letter-spacing: -0.01em;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -615,12 +637,14 @@ ul {
 .account-note {
   margin-top: 8px;
   padding: 4px 10px;
-  border-left: 3px solid var(--indicator);
+  border-left: 0;
   background: var(--surface);
   font-size: 14px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  border-radius: var(--radius-sm);
+  color: var(--muted);
 }
 .account-note.empty {
   visibility: hidden;
@@ -635,14 +659,14 @@ ul {
 }
 .balance-caption {
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 400;
   color: var(--muted);
 }
 .balance {
-  font-size: 44px;
-  font-weight: 700;
+  font-size: 48px;
+  font-weight: 300;
   line-height: 1.05;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.01em;
   font-variant-numeric: tabular-nums;
 }
 .balance.negative {
@@ -662,7 +686,9 @@ ul {
 }
 .amount-row {
   display: grid;
-  grid-template-columns: minmax(96px, 0.8fr) minmax(120px, 1.2fr) minmax(140px, 1fr) minmax(140px, 1fr);
+  grid-template-columns:
+    minmax(96px, 0.8fr) minmax(120px, 1.2fr) minmax(140px, 1fr)
+    minmax(140px, 1fr);
   align-items: end;
   gap: 12px;
 }
@@ -697,13 +723,12 @@ ul {
   column-gap: 12px;
   min-height: 84px;
   padding: 12px 14px;
-  border: 1px solid var(--line);
+  border: 1px solid transparent;
   border-radius: var(--radius);
-  background: var(--accent);
+  background: var(--surface);
   text-align: left;
 }
 .tile:hover:not(:disabled) {
-  border-color: var(--indicator);
   background: var(--hover);
   color: var(--on-hover);
 }
@@ -720,7 +745,7 @@ ul {
 .tile-name {
   grid-area: name;
   font-size: 16px;
-  font-weight: 600;
+  font-weight: 400;
   line-height: 1.2;
   overflow-wrap: anywhere;
 }
@@ -733,11 +758,11 @@ ul {
 .tile:hover:not(:disabled) .tile-detail {
   color: inherit;
 }
-.tile-category {
-  background: var(--surface);
-}
+/* Categories and the way back open or leave a group, so they are outlines, not filled like items. */
+.tile-category,
 .tile-back {
-  border-style: dashed;
+  background: transparent;
+  border: 1px solid var(--line);
 }
 .history {
   display: flex;
@@ -745,7 +770,7 @@ ul {
   gap: 8px;
 }
 .entries {
-  border-top: 1px solid var(--hairline);
+  border-top: 1px solid transparent;
 }
 .entry {
   display: grid;
@@ -762,7 +787,7 @@ ul {
   min-width: 0;
 }
 .entry-label {
-  font-weight: 600;
+  font-weight: 400;
 }
 .entry-note {
   font-size: 14px;
@@ -774,7 +799,7 @@ ul {
 }
 .entry-amount {
   font-size: 16px;
-  font-weight: 600;
+  font-weight: 400;
   font-variant-numeric: tabular-nums;
 }
 .entry.reversed :is(.entry-label, .entry-amount) {
@@ -794,7 +819,7 @@ ul {
 .busted figcaption {
   margin-top: 8px;
   font-size: 20px;
-  font-weight: 700;
+  font-weight: 500;
 }
 @keyframes busted-fade-in {
   from {
@@ -816,10 +841,10 @@ ul {
   width: max-content;
   max-width: calc(100vw - 32px);
   padding: 8px 8px 8px 20px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--hairline);
   border-radius: calc(var(--radius) + 4px);
   background: var(--accent);
-  box-shadow: 0 8px 28px rgb(0 0 0 / 0.18);
+  box-shadow: 0 6px 24px rgb(0 0 0 / 0.12);
 }
 .toast-text {
   min-width: 0;
@@ -845,8 +870,7 @@ ul {
   width: min(440px, calc(100vw - 32px)) !important;
   max-width: none !important;
   border-radius: calc(var(--radius) + 6px) !important;
-  border-top: 4px solid var(--brand);
-  box-shadow: 0 24px 64px rgb(0 0 0 / 0.3) !important;
+  box-shadow: 0 16px 48px rgb(0 0 0 / 0.18) !important;
 }
 .modal-wide {
   width: min(560px, calc(100vw - 32px)) !important;
@@ -858,8 +882,8 @@ ul {
   padding: 24px !important;
 }
 .modal-title {
-  font-size: 22px !important;
-  font-weight: 700 !important;
+  font-size: 20px !important;
+  font-weight: 500 !important;
   line-height: 1.2;
 }
 .dialog-form {
@@ -907,7 +931,7 @@ ul {
   color: var(--muted);
 }
 .summary dd {
-  font-weight: 600;
+  font-weight: 400;
   font-variant-numeric: tabular-nums;
 }
 .name-hints {
@@ -922,7 +946,7 @@ ul {
 }
 .name-hint-warning {
   color: var(--error);
-  font-weight: 700;
+  font-weight: 500;
 }
 .name-hint {
   display: flex;
@@ -931,9 +955,9 @@ ul {
   min-height: 40px;
   align-items: center;
   padding: 6px 12px;
-  border: 1px solid var(--line);
+  border: 1px solid transparent;
   border-radius: var(--radius-sm);
-  background: transparent;
+  background: var(--surface);
   text-align: left;
 }
 button.name-hint:hover:not(:disabled) {
@@ -949,11 +973,12 @@ button.name-hint:hover:not(:disabled) {
   justify-content: space-between;
   gap: 16px;
   padding: 16px;
-  border: 1px solid var(--hairline);
+  border: 1px solid transparent;
   border-radius: var(--radius);
+  background: var(--surface);
 }
 .danger-title {
-  font-weight: 600;
+  font-weight: 400;
 }
 
 /* ---------- Pages: statistics and settings ---------- */
@@ -971,9 +996,8 @@ button.name-hint:hover:not(:disabled) {
   margin-bottom: 24px;
 }
 .page-title {
-  font-size: 28px;
-  font-weight: 700;
-  letter-spacing: -0.01em;
+  font-size: 26px;
+  font-weight: 400;
 }
 .page > .page-title {
   margin-bottom: 16px;
@@ -995,7 +1019,7 @@ button.name-hint:hover:not(:disabled) {
   padding: 0 16px;
   color: var(--muted);
   font-size: 15px;
-  font-weight: 600;
+  font-weight: 400;
 }
 .settings-tabs [role="tab"][aria-selected="true"] {
   color: var(--ink);
@@ -1021,7 +1045,7 @@ button.name-hint:hover:not(:disabled) {
   padding: 20px;
   border: 1px solid var(--hairline);
   border-radius: calc(var(--radius) + 4px);
-  background: var(--surface);
+  background: transparent;
 }
 .rows {
   border-top: 1px solid var(--hairline);
@@ -1054,7 +1078,7 @@ button.name-hint:hover:not(:disabled) {
   min-width: 0;
 }
 .row-title {
-  font-weight: 600;
+  font-weight: 400;
   overflow-wrap: anywhere;
 }
 .row-detail {
@@ -1079,19 +1103,19 @@ button.name-hint:hover:not(:disabled) {
 }
 .stat-tile {
   padding: 16px;
-  border: 1px solid var(--hairline);
+  border: 1px solid transparent;
   border-radius: var(--radius);
   background: var(--surface);
 }
 .stat-label {
   color: var(--muted);
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 400;
 }
 .stat-value {
   margin-top: 4px;
   font-size: 28px;
-  font-weight: 700;
+  font-weight: 300;
   font-variant-numeric: tabular-nums;
 }
 .stat-note-line {
@@ -1109,8 +1133,8 @@ button.name-hint:hover:not(:disabled) {
   min-width: 0;
 }
 .stat-section h2 {
-  font-size: 18px;
-  font-weight: 700;
+  font-size: 16px;
+  font-weight: 500;
 }
 .stat-wide {
   grid-column: 1 / -1;
@@ -1166,7 +1190,7 @@ button.name-hint:hover:not(:disabled) {
   font-variant-numeric: tabular-nums;
 }
 .chart-table-plain tr[aria-current="true"] :is(th, td) {
-  font-weight: 700;
+  font-weight: 500;
 }
 .stats-note {
   margin-top: 36px;
@@ -1200,10 +1224,10 @@ button.name-hint:hover:not(:disabled) {
   text-align: left;
 }
 .welcome-title {
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 44px;
+  font-size: 40px;
   letter-spacing: -0.02em;
   margin-bottom: 16px;
+  font-weight: 300;
 }
 .compatibility-card .welcome-title {
   font-size: 28px;
@@ -1211,7 +1235,7 @@ button.name-hint:hover:not(:disabled) {
 }
 .compatibility-title {
   font-size: 26px;
-  font-weight: 700;
+  font-weight: 500;
   line-height: 1.2;
 }
 .welcome-hint {

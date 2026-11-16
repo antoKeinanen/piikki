@@ -25,9 +25,15 @@ it("preserves chosen colors and keeps text and controls accessible for light, da
       }
       expect(contrastRatio(style["--on-brand"], primary)).toBeGreaterThanOrEqual(4.5);
       expect(contrastRatio(style["--on-hover"], style["--hover"])).toBeGreaterThanOrEqual(4.5);
+      expect(contrastRatio(style["--muted"], style["--surface"])).toBeGreaterThanOrEqual(4.5);
       for (const indicator of [style["--line"], style["--focus"], style["--indicator"]]) {
         expect(contrastRatio(indicator, secondary)).toBeGreaterThanOrEqual(3);
       }
     }
   }
+});
+
+it("chooses an exclusive color scheme from the branding background", () => {
+  expect(brandingStyle({ ...defaultBranding, secondary: "#ffffff" }).colorScheme).toBe("only light");
+  expect(brandingStyle({ ...defaultBranding, secondary: "#1e2229" }).colorScheme).toBe("only dark");
 });

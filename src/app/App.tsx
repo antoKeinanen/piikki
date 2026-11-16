@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useLayoutEffect, useState } from "react";
 import { Dialog, Portal } from "@chakra-ui/react";
 import { useLedgerSession } from "./useLedgerSession";
 import {
@@ -320,6 +320,17 @@ function CashierApp() {
   }
   const branding = data?.branding ?? defaultBranding;
   const brandStyle = brandingStyle(branding);
+  // The page edge (overscroll, the root scrollbar) follows the branding too,
+  // set before paint so a dark branding never flashes a light edge.
+  useLayoutEffect(() => {
+    const root = document.documentElement.style;
+    root.colorScheme = String(brandStyle.colorScheme);
+    root.background = branding.secondary;
+    return () => {
+      root.colorScheme = "";
+      root.background = "";
+    };
+  }, [brandStyle.colorScheme, branding.secondary]);
   const osakunnat = data
     ? [...data.customers, ...data.removedCustomers]
         .map((c) => c.osakunta)
