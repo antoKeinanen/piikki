@@ -40,6 +40,9 @@ export function brandingStyle(branding: Branding): CSSProperties & Record<`--${s
       ? toward
       : mix(branding.secondary, ink === "#ffffff" ? "#000000" : "#ffffff", 0.06);
   return {
+    // "only" stops automatic browser dark modes from recolouring the branding,
+    // and native controls match a light or dark branding background.
+    colorScheme: ink === "#ffffff" ? "only dark" : "only light",
     "--brand": branding.primary,
     "--accent": branding.secondary,
     "--on-brand": readableText(branding.primary),
