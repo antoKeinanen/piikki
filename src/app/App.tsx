@@ -320,6 +320,16 @@ function CashierApp() {
   }
   const branding = data?.branding ?? defaultBranding;
   const brandStyle = brandingStyle(branding);
+  // The page edge (overscroll, the root scrollbar) follows the branding too.
+  useEffect(() => {
+    const root = document.documentElement.style;
+    root.colorScheme = String(brandStyle.colorScheme);
+    root.background = branding.secondary;
+    return () => {
+      root.colorScheme = "";
+      root.background = "";
+    };
+  }, [brandStyle.colorScheme, branding.secondary]);
   const osakunnat = data
     ? [...data.customers, ...data.removedCustomers]
         .map((c) => c.osakunta)

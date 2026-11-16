@@ -33,7 +33,7 @@ it("preserves chosen colors and keeps text and controls accessible for light, da
   }
 });
 
-it("opts out of automatic browser dark modes and matches native controls to the branding", () => {
+it("chooses an exclusive color scheme from the branding background", () => {
   expect(brandingStyle({ ...defaultBranding, secondary: "#ffffff" }).colorScheme).toBe("only light");
   expect(brandingStyle({ ...defaultBranding, secondary: "#1e2229" }).colorScheme).toBe("only dark");
 });
