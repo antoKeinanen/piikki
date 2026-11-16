@@ -44,8 +44,8 @@ describe("cashier ledger", () => {
     expect(ledger.snapshot().customers[0].balance).toBe(-600);
     await ledger.reverse(deposit.id);
     expect(ledger.snapshot().customers[0].balance).toBe(-900);
-    await expect(ledger.reverse(deposit.id)).rejects.toThrow("cannot be reversed");
-    await expect(ledger.reverse(ledger.snapshot().entries[0].id)).rejects.toThrow("cannot be reversed");
+    await expect(ledger.reverse(deposit.id)).rejects.toThrow("ei voi perua");
+    await expect(ledger.reverse(ledger.snapshot().entries[0].id)).rejects.toThrow("ei voi perua");
     const charge = ledger.snapshot().entries.find((entry) => entry.cents === -400);
     if (!charge) throw new Error("Charge missing");
     await ledger.reverse(charge.id);
@@ -64,8 +64,8 @@ describe("cashier ledger", () => {
       for (const kind of ["charge", "deposit"] as const) {
         await expect(ledger.post({ customerId, cents, kind, label: "Invalid" })).rejects.toThrow();
       }
-      await expect(ledger.post({ customerId: "missing", cents: 100, kind: "charge", label: "Invalid" })).rejects.toThrow("Customer no longer exists");
-      await expect(ledger.reverse("missing")).rejects.toThrow("cannot be reversed");
+      await expect(ledger.post({ customerId: "missing", cents: 100, kind: "charge", label: "Invalid" })).rejects.toThrow("Henkilöä ei enää ole");
+      await expect(ledger.reverse("missing")).rejects.toThrow("ei voi perua");
       expect(ledger.snapshot()).toEqual(before);
     },
   );
@@ -96,7 +96,7 @@ describe("cashier ledger", () => {
     const db = new SQL.Database(ledger.export());
     try {
       db.run(sql);
-      await expect(Ledger.open(db.export())).rejects.toThrow("Could not open this database");
+      await expect(Ledger.open(db.export())).rejects.toThrow("Tietokantaa ei voitu avata");
     } finally {
       db.close();
     }
@@ -118,7 +118,7 @@ describe("direct persistence", () => {
       });
     });
     const adding = ledger.addCustomer("Aino", "1");
-    await expect(ledger.addCustomer("Other", "2")).rejects.toThrow("Wait");
+    await expect(ledger.addCustomer("Other", "2")).rejects.toThrow("Odota");
     expect(finish).toBeDefined();
     finish?.();
     await adding;

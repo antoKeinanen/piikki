@@ -1,44 +1,49 @@
 import { useState, type ReactNode } from "react";
-import { Button, Field, Input, NativeSelect, Text } from "@chakra-ui/react";
-import { OSAKUNTA_MAX, formatAmount, parseSignedAmount, type Customer } from "../../ledger";
-function FormField({
-  label,
-  children,
-}: {
-  label: string;
-  children: ReactNode;
-}) {
-  return (
-    <Field.Root>
-      <Field.Label>{label}</Field.Label>
-      {children}
-    </Field.Root>
-  );
-}
+import {
+  OSAKUNTA_MAX,
+  formatAmount,
+  parseSignedAmount,
+  type Customer,
+} from "../../ledger";
+import { Field } from "../../ui/Field";
+import { DialogActions } from "../../ui/DialogActions";
+
 const OTHER = "\u0000other";
 /** Hints start after this many typed characters. */
 const HINT_FROM = 2;
-export type CustomerValues = { name: string; osakunta: string; openingCents: number };
+export type CustomerValues = {
+  name: string;
+  osakunta: string;
+  openingCents: number;
+  note: string;
+};
 /** Existing person, possibly deleted, shown as a duplicate hint. */
-export type KnownPerson = Pick<Customer, "id" | "name" | "osakunta" | "balance"> & { removed?: boolean };
+export type KnownPerson = Pick<
+  Customer,
+  "id" | "name" | "osakunta" | "balance"
+> & { removed?: boolean };
 
 /** Adds a person, or edits one when initial values are given. */
 export function CustomerForm({
   busy,
   save,
-  initial = { name: "", osakunta: "" },
+  cancel,
+  initial = { name: "", osakunta: "", note: "" },
   submitLabel = "Lisää henkilö",
   osakunnat,
   people = [],
   selfId,
   onPick,
   withOpening = false,
+  withNote = false,
+  children,
 }: {
   busy: boolean;
   save(values: CustomerValues): Promise<void>;
-  initial?: { name: string; osakunta: string };
+  cancel(): void;
+  initial?: { name: string; osakunta: string; note: string };
   submitLabel?: string;
-  /** Choices for the osakunta dropdown. */
+  /** Choices for the osakunta menu. */
   osakunnat: string[];
   /** Everyone in the database, used to warn about duplicate names. */
   people?: KnownPerson[];
@@ -47,14 +52,18 @@ export function CustomerForm({
   /** Selects an existing person instead of adding a duplicate. */
   onPick?(id: string): void;
   withOpening?: boolean;
+  withNote?: boolean;
+  /** Shown between the fields and the buttons. */
+  children?: ReactNode;
 }) {
-  const choices = [...new Set([...osakunnat, initial.osakunta].filter(Boolean))].sort((a, b) =>
-    a.localeCompare(b, "fi"),
-  );
+  const choices = [
+    ...new Set([...osakunnat, initial.osakunta].filter(Boolean)),
+  ].sort((a, b) => a.localeCompare(b, "fi"));
   const [name, setName] = useState(initial.name);
   const [choice, setChoice] = useState(initial.osakunta);
   const [custom, setCustom] = useState("");
   const [opening, setOpening] = useState("");
+  const [note, setNote] = useState(initial.note);
   const osakunta = choice === OTHER ? custom.trim() : choice;
   let openingCents = 0;
   let openingError = "";
@@ -62,7 +71,7 @@ export function CustomerForm({
     try {
       openingCents = parseSignedAmount(opening);
     } catch {
-      openingError = "Anna alkusaldo muodossa 12,50 tai -12,50.";
+      openingError = "Anna alkusaldo numeroina, esim. 12,50 tai -12,50.";
     }
   }
   const query = name.trim().toLocaleLowerCase("fi");
@@ -70,42 +79,68 @@ export function CustomerForm({
     query.length >= HINT_FROM
       ? people.filter(
           (person) =>
-            person.id !== selfId && person.name.toLocaleLowerCase("fi").includes(query),
+            person.id !== selfId &&
+            person.name.toLocaleLowerCase("fi").includes(query),
         )
       : [];
-  const exact = matches.some((person) => person.name.toLocaleLowerCase("fi") === query);
-  const unchanged = name.trim() === initial.name && osakunta === initial.osakunta;
+  const exact = matches.some(
+    (person) => person.name.toLocaleLowerCase("fi") === query,
+  );
+  // Only an edit can be unchanged. A new person may start from a searched name.
+  const unchanged =
+    selfId !== undefined &&
+    name.trim() === initial.name &&
+    osakunta === initial.osakunta &&
+    note === initial.note;
   return (
     <form
-      className="settings-form"
+      className="dialog-form"
       onSubmit={(e) => {
         e.preventDefault();
         if (openingError) return;
-        void save({ name: name.trim(), osakunta, openingCents }).catch(() => {});
+        void save({ name: name.trim(), osakunta, openingCents, note }).catch(
+          () => {},
+        );
       }}
     >
-      <FormField label="Nimi">
-        <Input
-          autoFocus
-          required
-          autoComplete="off"
-          value={name}
-          disabled={busy}
-          onChange={(e) => setName(e.target.value)}
-        />
-      </FormField>
+      <Field label="Nimi">
+        {(control) => (
+          <input
+            {...control}
+            className="input"
+            autoFocus
+            required
+            autoComplete="off"
+            value={name}
+            disabled={busy}
+            onChange={(e) => setName(e.target.value)}
+          />
+        )}
+      </Field>
       {!!matches.length && (
-        <div className="name-hints" role="status" aria-label="Samankaltaiset nimet">
-          <Text className={exact ? "name-hint-warning" : "name-hint-title"}>
-            {exact ? "Tämä nimi on jo kannassa." : "Kannassa on jo samankaltaisia nimiä:"}
-          </Text>
+        <div
+          className="name-hints"
+          role="status"
+          aria-label="Samankaltaiset nimet"
+        >
+          <p className={exact ? "name-hint-warning" : "name-hint-title"}>
+            {exact
+              ? "Tämä nimi on jo listalla."
+              : "Listalla on jo samankaltaisia nimiä:"}
+          </p>
           {matches.slice(0, 5).map((person) =>
             person.removed || !onPick ? (
-              <Text key={person.id} className="name-hint">
-                {person.name}
-                {person.osakunta && ` • ${person.osakunta}`}
-                {person.removed && " (poistettu, palautus asetuksista)"}
-              </Text>
+              <p key={person.id} className="name-hint">
+                <span>
+                  {person.name}
+                  {person.osakunta && ` · ${person.osakunta}`}
+                </span>
+                {person.removed && (
+                  <span className="name-hint-detail">
+                    Poistettu. Palauta asetuksista.
+                  </span>
+                )}
+              </p>
             ) : (
               <button
                 type="button"
@@ -116,70 +151,108 @@ export function CustomerForm({
               >
                 <span>
                   {person.name}
-                  {person.osakunta && ` • ${person.osakunta}`}
+                  {person.osakunta && ` · ${person.osakunta}`}
                 </span>
-                <span className="name-hint-balance">{formatAmount(person.balance)} · Valitse</span>
+                <span className="name-hint-detail">
+                  {formatAmount(person.balance)} · Valitse
+                </span>
               </button>
             ),
           )}
-          {matches.length > 5 && <Text className="name-hint">+ {matches.length - 5} muuta</Text>}
+          {matches.length > 5 && (
+            <p className="name-hint-title">ja {matches.length - 5} muuta</p>
+          )}
         </div>
       )}
-      <FormField label="Osakunta (valinnainen)">
-        <NativeSelect.Root disabled={busy}>
-          <NativeSelect.Field value={choice} onChange={(e) => setChoice(e.currentTarget.value)}>
+      <Field label="Osakunta (valinnainen)">
+        {(control) => (
+          <select
+            {...control}
+            className="input select"
+            value={choice}
+            disabled={busy}
+            onChange={(e) => setChoice(e.currentTarget.value)}
+          >
             <option value="">Ei osakuntaa</option>
             {choices.map((value) => (
               <option key={value} value={value}>
                 {value}
               </option>
             ))}
-            <option value={OTHER}>Muu…</option>
-          </NativeSelect.Field>
-          <NativeSelect.Indicator />
-        </NativeSelect.Root>
-      </FormField>
+            <option value={OTHER}>Muu, kirjoita nimi…</option>
+          </select>
+        )}
+      </Field>
       {choice === OTHER && (
-        <FormField label="Uusi osakunta">
-          <Input
-            autoFocus
-            maxLength={OSAKUNTA_MAX}
-            value={custom}
-            disabled={busy}
-            onChange={(e) => setCustom(e.target.value)}
-          />
-        </FormField>
+        <Field label="Osakunnan nimi">
+          {(control) => (
+            <input
+              {...control}
+              className="input"
+              autoFocus
+              maxLength={OSAKUNTA_MAX}
+              value={custom}
+              disabled={busy}
+              onChange={(e) => setCustom(e.target.value)}
+            />
+          )}
+        </Field>
       )}
       {withOpening && (
-        <FormField label="Alkusaldo (valinnainen)">
-          <Input
-            inputMode="decimal"
-            placeholder="0,00 tai -5,00 velkaa"
-            value={opening}
-            disabled={busy}
-            onChange={(e) => setOpening(e.target.value)}
-          />
-        </FormField>
+        <Field
+          label="Alkusaldo (valinnainen)"
+          hint="Miinussaldo miinusmerkillä, esim. -5,00."
+        >
+          {(control) => (
+            <input
+              {...control}
+              className="input"
+              inputMode="decimal"
+              autoComplete="off"
+              placeholder="0,00"
+              value={opening}
+              disabled={busy}
+              onChange={(e) => setOpening(e.target.value)}
+            />
+          )}
+        </Field>
       )}
       {openingError && (
-        <Text role="alert" className="error">
+        <p role="alert" className="error">
           {openingError}
-        </Text>
+        </p>
       )}
-      <Button
-        className="primary"
-        type="submit"
-        disabled={
-          !name.trim() ||
-          osakunta.length > OSAKUNTA_MAX ||
-          (choice === OTHER && !osakunta) ||
-          !!openingError ||
-          unchanged ||
-          busy
-        }
-      >
-        {submitLabel}
-      </Button>
+      {withNote && (
+        <Field label="Muistiinpano" hint="Näkyy nimen alla.">
+          {(control) => (
+            <textarea
+              {...control}
+              className="input textarea"
+              rows={3}
+              value={note}
+              disabled={busy}
+              onChange={(e) => setNote(e.target.value)}
+            />
+          )}
+        </Field>
+      )}
+      {children}
+      <DialogActions onCancel={cancel} busy={busy}>
+        <button
+          className="btn btn-primary"
+          type="submit"
+          disabled={
+            !name.trim() ||
+            osakunta.length > OSAKUNTA_MAX ||
+            (choice === OTHER && !osakunta) ||
+            !!openingError ||
+            unchanged ||
+            busy
+          }
+        >
+          {submitLabel}
+        </button>
+      </DialogActions>
     </form>
   );
 }

@@ -1,4 +1,3 @@
-import { NativeSelect, Text } from "@chakra-ui/react";
 import { formatAmount, type LedgerEvent } from "../../ledger";
 import type { EventComparison as Comparison, EventSummary } from "./summary";
 import { EmptyNote, CustomerRanking, ProductRanking } from "./Rankings";
@@ -9,9 +8,9 @@ import { ChargeSizes } from "./ChargeSizes";
 function Tile({ label, value, note }: { label: string; value: string; note?: string }) {
   return (
     <div className="stat-tile">
-      <Text className="stat-label">{label}</Text>
-      <Text className="stat-value">{value}</Text>
-      <Text className="stat-note-line">{note ?? " "}</Text>
+      <p className="stat-label">{label}</p>
+      <p className="stat-value">{value}</p>
+      <p className="stat-note-line">{note ?? " "}</p>
     </div>
   );
 }
@@ -27,7 +26,7 @@ function Tiles({ summary }: { summary: EventSummary }) {
       <Tile
         label="Veloituksia"
         value={String(summary.charges)}
-        note={summary.charges ? `suurin veloitus ${formatAmount(summary.largest)}` : undefined}
+        note={summary.charges ? `Suurin ${formatAmount(summary.largest)}` : undefined}
       />
       <Tile
         label="Keskiveloitus"
@@ -36,23 +35,23 @@ function Tiles({ summary }: { summary: EventSummary }) {
       <Tile
         label="Henkilöitä"
         value={String(summary.people)}
-        note={summary.people ? `${perPerson.toFixed(1).replace(".", ",")} veloitusta henkilöä kohti` : undefined}
+        note={summary.people ? `${perPerson.toFixed(1).replace(".", ",")} veloitusta / henkilö` : undefined}
       />
       <Tile
         label="Saldoa lisätty"
         value={formatAmount(summary.deposits)}
-        note={`${summary.depositCount} lisäystä`}
+        note={summary.depositCount === 1 ? "1 lisäys" : `${summary.depositCount} lisäystä`}
       />
       <Tile label="Saldoa jäljellä" value={formatAmount(summary.held)} />
       <Tile
-        label="Velkaa"
+        label="Miinuksella"
         value={formatAmount(summary.debt)}
-        note={`${summary.debtors} henkilöä`}
+        note={summary.debtors === 1 ? "1 henkilö" : `${summary.debtors} henkilöä`}
       />
       <Tile
         label="Perutut veloitukset"
         value={String(summary.undone)}
-        note={summary.undone ? `${undoneShare} % kaikista veloituksista` : undefined}
+        note={summary.undone ? `${undoneShare} % veloituksista` : undefined}
       />
     </div>
   );
@@ -72,23 +71,21 @@ export function EventAnalytics({
   onEvent(id: string): void;
 }) {
   return (
-    <main className="stats">
-      <div className="stats-filter">
-        <h1>Tilastot</h1>
-        <NativeSelect.Root size="sm" width="auto" maxWidth="100%">
-          <NativeSelect.Field
-            aria-label="Tapahtuma"
-            value={eventId}
-            onChange={(event) => onEvent(event.target.value)}
-          >
-            {[...events].reverse().map((event) => (
-              <option key={event.id} value={event.id}>
-                {event.name}
-              </option>
-            ))}
-          </NativeSelect.Field>
-          <NativeSelect.Indicator />
-        </NativeSelect.Root>
+    <main className="page stats">
+      <div className="page-head">
+        <h1 className="page-title">Tilastot</h1>
+        <select
+          className="input select input-sm event-select"
+          aria-label="Tapahtuma"
+          value={eventId}
+          onChange={(event) => onEvent(event.target.value)}
+        >
+          {[...events].reverse().map((event) => (
+            <option key={event.id} value={event.id}>
+              {event.name}
+            </option>
+          ))}
+        </select>
       </div>
       <Tiles summary={summary} />
       <div className="stat-panels">
@@ -111,10 +108,10 @@ export function EventAnalytics({
           <EventComparison rows={comparison} eventId={eventId} />
         )}
       </div>
-      <Text className="stats-note">
-        Luvuissa ei ole mukana peruttuja veloituksia eikä niiden hyvityksiä. Saldo ja velka ovat
-        tilanne valitun tapahtuman lopussa, ja niihin sisältyvät aiemmat tapahtumat.
-      </Text>
+      <p className="stats-note">
+        Perutut kirjaukset eivät ole luvuissa mukana. Saldo ja miinus ovat tilanne valitun
+        tapahtuman lopussa, ja niissä on mukana myös aiemmat tapahtumat.
+      </p>
     </main>
   );
 }

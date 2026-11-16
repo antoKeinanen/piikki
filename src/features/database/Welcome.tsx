@@ -1,4 +1,3 @@
-import { Button, Text } from "@chakra-ui/react";
 export function Welcome({
   busy,
   error,
@@ -12,18 +11,22 @@ export function Welcome({
 }) {
   return (
     <main className="welcome">
-      <Button size="xl" className="primary" disabled={busy} onClick={onOpen}>
-        Avaa tietokanta
-      </Button>
-      <span className="drop-label">tai pudota SQLite-tiedosto tähän</span>
-      <Button variant="ghost" disabled={busy} onClick={onCreate}>
-        Luo tietokanta
-      </Button>
-      {error && (
-        <Text role="alert" className="error">
-          {error}
-        </Text>
-      )}
+      <div className="welcome-card">
+        <h1 className="welcome-title">Piikki</h1>
+        <button type="button" className="btn btn-primary btn-xl" disabled={busy} onClick={onOpen}>
+          Avaa tietokanta
+        </button>
+        <p className="welcome-hint">Voit myös vetää tiedoston tähän.</p>
+        <div className="welcome-divider" aria-hidden="true" />
+        <button type="button" className="btn btn-ghost" disabled={busy} onClick={onCreate}>
+          Luo tietokanta
+        </button>
+        {error && (
+          <p role="alert" className="error">
+            {error}
+          </p>
+        )}
+      </div>
     </main>
   );
 }

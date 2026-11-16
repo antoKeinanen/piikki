@@ -24,11 +24,11 @@ async function versionTwoBytes() {
     INSERT INTO customers VALUES('aino','Aino',''),('eino','Eino','');
     INSERT INTO customer_metadata VALUES('aino','KyO','Muista tee'),('eino','','');
     INSERT INTO customer_removals VALUES('eino','2026-10-01T10:00:00Z');
-    INSERT INTO presets VALUES('olut','Olut',300);
-    INSERT INTO product_details VALUES('olut','Tölkki','');
+    INSERT INTO presets VALUES('kahvi','Kahvi',300);
+    INSERT INTO product_details VALUES('kahvi','Kuumat','');
     INSERT INTO entries VALUES('d1','aino',2000,'Lisää saldoa','2026-10-01T10:00:00Z',NULL,'initial');
-    INSERT INTO entries VALUES('c1','aino',-300,'Olut','2026-10-01T11:00:00Z',NULL,'initial');
-    INSERT INTO entries VALUES('u1','aino',300,'Undo Olut','2026-10-01T11:05:00Z','c1','initial');
+    INSERT INTO entries VALUES('c1','aino',-300,'Kahvi','2026-10-01T11:00:00Z',NULL,'initial');
+    INSERT INTO entries VALUES('u1','aino',300,'Undo Kahvi','2026-10-01T11:05:00Z','c1','initial');
     INSERT INTO entries VALUES('c2','eino',-500,'Veloita','2026-10-01T12:00:00Z',NULL,'initial');
   `);
   const bytes = db.export();
@@ -50,19 +50,19 @@ it("upgrades a version 2 database without losing data and without writing on ope
   ]);
   expect(snapshot.removedCustomers).toEqual([expect.objectContaining({ id: "eino", balance: -500 })]);
   expect(snapshot.products).toEqual([
-    { id: "olut", name: "Olut", cents: 300, description: "Tölkki", image: "", category: "" },
+    { id: "kahvi", name: "Kahvi", cents: 300, description: "Kuumat", image: "", category: "" },
   ]);
   expect(snapshot.entries.map((e) => [e.id, e.reversed, e.operator, e.note, e.opening])).toEqual([
     ["c2", 0, "", "", 0], ["u1", 0, "", "", 0], ["c1", 1, "", "", 0], ["d1", 0, "", "", 0],
   ]);
   // The things version 2 could not store now work.
   await ledger.updateCustomer("aino", { name: "Aino", osakunta: "Sen-KyO" });
-  await ledger.saveProduct({ ...snapshot.products[0], category: "Tölkki" });
-  await ledger.post({ customerId: "aino", cents: 300, kind: "charge", label: "Olut", operator: "Eetu", note: "Tiskiltä" });
+  await ledger.saveProduct({ ...snapshot.products[0], category: "Kuumat" });
+  await ledger.post({ customerId: "aino", cents: 300, kind: "charge", label: "Kahvi", operator: "Eetu", note: "Tiskiltä" });
   const reopened = await Ledger.open(ledger.export());
   expect(reopened.migrated).toBe(false);
   expect(reopened.snapshot().customers[0]).toMatchObject({ osakunta: "Sen-KyO", note: "Muista tee", balance: 1700 });
-  expect(reopened.snapshot().products[0].category).toBe("Tölkki");
+  expect(reopened.snapshot().products[0].category).toBe("Kuumat");
   expect(reopened.snapshot().entries[0]).toMatchObject({ operator: "Eetu", note: "Tiskiltä" });
 
   const SQL = await initSqlJs();
@@ -109,7 +109,7 @@ it("refuses databases from a newer version instead of guessing", async () => {
   const SQL = await initSqlJs();
   const db = new SQL.Database(await versionTwoBytes());
   db.run("PRAGMA user_version=4");
-  await expect(Ledger.open(db.export())).rejects.toThrow("newer version");
+  await expect(Ledger.open(db.export())).rejects.toThrow("uudemmalla versiolla");
   db.close();
 });
 

@@ -1,7 +1,6 @@
+import { useState } from "react";
 import { brandingStyle } from "../branding/theme";
 import { defaultBranding } from "../../ledger";
-import { useState } from "react";
-import { Button, Input, Text } from "@chakra-ui/react";
 
 export function CompatibilityBlock({ problem }: { problem: string }) {
   const [copied, setCopied] = useState(false);
@@ -17,59 +16,42 @@ export function CompatibilityBlock({ problem }: { problem: string }) {
   }
   return (
     <main className="compatibility-page" style={brandingStyle(defaultBranding)}>
-      <header className="masthead" aria-label="Piikki">
-        <span className="wordmark">Piikki</span>
-      </header>
-      <section
-        className="compatibility-content"
-        aria-label="Selaimen yhteensopivuus"
-      >
-        <div className="compatibility-rule" aria-hidden="true" />
-        <Text className="compatibility-title">
+      <section className="compatibility-card" aria-label="Selaimen yhteensopivuus">
+        <p className="welcome-title">Piikki</p>
+        <h1 className="compatibility-title">
+          {secure ? "Avaa Piikki toisessa selaimessa" : "Avaa Piikki suojatulla yhteydellä"}
+        </h1>
+        <p className="dialog-text">
           {secure
-            ? "Tarvitset toisen selaimen."
-            : "Tarvitset suojatun yhteyden."}
-        </Text>
-        <Text className="compatibility-explanation">
-          {secure
-            ? "Muutokset tallentuvat suoraan SQLite-tiedostoosi. Tämä selain ei tue tarvittavaa tiedostojen käsittelyä."
-            : "SQLite-tiedoston avaaminen ja tallentaminen vaatii HTTPS-yhteyden."}
-        </Text>
-        <Text className="compatibility-next">
-          {secure
-            ? "Kopioi linkki ja avaa se toisessa selaimessa tai toisella laitteella."
-            : "Avaa sivu HTTPS-yhteydellä tai käytä omalla laitteellasi localhost-osoitetta."}
-        </Text>
-        <div className="compatibility-actions">
+            ? "Piikki tallentaa muutokset suoraan tiedostoon. Tämä selain ei osaa sitä. Chrome ja Edge tietokoneella osaavat."
+            : "Tiedostojen avaaminen ja tallentaminen vaatii HTTPS-yhteyden."}
+        </p>
+        <div className="button-row">
           {secure ? (
-            <Button className="primary" onClick={() => void copyLink()}>
+            <button type="button" className="btn btn-primary" onClick={() => void copyLink()}>
               {copied ? "Linkki kopioitu" : "Kopioi linkki"}
-            </Button>
+            </button>
           ) : (
-            <Button className="primary" asChild>
-              <a href={window.location.href.replace(/^http:/, "https:")}>
-                Avaa suojattu sivu
-              </a>
-            </Button>
+            <a className="btn btn-primary" href={window.location.href.replace(/^http:/, "https:")}>
+              Avaa suojattu sivu
+            </a>
           )}
-          <Button variant="ghost" onClick={() => window.location.reload()}>
+          <button type="button" className="btn btn-ghost" onClick={() => window.location.reload()}>
             Tarkista uudelleen
-          </Button>
+          </button>
         </div>
         {showLink && (
-          <Input
+          <input
             aria-label="Sovelluksen linkki"
-            className="compatibility-link"
+            className="input"
             readOnly
             value={window.location.href}
             onFocus={(e) => e.target.select()}
           />
         )}
-        <details className="compatibility-details">
-          <summary>Miksi käyttö on estetty?</summary>
-          <Text>
-            {problem} Sovellus pysyy suljettuna, jotta muutokset eivät jää tallentamatta.
-          </Text>
+        <details className="details">
+          <summary>Tekninen syy</summary>
+          <p>{problem}</p>
         </details>
       </section>
     </main>

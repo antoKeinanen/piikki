@@ -8,13 +8,15 @@ const group = (name) => name.startsWith('features/')
   ? name.split('/').slice(0, 2).join('/') : name.split('/')[0];
 const dependencies = {
   'main.tsx': ['app'],
-  app: ['ledger', 'persistence', 'features/analytics', 'features/cashier', 'features/branding', 'features/products', 'features/database'],
+  app: ['ledger', 'persistence', 'ui', 'features/analytics', 'features/cashier', 'features/branding', 'features/products', 'features/database'],
   persistence: ['ledger'],
-  'features/analytics': ['ledger'],
-  'features/cashier': ['ledger'],
-  'features/branding': ['ledger'],
-  'features/products': ['ledger'],
-  'features/database': ['ledger', 'persistence'],
+  // Shared form controls with no knowledge of the ledger.
+  ui: [],
+  'features/analytics': ['ledger', 'ui'],
+  'features/cashier': ['ledger', 'ui'],
+  'features/branding': ['ledger', 'ui'],
+  'features/products': ['ledger', 'ui'],
+  'features/database': ['ledger', 'persistence', 'ui'],
   'test-support': ['ledger'],
   ledger: [],
 };

@@ -1,4 +1,4 @@
-import { Button, Text } from "@chakra-ui/react";
+import { useState } from "react";
 import { formatAmount, type Customer } from "../../ledger";
 
 export function RemovedCustomers({
@@ -10,27 +10,52 @@ export function RemovedCustomers({
   busy: boolean;
   restore(id: string): Promise<void>;
 }) {
-  if (!customers.length)
-    return <Text className="empty-history">Ei poistettuja henkilöitä.</Text>;
+  const [restored, setRestored] = useState("");
+  const [error, setError] = useState("");
   return (
-    <div className="product-list">
-      {customers.map((customer) => (
-        <div className="product-row" key={customer.id}>
-          <span>
-            {customer.name}
-            {customer.osakunta && ` • ${customer.osakunta}`}
-            <small>{formatAmount(customer.balance)}</small>
-          </span>
-          <Button
-            variant="ghost"
-            size="sm"
-            disabled={busy}
-            onClick={() => void restore(customer.id).catch(() => {})}
-          >
-            Palauta {customer.name}
-          </Button>
-        </div>
-      ))}
-    </div>
+    <>
+      {restored && (
+        <p className="inline-notice" role="status">
+          {restored} palautettu listalle.
+        </p>
+      )}
+      {error && (
+        <p role="alert" className="error">
+          {error}
+        </p>
+      )}
+      {!customers.length && (
+        <p className="empty-text">Ei poistettuja henkilöitä.</p>
+      )}
+      <ul className="rows">
+        {customers.map((customer) => (
+          <li className="row" key={customer.id}>
+            <span className="row-main">
+              <span className="row-title">{customer.name}</span>
+              <span className="row-detail">
+                {customer.osakunta && `${customer.osakunta} · `}Saldo{" "}
+                {formatAmount(customer.balance)}
+              </span>
+            </span>
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              disabled={busy}
+              onClick={() => {
+                setError("");
+                setRestored("");
+                void restore(customer.id).then(
+                  () => setRestored(customer.name),
+                  (e: unknown) =>
+                    setError(e instanceof Error ? e.message : String(e)),
+                );
+              }}
+            >
+              Palauta {customer.name}
+            </button>
+          </li>
+        ))}
+      </ul>
+    </>
   );
 }

@@ -10,12 +10,12 @@ import {
 } from "./encryption";
 
 export function fileAccessProblem(): string | undefined {
-  if (!window.isSecureContext) return "Open this app over HTTPS or localhost.";
+  if (!window.isSecureContext) return "Sivu ei käytä HTTPS-yhteyttä.";
   if (
     typeof window.showOpenFilePicker !== "function" ||
     typeof window.showSaveFilePicker !== "function"
   )
-    return "This browser cannot open and save local files.";
+    return "Tämä selain ei osaa avata ja tallentaa tiedostoja.";
   if (
     typeof FileSystemFileHandle === "undefined" ||
     ["getFile", "createWritable", "requestPermission"].some(
@@ -24,7 +24,7 @@ export function fileAccessProblem(): string | undefined {
         "function",
     )
   )
-    return "This browser cannot write to local files.";
+    return "Tämä selain ei osaa kirjoittaa tiedostoihin.";
   if (
     typeof FileSystemWritableFileStream === "undefined" ||
     ["write", "close", "abort"].some(
@@ -33,7 +33,7 @@ export function fileAccessProblem(): string | undefined {
         "function",
     )
   )
-    return "This browser cannot finish saving files.";
+    return "Tämä selain ei osaa viimeistellä tallennusta.";
   return undefined;
 }
 export const supportsDirectFiles = () => fileAccessProblem() === undefined;
@@ -112,7 +112,7 @@ export async function connectFile(
     const current = new Uint8Array(await (await handle.getFile()).arrayBuffer());
     if (!same(current, expected)) {
       throw new Error(
-        "The database changed outside this app. Reopen it to continue.",
+        "Tiedostoa on muutettu tämän sovelluksen ulkopuolella. Avaa se uudelleen.",
       );
     }
     const encoded = await encode(bytes);
@@ -136,7 +136,7 @@ export async function connectFile(
     const latest = new Uint8Array(await (await handle.getFile()).arrayBuffer());
     if (!same(latest, expected))
       throw new Error(
-        "The database changed while it was opening. Open it again.",
+        "Tiedosto muuttui avaamisen aikana. Avaa se uudelleen.",
       );
     await probe.write(new Uint8Array(probed));
     await probe.close();
@@ -148,7 +148,7 @@ export async function connectFile(
   const verified = new Uint8Array(await (await handle.getFile()).arrayBuffer());
   if (!same(verified, expected))
     throw new Error(
-      "The saved file does not match the database. Open it again.",
+      "Tallennettu tiedosto ei vastaa tietokantaa. Avaa se uudelleen.",
     );
   const protection: Protection = {
     encrypted: () => !!fileKey,
@@ -162,9 +162,9 @@ export async function pickDatabase(): Promise<OpenedDatabase> {
     types: pickerTypes,
     multiple: false,
   });
-  if (!handle) throw new Error("No database selected.");
+  if (!handle) throw new Error("Tiedostoa ei valittu.");
   if ((await handle.requestPermission({ mode: "readwrite" })) !== "granted")
-    throw new Error("Allow write access to save changes to this file.");
+    throw new Error("Salli tiedostoon kirjoittaminen, jotta muutokset tallentuvat.");
   return connectFile(handle);
 }
 /** Saves a copy to a new file, encrypted when a password is configured. */

@@ -58,13 +58,15 @@ const openDialog = () => document.querySelector('[role="dialog"][data-state="ope
 /** Answers the operator prompt that follows opening a database in a new session. */
 async function startShift(name = "Eetu") {
   const dialog = await screen.findByRole("dialog", { name: "Kuka on vuorossa?" });
-  fireEvent.change(within(dialog).getByLabelText("Isännän tai apuisännän nimi"), { target: { value: name } });
+  fireEvent.change(within(dialog).getByLabelText(/Nimesi|Tai kirjoita nimesi/), { target: { value: name } });
   fireEvent.click(within(dialog).getByRole("button", { name: "Aloita vuoro" }));
   await waitFor(() => expect(openDialog()).toBeNull());
 }
-/** Selects a person from the table; nobody is selected after opening. */
+/** Matches a person row, whose name also includes the osakunta and balance. */
+const person = (name: string) => new RegExp(`^${name},`);
+/** Selects a person from the list; nobody is selected after opening. */
 async function pick(name: string) {
-  fireEvent.click(await screen.findByRole("button", { name }));
+  fireEvent.click(await screen.findByRole("button", { name: person(name) }));
   await screen.findByLabelText("Saldo");
 }
 async function continueEvent(person?: string, { shift = true } = {}) {
@@ -91,7 +93,6 @@ it("charges immediately, hides IDs and filenames, and opens branding settings", 
   fireEvent.click(screen.getByRole("button", { name: "Veloita Lounas 8,50" }));
   await waitFor(() => expect(balance.textContent).toBe("34,00"));
   expect(document.querySelector('[role="dialog"][data-state="open"]')).toBeNull();
-  fireEvent.click(screen.getByRole("button", { name: "Lisää saldoa" }));
   fireEvent.change(screen.getByLabelText("Summa"), {
     target: { value: "10.00" },
   });
@@ -99,8 +100,8 @@ it("charges immediately, hides IDs and filenames, and opens branding settings", 
   await waitFor(() => expect(balance.textContent).toBe("44,00"));
   expect(document.querySelector('[role="dialog"][data-state="open"]')).toBeNull();
   fireEvent.click(screen.getByRole("button", { name: "Asetukset" }));
-  expect(await screen.findByRole("dialog", { name: "Asetukset" })).toBeTruthy();
-  expect(screen.getByLabelText("Pääväri")).toBeTruthy();
+  fireEvent.click(await screen.findByRole("tab", { name: "Ulkoasu" }));
+  expect(await screen.findByLabelText("Pääväri")).toBeTruthy();
   expect(screen.getByLabelText("Taustaväri")).toBeTruthy();
   const logo =
     "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=";
@@ -116,7 +117,7 @@ it("charges immediately, hides IDs and filenames, and opens branding settings", 
     },
   });
   await screen.findByAltText("Logon esikatselu");
-  fireEvent.change(screen.getByLabelText("Osakunta"), {
+  fireEvent.change(screen.getByLabelText("Osakunnan nimi"), {
     target: { value: "Testiosakunta" },
   });
   fireEvent.change(screen.getByLabelText("Pääväri"), {
@@ -129,34 +130,34 @@ it("charges immediately, hides IDs and filenames, and opens branding settings", 
     ),
   );
   fireEvent.click(screen.getByRole("tab", { name: "Nimikkeet" }));
-  expect(await screen.findByLabelText("Nimikkeen summa")).toBeTruthy();
-  fireEvent.change(screen.getByLabelText("Nimikkeen nimi"), { target: { value: "Kaakao" } });
-  fireEvent.change(screen.getByLabelText("Nimikkeen summa"), {
+  expect(await screen.findByLabelText("Summa")).toBeTruthy();
+  fireEvent.change(screen.getByLabelText("Nimi"), { target: { value: "Kaakao" } });
+  fireEvent.change(screen.getByLabelText("Summa"), {
     target: { value: "4.25" },
   });
-  fireEvent.change(screen.getByLabelText("Kuvaus"), { target: { value: "Lämmin juoma" } });
-  fireEvent.change(screen.getByLabelText("Nimikkeen kuva"), {
+  fireEvent.change(screen.getByLabelText("Kuvaus (valinnainen)"), { target: { value: "Lämmin juoma" } });
+  fireEvent.change(screen.getByLabelText("Kuva (valinnainen)"), {
     target: { files: [new File(["image"], "product.png", { type: "image/png" })] },
   });
-  await screen.findByAltText("Nimikkeen kuvan esikatselu");
+  await screen.findByAltText("Kuvan esikatselu");
   fireEvent.click(screen.getByRole("button", { name: "Lisää nimike" }));
   await screen.findByText("4,25");
   const preset = ledger.snapshot().products.find((value) => value.cents === 425);
   if (!preset) throw new Error("Preset was not saved");
-  const row = screen.getByText("4,25").closest(".product-row");
+  const row = screen.getByText("4,25").closest(".row");
   if (!(row instanceof HTMLElement)) throw new Error("Preset row missing");
-  fireEvent.click(within(row).getByRole("button", { name: "Muokkaa" }));
-  const item = row.closest(".product-item");
-  if (!(item instanceof HTMLElement)) throw new Error("Preset item missing");
-  expect(item.classList.contains("editing")).toBe(true);
+  fireEvent.click(within(row).getByRole("button", { name: "Muokkaa Kaakao" }));
+  expect(row.classList.contains("editing")).toBe(true);
   expect(within(row).getByText("Muokataan")).toBeTruthy();
-  expect(within(item).getByLabelText("Nimikkeen nimi")).toBe(document.activeElement);
+  const form = screen.getByRole("form", { name: "Muokkaa nimikettä Kaakao" });
+  expect(within(form).getByLabelText("Nimi")).toBe(document.activeElement);
+  expect(within(form).getByLabelText("Summa").getAttribute("value")).toBe("4,25");
   expect(screen.queryByRole("button", { name: "Lisää nimike" })).toBeNull();
-  fireEvent.change(within(item).getByLabelText("Nimikkeen summa"), { target: { value: "4.50" } });
+  fireEvent.change(within(form).getByLabelText("Summa"), { target: { value: "4.50" } });
   fireEvent.click(screen.getByRole("button", { name: "Tallenna nimike" }));
   await waitFor(() => expect(ledger.snapshot().products.find((p) => p.id === preset.id)?.cents).toBe(450));
   preset.cents = 450;
-  fireEvent.click(within(row).getByRole("button", { name: "Poista" }));
+  fireEvent.click(within(row).getByRole("button", { name: "Poista Kaakao" }));
   const restore = await screen.findByRole("button", { name: "Palauta Kaakao" });
   expect(
     ledger.snapshot().products.some((value) => value.id === preset.id),
@@ -171,17 +172,11 @@ it("charges immediately, hides IDs and filenames, and opens branding settings", 
     expect(screen.queryByRole("button", { name: "Palauta Kaakao" })).toBeNull(),
   );
 
-  fireEvent.click(screen.getByRole("button", { name: "Valmis" }));
-  await waitFor(() =>
-    expect(
-      document.querySelector('[role="dialog"][data-state="open"]'),
-    ).toBeNull(),
-  );
+  fireEvent.click(screen.getByRole("button", { name: "Tilit" }));
   expect(screen.getByRole("banner", { name: "Testiosakunta" })).toBeTruthy();
   expect(screen.getByAltText("Testiosakunta logo").getAttribute("src")).toBe(
     logo,
   );
-  fireEvent.click(screen.getByRole("button", { name: "Veloita" }));
   expect(
     await screen.findByRole("button", { name: "Veloita Kaakao 4,50" }),
   ).toBeTruthy();
@@ -234,15 +229,15 @@ it("collects organization branding before creating and saving the database", asy
     }));
   mount();
   expect(screen.queryByText("KyO")).toBeNull();
-  expect(screen.getByRole("banner", { name: "Piikki" })).toBeTruthy();
+  expect(screen.getByRole("heading", { name: "Piikki" })).toBeTruthy();
   fireEvent.click(screen.getByRole("button", { name: "Luo tietokanta" }));
   const dialog = await screen.findByRole("dialog", {
-    name: "Organisaation tiedot",
+    name: "Uusi tietokanta",
   });
   expect(save).not.toHaveBeenCalled();
-  const create = within(dialog).getByRole("button", { name: "Luo tietokanta" });
+  const create = within(dialog).getByRole("button", { name: "Jatka" });
   expect(create.hasAttribute("disabled")).toBe(true);
-  fireEvent.change(within(dialog).getByLabelText("Osakunta"), {
+  fireEvent.change(within(dialog).getByLabelText("Osakunnan nimi"), {
     target: { value: "Uusi organisaatio" },
   });
   fireEvent.change(within(dialog).getByLabelText("Pääväri"), {
@@ -260,9 +255,9 @@ it("collects organization branding before creating and saving the database", asy
   fireEvent.click(create);
   await screen.findByRole("dialog", { name: "Valitse tapahtuma" });
   expect(save).not.toHaveBeenCalled();
-  const createEvent = screen.getByRole("button", { name: "Luo uusi tapahtuma" });
+  const createEvent = screen.getByRole("button", { name: "Aloita uusi tapahtuma" });
   expect(createEvent.hasAttribute("disabled")).toBe(true);
-  fireEvent.change(screen.getByLabelText("Tapahtuman nimi"), { target: { value: "Avajaiset" } });
+  fireEvent.change(screen.getByLabelText("Uuden tapahtuman nimi"), { target: { value: "Avajaiset" } });
   fireEvent.click(createEvent);
   await startShift();
   await screen.findByRole("banner", { name: "Uusi organisaatio" });
@@ -282,7 +277,7 @@ it("cancels onboarding without creating a database", async () => {
   const save = vi.spyOn(fileAccess, "saveDatabase");
   mount();
   fireEvent.click(screen.getByRole("button", { name: "Luo tietokanta" }));
-  await screen.findByRole("dialog", { name: "Organisaation tiedot" });
+  await screen.findByRole("dialog", { name: "Uusi tietokanta" });
   fireEvent.click(screen.getByRole("button", { name: "Peruuta" }));
   await waitFor(() =>
     expect(
@@ -306,24 +301,18 @@ it("replaces the session snapshot and clears the cashier draft when opening anot
     await screen.findByRole("button", { name: "Avaa tietokanta" }),
   );
   await continueEvent("Aino Korhonen");
-  fireEvent.click(screen.getByRole("button", { name: "Lisää saldoa" }));
   fireEvent.change(screen.getByLabelText("Summa"), { target: { value: "12" } });
   fireEvent.click(screen.getByRole("button", { name: "Asetukset" }));
-  fireEvent.click(await screen.findByRole("tab", { name: "Tietokanta" }));
+  fireEvent.click(await screen.findByRole("tab", { name: "Tiedosto" }));
   fireEvent.click(
-    await screen.findByRole("button", { name: "Avaa tietokanta" }),
+    await screen.findByRole("button", { name: "Avaa toinen tietokanta" }),
   );
   await continueEvent("Second customer", { shift: false });
   await waitFor(() =>
     expect(screen.getByLabelText("Saldo").textContent).toBe("0,00"),
   );
-  expect(screen.queryByRole("button", { name: "Aino Korhonen" })).toBeNull();
+  expect(screen.queryByRole("button", { name: person("Aino Korhonen") })).toBeNull();
   expect(screen.getByLabelText("Summa").getAttribute("value")).toBe("");
-  expect(
-    screen
-      .getByRole("button", { name: "Veloita", pressed: true })
-      .getAttribute("aria-pressed"),
-  ).toBe("true");
 });
 
 it("keeps the amount and balance after a failed save, then allows retry", async () => {
@@ -382,8 +371,8 @@ it("charges below zero with custom amounts and products and reopens the saved ac
   expect(quick.hasAttribute("disabled")).toBe(false);
   fireEvent.click(quick);
   await waitFor(() => expect(screen.getByLabelText("Saldo").textContent).toBe("−16,00"));
-  fireEvent.click(screen.getAllByRole("button", { name: "Peru" })[0]);
-  fireEvent.click(await screen.findByRole("button", { name: "Peru tapahtuma" }));
+  fireEvent.click(screen.getByRole("button", { name: "Peru Lounas −8,50" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Peru kirjaus" }));
   await waitFor(() => expect(screen.getByLabelText("Saldo").textContent).toBe("−7,50"));
   app.unmount();
   pick.mockResolvedValue({ ledger: await Ledger.open(saved), name: "test.sqlite" });
@@ -406,16 +395,16 @@ it("preserves the active database when opening a replacement is cancelled", asyn
   );
   await continueEvent("Aino Korhonen");
   fireEvent.click(screen.getByRole("button", { name: "Asetukset" }));
-  fireEvent.click(await screen.findByRole("tab", { name: "Tietokanta" }));
+  fireEvent.click(await screen.findByRole("tab", { name: "Tiedosto" }));
   fireEvent.click(
-    await screen.findByRole("button", { name: "Avaa tietokanta" }),
+    await screen.findByRole("button", { name: "Avaa toinen tietokanta" }),
   );
   await waitFor(() =>
     expect(
-      screen.getByRole("button", { name: "Valmis" }).hasAttribute("disabled"),
+      screen.getByRole("button", { name: "Tilit" }).hasAttribute("disabled"),
     ).toBe(false),
   );
-  fireEvent.click(screen.getByRole("button", { name: "Valmis" }));
+  fireEvent.click(screen.getByRole("button", { name: "Tilit" }));
   await waitFor(() =>
     expect(screen.getByLabelText("Saldo").textContent).toBe("42,50"),
   );
@@ -431,12 +420,12 @@ it("shows the previous event name and creates a named event that keeps the previ
   mount();
   fireEvent.click(screen.getByRole("button", { name: "Avaa tietokanta" }));
   const dialog = await screen.findByRole("dialog", { name: "Valitse tapahtuma" });
-  expect(within(dialog).getByText(`Edellinen tapahtuma: ${previous.event.name}`)).toBeTruthy();
+  expect(within(dialog).getByRole("button", { name: `Jatka tapahtumaa ${previous.event.name}` })).toBeTruthy();
   expect(screen.queryByLabelText("Saldo")).toBeNull();
-  const create = within(dialog).getByRole("button", { name: "Luo uusi tapahtuma" });
-  fireEvent.change(screen.getByLabelText("Tapahtuman nimi"), { target: { value: "   " } });
+  const create = within(dialog).getByRole("button", { name: "Aloita uusi tapahtuma" });
+  fireEvent.change(screen.getByLabelText("Uuden tapahtuman nimi"), { target: { value: "   " } });
   expect(create.hasAttribute("disabled")).toBe(true);
-  fireEvent.change(screen.getByLabelText("Tapahtuman nimi"), { target: { value: "  Talvijuhla  " } });
+  fireEvent.change(screen.getByLabelText("Uuden tapahtuman nimi"), { target: { value: "  Talvijuhla  " } });
   fireEvent.click(create);
   await startShift();
   await pick("Aino Korhonen");
@@ -458,13 +447,13 @@ it("keeps the choice and previous event after a failed event save and allows ret
   mount();
   fireEvent.click(screen.getByRole("button", { name: "Avaa tietokanta" }));
   await screen.findByRole("dialog", { name: "Valitse tapahtuma" });
-  fireEvent.change(screen.getByLabelText("Tapahtuman nimi"), { target: { value: "Talvijuhla" } });
-  fireEvent.click(screen.getByRole("button", { name: "Luo uusi tapahtuma" }));
+  fireEvent.change(screen.getByLabelText("Uuden tapahtuman nimi"), { target: { value: "Talvijuhla" } });
+  fireEvent.click(screen.getByRole("button", { name: "Aloita uusi tapahtuma" }));
   await screen.findByText("Event save failed");
   expect(ledger.snapshot()).toEqual(original.snapshot());
-  expect(screen.getByLabelText("Tapahtuman nimi").getAttribute("value")).toBe("Talvijuhla");
+  expect(screen.getByLabelText("Uuden tapahtuman nimi").getAttribute("value")).toBe("Talvijuhla");
   fail = false;
-  fireEvent.click(screen.getByRole("button", { name: "Luo uusi tapahtuma" }));
+  fireEvent.click(screen.getByRole("button", { name: "Aloita uusi tapahtuma" }));
   await startShift();
   await pick("Aino Korhonen");
   await waitFor(() => expect(screen.getByLabelText("Saldo").textContent).toBe("42,50"));
@@ -497,13 +486,14 @@ it("keeps the current cashier session when the replacement event choice is cance
   fireEvent.click(screen.getByRole("button", { name: "Avaa tietokanta" }));
   await continueEvent("Aino Korhonen");
   fireEvent.click(screen.getByRole("button", { name: "Asetukset" }));
-  fireEvent.click(await screen.findByRole("tab", { name: "Tietokanta" }));
-  fireEvent.click(await screen.findByRole("button", { name: "Avaa tietokanta" }));
+  fireEvent.click(await screen.findByRole("tab", { name: "Tiedosto" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Avaa toinen tietokanta" }));
   await screen.findByRole("button", { name: "Jatka tapahtumaa Toinen juhla" });
   fireEvent.click(screen.getByRole("button", { name: "Peruuta" }));
   await waitFor(() => expect(document.querySelector('[role="dialog"][data-state="open"]')).toBeNull());
+  fireEvent.click(screen.getByRole("button", { name: "Tilit" }));
   expect(screen.getByLabelText("Saldo").textContent).toBe("42,50");
-  expect(screen.getByRole("button", { name: "Aino Korhonen" })).toBeTruthy();
+  expect(screen.getByRole("button", { name: person("Aino Korhonen") })).toBeTruthy();
   expect(first.snapshot().customers[0].balance).toBe(4250);
 });
 
@@ -540,27 +530,31 @@ it("creates customer metadata and saves, updates, and clears a note across datab
   mount();
   fireEvent.click(screen.getByRole("button", { name: "Avaa tietokanta" }));
   await continueEvent();
-  fireEvent.click(await screen.findByRole("button", { name: "Lisää henkilö" }));
+  fireEvent.click(await screen.findByRole("button", { name: "+ Lisää henkilö" }));
   const dialog = await screen.findByRole("dialog", { name: "Lisää henkilö" });
   fireEvent.change(within(dialog).getByLabelText("Nimi"), { target: { value: "Aino" } });
   fireEvent.change(within(dialog).getByLabelText("Osakunta (valinnainen)"), { target: { value: "\u0000other" } });
-  const custom = within(dialog).getByLabelText("Uusi osakunta");
+  const custom = within(dialog).getByLabelText("Osakunnan nimi");
   fireEvent.change(custom, { target: { value: "x".repeat(70) } });
   expect(custom.getAttribute("maxlength")).toBe("60");
   fireEvent.change(custom, { target: { value: "Sen-KyO" } });
   fireEvent.click(within(dialog).getByRole("button", { name: "Lisää henkilö" }));
   // The new person is selected right away.
-  const note = await screen.findByLabelText("Muistiinpano");
-  expect(screen.getByRole("cell", { name: "Sen-KyO" })).toBeTruthy();
-  expect(within(screen.getByRole("region", { name: "Valittu henkilö" })).getByText("Aino • Sen-KyO")).toBeTruthy();
-  expect(note.textContent).toBe("");
+  const account = await screen.findByRole("region", { name: "Valittu henkilö" });
+  await within(account).findByRole("heading", { name: "Aino" });
+  expect(within(account).getByText("Sen-KyO")).toBeTruthy();
+  expect(within(screen.getByRole("region", { name: "Henkilöt" })).getByText("Sen-KyO")).toBeTruthy();
   for (const value of ["First\nSecond", "Updated", ""]) {
-    fireEvent.change(note, { target: { value } });
-    fireEvent.click(screen.getByRole("button", { name: "Tallenna muistiinpano" }));
+    fireEvent.click(within(account).getByRole("button", { name: "Muokkaa henkilöä Aino" }));
+    const edit = await screen.findByRole("dialog", { name: "Muokkaa henkilöä" });
+    fireEvent.change(within(edit).getByLabelText("Muistiinpano"), { target: { value } });
+    fireEvent.click(within(edit).getByRole("button", { name: "Tallenna" }));
     await waitFor(() => expect(ledger.snapshot().customers[0].note).toBe(value));
     expect((await Ledger.open(saved)).snapshot().customers[0].note).toBe(value);
-    await waitFor(() => expect(screen.getByRole("button", { name: "Tallenna muistiinpano" }).hasAttribute("disabled")).toBe(true));
+    await waitFor(() => expect(openDialog()).toBeNull());
+    if (value) expect(within(account).getByText(value.replace("\n", " "), { normalizer: (t) => t.replace(/\s+/g, " ") })).toBeTruthy();
   }
+  expect(account.querySelector(".account-note")?.classList.contains("empty")).toBe(true);
 });
 
 it("keeps a product draft after a failed save and retries without duplicates", async () => {
@@ -574,16 +568,16 @@ it("keeps a product draft after a failed save and retries without duplicates", a
   await continueEvent();
   fireEvent.click(await screen.findByRole("button", { name: "Asetukset" }));
   fireEvent.click(await screen.findByRole("tab", { name: "Nimikkeet" }));
-  fireEvent.change(await screen.findByLabelText("Nimikkeen nimi"), { target: { value: "Coffee" } });
-  fireEvent.change(screen.getByLabelText("Nimikkeen summa"), { target: { value: "2.50" } });
+  fireEvent.change(await screen.findByLabelText("Nimi"), { target: { value: "Coffee" } });
+  fireEvent.change(screen.getByLabelText("Summa"), { target: { value: "2.50" } });
   fireEvent.click(screen.getByRole("button", { name: "Lisää nimike" }));
   await screen.findAllByText("Product write failed");
   expect(ledger.snapshot().products).toEqual([]);
-  expect(screen.getByLabelText("Nimikkeen nimi").getAttribute("value")).toBe("Coffee");
+  expect(screen.getByLabelText("Nimi").getAttribute("value")).toBe("Coffee");
   fail = false;
   fireEvent.click(screen.getByRole("button", { name: "Lisää nimike" }));
   await waitFor(() => expect(ledger.snapshot().products).toHaveLength(1));
-  await waitFor(() => expect(screen.getByLabelText("Nimikkeen nimi").getAttribute("value")).toBe(""));
+  await waitFor(() => expect(screen.getByLabelText("Nimi").getAttribute("value")).toBe(""));
 });
 it("shows statistics per event and switches back to the cashier", async () => {
   const ledger = await createExample();
@@ -621,7 +615,7 @@ it("shows statistics per event and switches back to the cashier", async () => {
       row.getAttribute("aria-current"),
     ]);
   await screen.findByText("Tässä tapahtumassa ei ole vielä veloituksia.");
-  expect(tiles()).toMatchObject({ Veloitettu: "0,00", Veloituksia: "0", Henkilöitä: "0", Velkaa: "0,00" });
+  expect(tiles()).toMatchObject({ Veloitettu: "0,00", Veloituksia: "0", Henkilöitä: "0", Miinuksella: "0,00" });
   expect(screen.queryByRole("heading", { name: "Nimikkeet" })).toBeNull();
   expect(comparison()).toEqual([
     ["Uusi juhla", "true"],
@@ -643,7 +637,7 @@ it("shows statistics per event and switches back to the cashier", async () => {
     Henkilöitä: "1",
     "Saldoa lisätty": "231,50",
     "Saldoa jäljellä": "214,50",
-    Velkaa: "0,00",
+    Miinuksella: "0,00",
     "Perutut veloitukset": "1",
   });
   expect(comparison()[1]).toEqual(["Ensimmäinen tapahtuma", "true"]);
@@ -670,40 +664,44 @@ it("edits a person with undo, deletes with undo, and restores from settings", as
 
   fireEvent.click(await screen.findByRole("button", { name: "Muokkaa henkilöä Aino Korhonen" }));
   let dialog = await screen.findByRole("dialog", { name: "Muokkaa henkilöä" });
-  const save = within(dialog).getByRole("button", { name: "Tallenna muutokset" });
+  const save = within(dialog).getByRole("button", { name: "Tallenna" });
   expect(save.hasAttribute("disabled")).toBe(true);
   fireEvent.change(within(dialog).getByLabelText("Nimi"), { target: { value: "Aino K" } });
   fireEvent.change(within(dialog).getByLabelText("Osakunta (valinnainen)"), { target: { value: "\u0000other" } });
-  fireEvent.change(within(dialog).getByLabelText("Uusi osakunta"), { target: { value: "PO" } });
+  fireEvent.change(within(dialog).getByLabelText("Osakunnan nimi"), { target: { value: "PO" } });
   fireEvent.click(save);
-  await within(account).findByText("Aino K • PO");
+  await within(account).findByRole("heading", { name: "Aino K" });
+  expect(within(account).getByText("PO")).toBeTruthy();
   expect(aino()).toMatchObject({ name: "Aino K", osakunta: "PO" });
-  fireEvent.click(within(account).getByRole("button", { name: "Kumoa muutos" }));
-  await within(account).findByText("Aino Korhonen");
+  const toast = () => screen.queryByRole("status", { name: "Ilmoitus" });
+  expect(toast()?.textContent).toContain("Aino K: tiedot tallennettu.");
+  fireEvent.click(within(screen.getByRole("status", { name: "Ilmoitus" })).getByRole("button", { name: "Peru" }));
+  await within(account).findByRole("heading", { name: "Aino Korhonen" });
   expect(aino()).toMatchObject({ name: "Aino Korhonen", osakunta: "" });
-  expect(within(account).queryByRole("button", { name: "Kumoa muutos" })).toBeNull();
+  expect(screen.getByRole("status", { name: "Ilmoitus" }).textContent).toBe("");
 
   fireEvent.click(screen.getByRole("button", { name: "Muokkaa henkilöä Aino Korhonen" }));
   dialog = await screen.findByRole("dialog", { name: "Muokkaa henkilöä" });
   expect(within(dialog).getByText(/Saldo 42,50/)).toBeTruthy();
-  fireEvent.click(within(dialog).getByRole("button", { name: "Poista henkilö" }));
+  fireEvent.click(within(dialog).getByRole("button", { name: "Poista" }));
   await waitFor(() => expect(aino()).toBeUndefined());
-  expect(screen.queryByRole("button", { name: "Aino Korhonen" })).toBeNull();
-  fireEvent.click(within(account).getByRole("button", { name: "Palauta Aino Korhonen" }));
+  expect(screen.queryByRole("button", { name: person("Aino Korhonen") })).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "Palauta Aino Korhonen" }));
   await waitFor(() => expect(aino()?.balance).toBe(4250));
-  expect(within(account).getByLabelText("Saldo").textContent).toBe("42,50");
+  expect((await screen.findByLabelText("Saldo")).textContent).toBe("42,50");
 
   fireEvent.click(screen.getByRole("button", { name: "Muokkaa henkilöä Aino Korhonen" }));
   dialog = await screen.findByRole("dialog", { name: "Muokkaa henkilöä" });
-  fireEvent.click(within(dialog).getByRole("button", { name: "Poista henkilö" }));
+  fireEvent.click(within(dialog).getByRole("button", { name: "Poista" }));
   await waitFor(() => expect(aino()).toBeUndefined());
   fireEvent.click(screen.getByRole("button", { name: "Asetukset" }));
-  dialog = await screen.findByRole("dialog", { name: "Asetukset" });
-  fireEvent.click(within(dialog).getByRole("tab", { name: "Poistetut" }));
-  fireEvent.click(await within(dialog).findByRole("button", { name: "Palauta Aino Korhonen" }));
+  fireEvent.click(await screen.findByRole("tab", { name: "Poistetut henkilöt" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Palauta Aino Korhonen" }));
   await waitFor(() => expect(aino()?.balance).toBe(4250));
-  await within(dialog).findByText("Ei poistettuja henkilöitä.");
-  expect(within(account).queryByRole("button", { name: "Palauta Aino Korhonen" })).toBeNull();
+  await screen.findByText("Ei poistettuja henkilöitä.");
+  expect(screen.getByText("Aino Korhonen palautettu listalle.")).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "Tilit" }));
+  expect(screen.queryByRole("button", { name: "Palauta Aino Korhonen" })).toBeNull();
 });
 
 async function openExample() {
@@ -721,30 +719,72 @@ it("asks who is at the till, records them and the description, and can switch op
   await continueEvent("Aino Korhonen");
   expect(screen.getByRole("button", { name: "Vuorossa Eetu, vaihda" })).toBeTruthy();
   fireEvent.change(screen.getByLabelText("Summa"), { target: { value: "4" } });
-  fireEvent.change(screen.getByLabelText("Tapahtuman kuvaus"), { target: { value: "Rikottu lasi" } });
+  fireEvent.change(screen.getByLabelText("Kuvaus (valinnainen)"), { target: { value: "Avainkortti" } });
   fireEvent.click(screen.getByRole("button", { name: "Veloita 4,00" }));
-  await screen.findByText("Rikottu lasi");
-  expect(ledger.snapshot().entries[0]).toMatchObject({ cents: -400, operator: "Eetu", note: "Rikottu lasi" });
-  expect(screen.getByLabelText("Tapahtuman kuvaus").getAttribute("value")).toBe("");
+  await screen.findByText("Avainkortti");
+  expect(ledger.snapshot().entries[0]).toMatchObject({ cents: -400, operator: "Eetu", note: "Avainkortti" });
+  expect(screen.getByLabelText("Kuvaus (valinnainen)").getAttribute("value")).toBe("");
   expect(screen.getByText(/· Eetu$/)).toBeTruthy();
 
   fireEvent.click(screen.getByRole("button", { name: "Vuorossa Eetu, vaihda" }));
   await startShift("Anto");
+  // An item charge keeps the typed description, then clears it.
+  fireEvent.change(screen.getByLabelText("Kuvaus (valinnainen)"), { target: { value: "Toiselle" } });
   fireEvent.click(screen.getByRole("button", { name: "Veloita Kahvi 2,50" }));
-  await waitFor(() => expect(ledger.snapshot().entries[0]).toMatchObject({ label: "Kahvi", operator: "Anto" }));
+  await waitFor(() => expect(ledger.snapshot().entries[0]).toMatchObject({ label: "Kahvi", operator: "Anto", note: "Toiselle" }));
+  await waitFor(() => expect(screen.getByLabelText("Kuvaus (valinnainen)").getAttribute("value")).toBe(""));
   expect(ledger.operators()).toEqual(["Anto", "Eetu"]);
 });
 
-it("resets to charge on another person and colours the mode", async () => {
-  await openExample();
+it("clears the typed amount on another person and keeps charge and add both one tap away", async () => {
+  const ledger = await openExample();
   await continueEvent("Aino Korhonen");
-  const account = screen.getByRole("region", { name: "Valittu henkilö" });
-  expect(account.className).toContain("mode-charge");
-  fireEvent.click(screen.getByRole("button", { name: "Lisää saldoa" }));
-  expect(account.className).toContain("mode-deposit");
+  fireEvent.change(screen.getByLabelText("Summa"), { target: { value: "3" } });
+  const before = ledger.snapshot().entries.length;
+  // Enter never posts a typed amount, so a slip cannot charge or add by accident.
+  fireEvent.submit(screen.getByRole("form", { name: "Oma summa" }));
+  expect(ledger.snapshot().entries).toHaveLength(before);
+  expect(screen.getByRole("button", { name: "Veloita 3,00" })).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Lisää saldoa 3,00" })).toBeTruthy();
   await pick("Emma Virtanen");
-  expect(screen.getByRole("button", { name: "Veloita", pressed: true })).toBeTruthy();
-  expect(account.className).toContain("mode-charge");
+  expect(screen.getByLabelText("Summa").getAttribute("value")).toBe("");
+  expect(screen.getByRole("button", { name: "Veloita" }).hasAttribute("disabled")).toBe(true);
+});
+
+it("offers to undo the latest charge from the notice", async () => {
+  const ledger = await openExample();
+  await continueEvent("Aino Korhonen");
+  fireEvent.click(screen.getByRole("button", { name: "Veloita Lounas 8,50" }));
+  const notice = await screen.findByRole("status", { name: "Ilmoitus" });
+  await waitFor(() => expect(notice.textContent).toContain("−8,50 Lounas · Aino Korhonen"));
+  fireEvent.click(within(notice).getByRole("button", { name: "Peru" }));
+  const dialog = await screen.findByRole("dialog", { name: "Perutaanko kirjaus?" });
+  expect(within(dialog).getByText("Saldoon kirjataan +8,50. Alkuperäinen kirjaus jää näkyviin perutuksi.")).toBeTruthy();
+  fireEvent.click(within(dialog).getByRole("button", { name: "Peru kirjaus" }));
+  await waitFor(() => expect(screen.getByLabelText("Saldo").textContent).toBe("42,50"));
+  expect(screen.getByRole("status", { name: "Ilmoitus" }).textContent).toBe("");
+  expect(ledger.snapshot().entries[0].reversal_of).toBeTruthy();
+});
+
+it("finds people with Enter and offers to add a missing name", async () => {
+  await openExample();
+  await continueEvent();
+  const search = screen.getByLabelText("Hae henkilöä");
+  fireEvent.change(search, { target: { value: "emma" } });
+  fireEvent.keyDown(search, { key: "Enter" });
+  await waitFor(() => expect(screen.getByLabelText("Saldo").textContent).toBe("32,00"));
+  // A name starting with the search wins over a more recent substring match.
+  // "o": Väinö Salonen is the most recent match, but Onni's name starts with it,
+  // so Onni is listed first and Enter picks the row that is shown first.
+  fireEvent.change(search, { target: { value: "o" } });
+  expect(document.querySelector(".person .person-name")?.textContent).toBe("Onni Järvinen");
+  fireEvent.keyDown(search, { key: "Enter" });
+  await waitFor(() => expect(screen.getByRole("heading", { name: "Onni Järvinen" })).toBeTruthy());
+  fireEvent.change(search, { target: { value: "Matti Meikäläinen" } });
+  fireEvent.click(screen.getByRole("button", { name: "Lisää Matti Meikäläinen" }));
+  const dialog = await screen.findByRole("dialog", { name: "Lisää henkilö" });
+  expect(within(dialog).getByLabelText("Nimi").getAttribute("value")).toBe("Matti Meikäläinen");
+  expect(within(dialog).getByRole("button", { name: "Lisää henkilö" }).hasAttribute("disabled")).toBe(false);
 });
 
 it("clears the selected person after two idle minutes", async () => {
@@ -758,7 +798,7 @@ it("clears the selected person after two idle minutes", async () => {
     expect(screen.getByLabelText("Saldo")).toBeTruthy();
     vi.advanceTimersByTime(2000);
     await waitFor(() => expect(screen.queryByLabelText("Saldo")).toBeNull());
-    expect(screen.getByText("Valitse tai lisää henkilö.")).toBeTruthy();
+    expect(screen.getByText("Valitse henkilö")).toBeTruthy();
   } finally {
     vi.useRealTimers();
   }
@@ -767,31 +807,33 @@ it("clears the selected person after two idle minutes", async () => {
 it("adds a person with an opening balance, warns about duplicates, and selects them", async () => {
   const ledger = await openExample();
   await continueEvent();
-  fireEvent.click(screen.getByRole("button", { name: "Lisää henkilö" }));
+  fireEvent.click(screen.getByRole("button", { name: "+ Lisää henkilö" }));
   const dialog = await screen.findByRole("dialog", { name: "Lisää henkilö" });
   fireEvent.change(within(dialog).getByLabelText("Nimi"), { target: { value: "a" } });
   expect(within(dialog).queryByRole("status", { name: "Samankaltaiset nimet" })).toBeNull();
   fireEvent.change(within(dialog).getByLabelText("Nimi"), { target: { value: "aino korhonen" } });
   const hints = within(dialog).getByRole("status", { name: "Samankaltaiset nimet" });
-  expect(within(hints).getByText("Tämä nimi on jo kannassa.")).toBeTruthy();
+  expect(within(hints).getByText("Tämä nimi on jo listalla.")).toBeTruthy();
   fireEvent.change(within(dialog).getByLabelText("Nimi"), { target: { value: "Aino" } });
-  expect(within(dialog).getByText("Kannassa on jo samankaltaisia nimiä:")).toBeTruthy();
+  expect(within(dialog).getByText("Listalla on jo samankaltaisia nimiä:")).toBeTruthy();
   fireEvent.change(within(dialog).getByLabelText("Nimi"), { target: { value: "Aino Uusi" } });
   const osakunta = within(dialog).getByLabelText("Osakunta (valinnainen)");
-  expect([...osakunta.querySelectorAll("option")].map((o) => o.textContent)).toEqual(["Ei osakuntaa", "KyO", "Muu…"]);
+  expect([...osakunta.querySelectorAll("option")].map((o) => o.textContent)).toEqual(["Ei osakuntaa", "KyO", "Muu, kirjoita nimi…"]);
   fireEvent.change(osakunta, { target: { value: "KyO" } });
   fireEvent.change(within(dialog).getByLabelText("Alkusaldo (valinnainen)"), { target: { value: "-12,50" } });
   fireEvent.click(within(dialog).getByRole("button", { name: "Lisää henkilö" }));
   await waitFor(() => expect(screen.getByLabelText("Saldo").textContent).toBe("−12,50"));
-  expect(within(screen.getByRole("region", { name: "Valittu henkilö" })).getByText("Aino Uusi • KyO")).toBeTruthy();
+  const account = screen.getByRole("region", { name: "Valittu henkilö" });
+  expect(within(account).getByRole("heading", { name: "Aino Uusi" })).toBeTruthy();
+  expect(within(account).getByText("KyO")).toBeTruthy();
   expect(screen.getByText("Alkusaldo")).toBeTruthy();
   const added = ledger.snapshot().customers.find((c) => c.name === "Aino Uusi");
   expect(added).toMatchObject({ osakunta: "KyO", balance: -1250 });
   // Recent activity sorts first by default.
-  expect(screen.getAllByRole("button", { pressed: true })[0].textContent).toBe("Viimeisin tapahtuma");
-  expect(document.querySelector(".customer-row .customer-name")?.textContent).toBe("Aino Uusi");
+  expect(within(screen.getByRole("group", { name: "Järjestys" })).getByRole("button", { pressed: true }).textContent).toBe("Viimeisimmät");
+  expect(document.querySelector(".person .person-name")?.textContent).toBe("Aino Uusi");
 
-  fireEvent.click(screen.getByRole("button", { name: "Lisää henkilö" }));
+  fireEvent.click(screen.getByRole("button", { name: "+ Lisää henkilö" }));
   const again = await screen.findByRole("dialog", { name: "Lisää henkilö" });
   fireEvent.change(within(again).getByLabelText("Nimi"), { target: { value: "Emma" } });
   fireEvent.click(within(again).getByRole("button", { name: /^Emma Virtanen/ }));
@@ -801,31 +843,31 @@ it("adds a person with an opening balance, warns about duplicates, and selects t
 
 it("opens product categories before their products", async () => {
   const ledger = await createExample();
-  await ledger.saveProduct({ id: "olut", name: "Olut", cents: 300, description: "", image: "", category: "Tölkki" });
-  await ledger.saveProduct({ id: "lonkero", name: "Lonkero", cents: 350, description: "", image: "", category: "Tölkki" });
+  await ledger.saveProduct({ id: "latte", name: "Latte", cents: 300, description: "", image: "", category: "Kuumat" });
+  await ledger.saveProduct({ id: "kaakao", name: "Kaakao", cents: 350, description: "", image: "", category: "Kuumat" });
   vi.spyOn(fileAccess, "fileAccessProblem").mockReturnValue(undefined);
   vi.spyOn(fileAccess, "supportsDirectFiles").mockReturnValue(true);
   vi.spyOn(fileAccess, "pickDatabase").mockResolvedValue({ ledger, name: "example.sqlite" });
   mount();
   fireEvent.click(screen.getByRole("button", { name: "Avaa tietokanta" }));
   await continueEvent("Aino Korhonen");
-  expect(screen.queryByRole("button", { name: "Veloita Olut 3,00" })).toBeNull();
+  expect(screen.queryByRole("button", { name: "Veloita Latte 3,00" })).toBeNull();
   expect(screen.getByRole("button", { name: "Veloita Kahvi 2,50" })).toBeTruthy();
-  fireEvent.click(screen.getByRole("button", { name: "Kategoria Tölkki" }));
-  expect(screen.getByRole("button", { name: "Veloita Olut 3,00" })).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "Kategoria Kuumat" }));
+  expect(screen.getByRole("button", { name: "Veloita Latte 3,00" })).toBeTruthy();
   expect(screen.queryByRole("button", { name: "Veloita Kahvi 2,50" })).toBeNull();
   fireEvent.click(screen.getByRole("button", { name: /Takaisin/ }));
-  fireEvent.change(screen.getByLabelText("Hae nimikettä"), { target: { value: "lonk" } });
-  expect(screen.getByRole("button", { name: "Veloita Lonkero 3,50" })).toBeTruthy();
+  fireEvent.change(screen.getByLabelText("Hae nimikettä"), { target: { value: "kaak" } });
+  expect(screen.getByRole("button", { name: "Veloita Kaakao 3,50" })).toBeTruthy();
 });
 
 it("shows the first product photo on each category", async () => {
   const ledger = await createExample();
-  const olut = "data:image/png;base64,T0w=";
-  const lonkero = "data:image/png;base64,TE8=";
-  await ledger.saveProduct({ id: "kivennäis", name: "Kivennäis", cents: 200, description: "", image: "", category: "Tölkki" });
-  await ledger.saveProduct({ id: "olut", name: "Olut", cents: 300, description: "", image: olut, category: "Tölkki" });
-  await ledger.saveProduct({ id: "lonkero", name: "Lonkero", cents: 350, description: "", image: lonkero, category: "Tölkki" });
+  const kahvi = "data:image/png;base64,T0w=";
+  const tee = "data:image/png;base64,TE8=";
+  await ledger.saveProduct({ id: "kivennäis", name: "Kivennäis", cents: 200, description: "", image: "", category: "Kuumat" });
+  await ledger.saveProduct({ id: "latte", name: "Latte", cents: 300, description: "", image: kahvi, category: "Kuumat" });
+  await ledger.saveProduct({ id: "kaakao", name: "Kaakao", cents: 350, description: "", image: tee, category: "Kuumat" });
   await ledger.saveProduct({ id: "vesi", name: "Vesi", cents: 100, description: "", image: "", category: "Muut" });
   vi.spyOn(fileAccess, "fileAccessProblem").mockReturnValue(undefined);
   vi.spyOn(fileAccess, "supportsDirectFiles").mockReturnValue(true);
@@ -833,14 +875,14 @@ it("shows the first product photo on each category", async () => {
   mount();
   fireEvent.click(screen.getByRole("button", { name: "Avaa tietokanta" }));
   await continueEvent("Aino Korhonen");
-  const photo = () => screen.getByRole("button", { name: "Kategoria Tölkki" }).querySelector("img")?.getAttribute("src");
-  expect(photo()).toBe(olut);
+  const photo = () => screen.getByRole("button", { name: "Kategoria Kuumat" }).querySelector("img")?.getAttribute("src");
+  expect(photo()).toBe(kahvi);
   expect(screen.getByRole("button", { name: "Kategoria Muut" }).querySelector("img")).toBeNull();
 });
 
 it("reuses an existing product category with one tap", async () => {
   const ledger = await createExample();
-  await ledger.saveProduct({ id: "olut", name: "Olut", cents: 300, description: "", image: "", category: "Tölkki" });
+  await ledger.saveProduct({ id: "latte", name: "Latte", cents: 300, description: "", image: "", category: "Kuumat" });
   vi.spyOn(fileAccess, "fileAccessProblem").mockReturnValue(undefined);
   vi.spyOn(fileAccess, "supportsDirectFiles").mockReturnValue(true);
   vi.spyOn(fileAccess, "pickDatabase").mockResolvedValue({ ledger, name: "example.sqlite" });
@@ -848,16 +890,15 @@ it("reuses an existing product category with one tap", async () => {
   fireEvent.click(screen.getByRole("button", { name: "Avaa tietokanta" }));
   await continueEvent();
   fireEvent.click(await screen.findByRole("button", { name: "Asetukset" }));
-  fireEvent.click(await screen.findByRole("tab", { name: "Nimikkeet" }));
-  fireEvent.change(await screen.findByLabelText("Nimikkeen nimi"), { target: { value: "Siideri" } });
-  fireEvent.change(screen.getByLabelText("Nimikkeen summa"), { target: { value: "3.50" } });
+  fireEvent.change(await screen.findByLabelText("Nimi"), { target: { value: "Mocha" } });
+  fireEvent.change(screen.getByLabelText("Summa"), { target: { value: "3.50" } });
   const chips = screen.getByRole("group", { name: "Aiemmat kategoriat" });
-  fireEvent.click(within(chips).getByRole("button", { name: "Tölkki" }));
-  expect(screen.getByLabelText("Kategoria (valinnainen)").getAttribute("value")).toBe("Tölkki");
-  expect(within(chips).getByRole("button", { name: "Tölkki" }).getAttribute("aria-pressed")).toBe("true");
+  fireEvent.click(within(chips).getByRole("button", { name: "Kuumat" }));
+  expect(screen.getByLabelText("Kategoria (valinnainen)").getAttribute("value")).toBe("Kuumat");
+  expect(within(chips).getByRole("button", { name: "Kuumat" }).getAttribute("aria-pressed")).toBe("true");
   fireEvent.click(screen.getByRole("button", { name: "Lisää nimike" }));
   await waitFor(() =>
-    expect(ledger.snapshot().products.find((p) => p.name === "Siideri")?.category).toBe("Tölkki"),
+    expect(ledger.snapshot().products.find((p) => p.name === "Mocha")?.category).toBe("Kuumat"),
   );
 });
 

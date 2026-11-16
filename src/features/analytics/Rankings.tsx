@@ -1,5 +1,5 @@
 import { BarList, useChart, type BarListData } from "@chakra-ui/charts";
-import { Span, Text } from "@chakra-ui/react";
+import { Span } from "@chakra-ui/react";
 import { formatAmount } from "../../ledger";
 import type { EventSummary } from "./summary";
 import { Section, TINT } from "./chart-style";
@@ -37,7 +37,7 @@ function Ranking({
 
 export function ProductRanking({ summary }: { summary: EventSummary }) {
   return (
-    <Section id="product-charged" title="Nimikkeet" hint="Veloitukset nimikkeittäin, kappalemäärä nimen vieressä.">
+    <Section id="product-charged" title="Nimikkeet" hint="Veloitettu summa nimikkeittäin. Kappalemäärä on nimen vieressä.">
       <Ranking
         label="Veloitukset nimikkeittäin"
         rows={summary.products.map((product) => ({
@@ -54,8 +54,8 @@ export function CustomerRanking({ summary }: { summary: EventSummary }) {
   return (
     <Section
       id="top-people"
-      title="Aktiivisimmat henkilöt"
-      hint={`Kymmenen eniten veloitettua${summary.people > 10 ? ` ${summary.people} henkilöstä` : ""}.`}
+      title="Eniten veloitetut"
+      hint={summary.people > 10 ? `Kärkikymmenen ${summary.people} henkilöstä.` : "Kaikki henkilöt, joilla on veloituksia."}
     >
       <Ranking
         label="Eniten veloitetut henkilöt"
@@ -70,5 +70,5 @@ export function CustomerRanking({ summary }: { summary: EventSummary }) {
 }
 
 export function EmptyNote({ children }: { children: string }) {
-  return <Text className="empty-history">{children}</Text>;
+  return <p className="empty-text">{children}</p>;
 }

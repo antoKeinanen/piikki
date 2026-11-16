@@ -1,10 +1,9 @@
 import type { ReactNode } from "react";
 import { Chart } from "@chakra-ui/charts";
-import { Text } from "@chakra-ui/react";
 import { formatAmount } from "../../ledger";
 import type { EventSummary } from "./summary";
 
-// Chart colors come from the branding CSS variables, so charts match the organisation's theme.
+// Chart colours come from the branding variables, so charts follow the chosen colours.
 export const PRIMARY = "var(--indicator)";
 export const SECONDARY = "color-mix(in srgb, var(--indicator) 55%, var(--accent))";
 // Light enough for text to sit on top of it.
@@ -52,7 +51,7 @@ export function Section({
   return (
     <section className={`stat-section ${wide ? "stat-wide" : ""}`} aria-labelledby={id}>
       <h2 id={id}>{title}</h2>
-      {hint && <Text className="stat-hint">{hint}</Text>}
+      {hint && <p className="stat-hint">{hint}</p>}
       {children}
     </section>
   );

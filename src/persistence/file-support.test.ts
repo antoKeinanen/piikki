@@ -47,7 +47,7 @@ it("rejects a partial file-handle implementation", () => {
       requestPermission() {}
     },
   );
-  expect(fileAccessProblem()).toContain("cannot write");
+  expect(fileAccessProblem()).toContain("kirjoittaa tiedostoihin");
 });
 it("rejects streams without a close operation", () => {
   vi.stubGlobal(
@@ -57,5 +57,5 @@ it("rejects streams without a close operation", () => {
       abort() {}
     },
   );
-  expect(fileAccessProblem()).toContain("cannot finish saving");
+  expect(fileAccessProblem()).toContain("viimeistellä");
 });

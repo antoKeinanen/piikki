@@ -93,8 +93,8 @@ it("preserves legacy names and amounts that predate product editing limits", asy
 
 it("stores product categories", async () => {
   const ledger = await Ledger.open();
-  await ledger.saveProduct({ id: "beer", name: "Olut", cents: 300, description: "", image: "", category: " Tölkki " });
-  await ledger.saveProduct({ id: "cider", name: "Siideri", cents: 350, description: "", image: "" });
+  await ledger.saveProduct({ id: "coffee", name: "Kahvi", cents: 300, description: "", image: "", category: " Kuumat " });
+  await ledger.saveProduct({ id: "juice", name: "Mehu", cents: 350, description: "", image: "" });
   const reopened = (await Ledger.open(ledger.export())).snapshot();
-  expect(reopened.products.map((p) => [p.name, p.category])).toEqual([["Olut", "Tölkki"], ["Siideri", ""]]);
+  expect(reopened.products.map((p) => [p.name, p.category])).toEqual([["Kahvi", "Kuumat"], ["Mehu", ""]]);
 });

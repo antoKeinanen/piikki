@@ -72,7 +72,7 @@ export class Ledger {
     } catch (error) {
       db.close();
       throw new Error(
-        `Could not open this database. ${error instanceof Error ? error.message : "Invalid SQLite file."}`,
+        `Tietokantaa ei voitu avata. ${error instanceof Error ? error.message : "Tiedosto ei ole SQLite-tietokanta."}`,
       );
     }
   }
@@ -89,7 +89,7 @@ export class Ledger {
   private migrate(fresh: boolean) {
     const start = this.version();
     if (start > SCHEMA_VERSION)
-      throw new Error("This database was saved by a newer version of Piikki. Update the app to open it.");
+      throw new Error("Tiedosto on tallennettu Piikin uudemmalla versiolla. Päivitä sovellus ja avaa tiedosto uudelleen.");
     for (const [from, step] of migrations) {
       if (this.version() !== from) continue;
       this.db.run("BEGIN");
@@ -97,7 +97,7 @@ export class Ledger {
         step(this);
         this.db.run(`PRAGMA user_version=${from + 1}`);
         if (this.rows("PRAGMA foreign_key_check").length)
-          throw new Error("Upgrading the database broke a reference.");
+          throw new Error("Tietokannan päivitys rikkoi viittauksen.");
         this.db.run("COMMIT");
       } catch (error) {
         this.db.run("ROLLBACK");
@@ -233,16 +233,16 @@ export class Ledger {
   }
   private validate() {
     if (this.version() !== SCHEMA_VERSION)
-      throw new Error("This file is not a supported Piikki database.");
+      throw new Error("Tiedosto ei ole Piikin tietokanta.");
     if (
       this.rows("PRAGMA integrity_check")[0]?.integrity_check !== "ok" ||
       this.rows("PRAGMA foreign_key_check").length
     )
-      throw new Error("This database contains invalid data.");
+      throw new Error("Tietokannassa on virheellisiä tietoja.");
     if (this.rows("SELECT id FROM entries WHERE event_id IS NULL").length)
-      throw new Error("A transaction is missing its event.");
+      throw new Error("Kirjaukselta puuttuu tapahtuma.");
     const events = this.rows("SELECT * FROM events").map((row) => LedgerEventSchema.parse(row));
-    if (!events.length) throw new Error("The database has no event.");
+    if (!events.length) throw new Error("Tietokannassa ei ole tapahtumaa.");
     for (const event of events) {
       const data = this.snapshot(event.id);
       const entries = new Map(data.entries.map((entry) => [entry.id, entry]));
@@ -253,7 +253,7 @@ export class Ledger {
           !entry.cents ||
           ![...data.customers, ...data.removedCustomers].some((c) => c.id === entry.customer_id)
         )
-          throw new Error("The database contains an invalid transaction.");
+          throw new Error("Tietokannassa on virheellinen kirjaus.");
         if (entry.reversal_of !== null) {
           const original = entries.get(entry.reversal_of);
           if (
@@ -263,17 +263,17 @@ export class Ledger {
             original.cents !== -entry.cents ||
             reversed.has(original.id)
           )
-            throw new Error("The database contains an invalid reversal.");
+            throw new Error("Tietokannassa on virheellinen peruutus.");
           reversed.add(original.id);
         }
       }
       if ([...data.customers, ...data.removedCustomers].some((c) => !Number.isSafeInteger(c.balance)))
-        throw new Error("The database contains an invalid balance.");
+        throw new Error("Tietokannassa on virheellinen saldo.");
     }
   }
   private saving = false;
   private async change(operation: () => void) {
-    if (this.saving) throw new Error("Wait for the previous change to save.");
+    if (this.saving) throw new Error("Edellinen muutos tallentuu vielä. Odota hetki.");
     this.saving = true;
     const previous = this.db.export();
     this.db.run("PRAGMA foreign_keys=ON; BEGIN");
@@ -324,6 +324,7 @@ export class Ledger {
       this.latestEvent().id,
     ]);
     this.saveEntryDetails(id, input);
+    return id;
   }
   async post(input: {
     customerId: string;
@@ -340,13 +341,14 @@ export class Ledger {
       input.cents <= 0 ||
       input.cents > 999999999
     )
-      throw new Error("Enter an amount greater than zero.");
-    return this.change(() => {
+      throw new Error("Summan pitää olla suurempi kuin nolla.");
+    let id = "";
+    await this.change(() => {
       const customer = this.snapshot().customers.find(
         (c) => c.id === input.customerId,
       );
-      if (!customer) throw new Error("Customer no longer exists.");
-      this.insertEntry({
+      if (!customer) throw new Error("Henkilöä ei enää ole.");
+      id = this.insertEntry({
         customerId: input.customerId,
         cents: input.kind === "charge" ? -input.cents : input.cents,
         label: input.label.trim() || (input.kind === "charge" ? "Charge" : "Deposit"),
@@ -354,12 +356,14 @@ export class Ledger {
         note: input.note,
       });
     });
+    /** The new entry, so the caller can offer to undo it. */
+    return id;
   }
   async reverse(id: string, operator?: string) {
     return this.change(() => {
       const entry = this.snapshot().entries.find((e) => e.id === id);
       if (!entry || entry.reversed || entry.reversal_of)
-        throw new Error("This transaction cannot be reversed.");
+        throw new Error("Tätä kirjausta ei voi perua.");
       this.insertEntry({
         customerId: entry.customer_id,
         cents: -entry.cents,
@@ -391,7 +395,7 @@ export class Ledger {
     osakunta = "",
     options: { openingCents?: number; operator?: string } = {},
   ) {
-    if (!name.trim()) throw new Error("Enter a customer name.");
+    if (!name.trim()) throw new Error("Anna nimi.");
     osakunta = osakunta.trim();
     if (!CustomerSchema.shape.osakunta.safeParse(osakunta).success)
       throw new Error(OSAKUNTA_ERROR);
@@ -421,7 +425,7 @@ export class Ledger {
       if (
         !this.snapshot().customers.some((customer) => customer.id === customerId)
       )
-        throw new Error("Customer no longer exists.");
+        throw new Error("Henkilöä ei enää ole.");
       this.ensureCustomerMetadata();
       this.db.run(
         "INSERT INTO customer_metadata(customer_id,note) VALUES(?,?) ON CONFLICT(customer_id) DO UPDATE SET note=excluded.note",
@@ -433,12 +437,12 @@ export class Ledger {
   async updateCustomer(customerId: string, input: { name: string; osakunta: string }) {
     const name = input.name.trim();
     const osakunta = input.osakunta.trim();
-    if (!name) throw new Error("Enter a customer name.");
+    if (!name) throw new Error("Anna nimi.");
     if (!CustomerSchema.shape.osakunta.safeParse(osakunta).success)
       throw new Error(OSAKUNTA_ERROR);
     return this.change(() => {
       if (!this.snapshot().customers.some((customer) => customer.id === customerId))
-        throw new Error("Customer no longer exists.");
+        throw new Error("Henkilöä ei enää ole.");
       this.db.run("UPDATE customers SET name=? WHERE id=?", [name, customerId]);
       this.ensureCustomerMetadata();
       this.db.run(
@@ -454,7 +458,7 @@ export class Ledger {
   async removeCustomer(customerId: string) {
     return this.change(() => {
       if (!this.snapshot().customers.some((customer) => customer.id === customerId))
-        throw new Error("Customer no longer exists.");
+        throw new Error("Henkilöä ei enää ole.");
       this.db.run(
         "CREATE TABLE IF NOT EXISTS customer_removals(customer_id TEXT PRIMARY KEY REFERENCES customers(id), removed_at TEXT NOT NULL)",
       );
@@ -467,7 +471,7 @@ export class Ledger {
   async restoreCustomer(customerId: string) {
     return this.change(() => {
       if (!this.snapshot().removedCustomers.some((customer) => customer.id === customerId))
-        throw new Error("This person is not deleted.");
+        throw new Error("Henkilöä ei ole poistettu.");
       this.db.run("DELETE FROM customer_removals WHERE customer_id=?", [customerId]);
     });
   }
@@ -475,9 +479,9 @@ export class Ledger {
     const product = ProductSchema.parse(input);
     product.name = product.name.trim();
     if (!product.name || product.name.length > 120)
-      throw new Error("Enter a product name of 1–120 characters.");
+      throw new Error("Nimikkeen nimessä pitää olla 1–120 merkkiä.");
     if (product.cents > 999999999)
-      throw new Error("Item amount is too large.");
+      throw new Error("Summa on liian suuri.");
     return this.change(() => {
       this.db.run(
         "INSERT INTO presets VALUES(?,?,?) ON CONFLICT(id) DO UPDATE SET name=excluded.name,cents=excluded.cents",
