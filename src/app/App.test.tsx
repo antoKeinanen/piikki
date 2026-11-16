@@ -774,9 +774,10 @@ it("finds people with Enter and offers to add a missing name", async () => {
   fireEvent.keyDown(search, { key: "Enter" });
   await waitFor(() => expect(screen.getByLabelText("Saldo").textContent).toBe("32,00"));
   // A name starting with the search wins over a more recent substring match.
-  // "o": Väinö Salonen is the most recent match, but Onni starts with it.
+  // "o": Väinö Salonen is the most recent match, but Onni's name starts with it,
+  // so Onni is listed first and Enter picks the row that is shown first.
   fireEvent.change(search, { target: { value: "o" } });
-  expect(document.querySelector(".person .person-name")?.textContent).toBe("Väinö Salonen");
+  expect(document.querySelector(".person .person-name")?.textContent).toBe("Onni Järvinen");
   fireEvent.keyDown(search, { key: "Enter" });
   await waitFor(() => expect(screen.getByRole("heading", { name: "Onni Järvinen" })).toBeTruthy());
   fireEvent.change(search, { target: { value: "Matti Meikäläinen" } });

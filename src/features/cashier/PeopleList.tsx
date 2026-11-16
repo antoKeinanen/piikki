@@ -23,20 +23,14 @@ function sort(customers: Customer[], order: Order) {
 }
 
 /**
- * The person Enter picks: a name that starts with the search, then a word in the
- * name that starts with it, then the first row shown. The list order stays as is.
+ * How well a name matches the search: 0 when the name starts with it, 1 when a
+ * word in it does, 2 otherwise. A search lists better matches first, and Enter
+ * picks the top row, so the highlighted guess and the pick are always the same.
  */
-function bestMatch(rows: Customer[], query: string) {
-  const name = (c: Customer) => c.name.toLocaleLowerCase("fi");
-  return (
-    rows.find((c) => name(c).startsWith(query)) ??
-    rows.find((c) =>
-      name(c)
-        .split(/\s+/)
-        .some((word) => word.startsWith(query)),
-    ) ??
-    rows[0]
-  );
+function rank(customer: Customer, query: string) {
+  const name = customer.name.toLocaleLowerCase("fi");
+  if (name.startsWith(query)) return 0;
+  return name.split(/\s+/).some((word) => word.startsWith(query)) ? 1 : 2;
 }
 
 export function PeopleList({
@@ -61,12 +55,16 @@ export function PeopleList({
     select(id);
     setSearch("");
   }
-  const rows = sort(
+  const matches = sort(
     customers.filter((c) =>
       `${c.name} ${c.osakunta}`.toLocaleLowerCase("fi").includes(query),
     ),
     order,
   );
+  // Sorting is stable, so the chosen order still applies within each rank.
+  const rows = query
+    ? matches.sort((a, b) => rank(a, query) - rank(b, query))
+    : matches;
   return (
     <section className="people" aria-label="Henkilöt">
       <div className="people-search">
@@ -80,9 +78,8 @@ export function PeopleList({
           onChange={(e) => setSearch(e.target.value)}
           onKeyDown={(e) => {
             // Enter picks the top match, Escape clears the search.
-            const target = bestMatch(rows, query);
-            if (e.key === "Enter" && query && target && !disabled)
-              pick(target.id);
+            if (e.key === "Enter" && query && rows[0] && !disabled)
+              pick(rows[0].id);
             if (e.key === "Escape") setSearch("");
           }}
         />

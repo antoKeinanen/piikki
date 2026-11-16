@@ -13,7 +13,8 @@ import {
 type PostInput = Omit<Parameters<Ledger["post"]>[0], "operator">;
 /** Labels stored for charges made without an item. */
 const GENERIC_CHARGE_LABELS = new Set(["Veloita", "Charge", "Purchase"]);
-const AMOUNT = /^\d+([.,]\d{1,2})?$/;
+/** Same limits as parseAmount, so the button never shows an amount that will be refused. */
+const AMOUNT = /^\d{1,7}([.,]\d{1,2})?$/;
 
 export function entryTitle(entry: Entry) {
   if (entry.reversal_of) return "Peruutus";
