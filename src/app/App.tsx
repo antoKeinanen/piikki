@@ -522,8 +522,9 @@ function CashierApp() {
           />
         </main>
       )}
-      <div role="status" aria-label="Ilmoitus" className="notice-region">
-        {shownNotice && view === "cashier" && (
+      {/* Hidden, not unmounted, on other views, so returning does not announce the notice again. */}
+      <div role="status" aria-label="Ilmoitus" className="notice-region" hidden={view !== "cashier"}>
+        {shownNotice && (
           <Toast
             busy={busy}
             action={shownNotice.kind === "entry" ? "Peru" : shownNotice.action}
